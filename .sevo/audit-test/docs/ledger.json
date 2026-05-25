@@ -1,0 +1,108 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "generatedAt": "2026-05-24T02:13:22.455Z",
+  "overallVerdict": "pass",
+  "rows": [
+    {
+      "stageId": "spec",
+      "verdict": "recorded",
+      "generatedAt": "2026-05-24T02:13:21.457Z",
+      "artifactPath": "docs/product-requirements.json",
+      "metrics": {}
+    },
+    {
+      "stageId": "spec-review-gate",
+      "verdict": "pass",
+      "generatedAt": "2026-05-24T02:13:21.459Z",
+      "artifactPath": "docs/spec-review-gate.json",
+      "metrics": {
+        "frCount": 1,
+        "acCount": 3
+      }
+    },
+    {
+      "stageId": "contract-review-gate",
+      "verdict": "pass",
+      "generatedAt": "2026-05-24T02:13:21.464Z",
+      "artifactPath": "docs/contract-review-gate.json",
+      "metrics": {
+        "frCount": 1,
+        "contractCount": 1,
+        "coveredFrs": [
+          "FR-01"
+        ],
+        "missingForFrs": []
+      }
+    },
+    {
+      "stageId": "review",
+      "verdict": "pass",
+      "generatedAt": "2026-05-24T02:13:21.468Z",
+      "artifactPath": "docs/review-report.json",
+      "metrics": {
+        "frCount": 1,
+        "findings": []
+      }
+    },
+    {
+      "stageId": "review-fix-loop",
+      "verdict": null,
+      "generatedAt": null,
+      "artifactPath": null,
+      "metrics": {}
+    },
+    {
+      "stageId": "regression",
+      "verdict": "recorded",
+      "generatedAt": "2026-05-24T02:13:21.472Z",
+      "artifactPath": "docs/regression.json",
+      "metrics": {
+        "passCount": 3,
+        "failCount": 0,
+        "testFileCount": 1
+      }
+    },
+    {
+      "stageId": "publish-generalization-gate",
+      "verdict": "pass",
+      "generatedAt": "2026-05-24T02:13:22.292Z",
+      "artifactPath": "docs/publish-generalization-gate.json",
+      "metrics": {
+        "matches": [],
+        "scannedFiles": 14
+      }
+    },
+    {
+      "stageId": "deploy",
+      "verdict": "pass",
+      "generatedAt": "2026-05-24T02:13:22.296Z",
+      "artifactPath": "docs/deploy.json",
+      "metrics": {
+        "package": {
+          "name": "sevo",
+          "currentVersion": "1.12.2",
+          "proposedVersion": "1.12.3",
+          "bumpKind": "patch"
+        },
+        "publish": {
+          "executed": false
+        }
+      }
+    },
+    {
+      "stageId": "verify",
+      "verdict": "pass",
+      "generatedAt": "2026-05-24T02:13:22.298Z",
+      "artifactPath": "docs/verify.json",
+      "metrics": {}
+    },
+    {
+      "stageId": "endgame-scan",
+      "verdict": null,
+      "generatedAt": null,
+      "artifactPath": null,
+      "metrics": {}
+    }
+  ]
+}

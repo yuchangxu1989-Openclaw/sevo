@@ -1,0 +1,36 @@
+# npm package: include compiled .js files, exclude dev/internal artifacts
+node_modules/
+state/
+*.log
+web/
+docs/
+tests/
+artifacts/
+skill/
+
+# Internal runtime
+.env
+.env.*
+logs/
+.cache/
+coverage/
+
+# Source code (npm gets compiled output, not source)
+src/
+tsconfig.json
+
+# Internal files not for distribution
+.openclaw/
+memory/
+*.secret
+*.key
+openclaw.json
+
+# Tests
+**/__tests__/
+**/*.test.ts
+**/*.test.js
+
+.DS_Store
+.gitignore
+.npmignore

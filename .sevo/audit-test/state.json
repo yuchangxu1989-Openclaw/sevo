@@ -1,0 +1,398 @@
+{
+  "pipelineId": "audit-test",
+  "taskId": "audit-test-fd6393d2",
+  "description": "审计测试值-2026-05-24",
+  "level": "L2+",
+  "status": "completed",
+  "currentStage": null,
+  "requiredStages": [
+    "spec",
+    "spec-review-gate",
+    "contract",
+    "contract-review-gate",
+    "implement",
+    "review",
+    "smoke-test",
+    "ux-acceptance",
+    "regression",
+    "publish-generalization-gate",
+    "deploy",
+    "verify",
+    "post-release-validation",
+    "ledger"
+  ],
+  "stages": {
+    "spec": {
+      "stageId": "spec",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:spec:markdown",
+          "type": "spec-markdown",
+          "path": "docs/product-requirements.md",
+          "createdAt": "2026-05-24T02:13:21.457Z"
+        },
+        {
+          "id": "audit-test:spec:json",
+          "type": "spec-json",
+          "path": "docs/product-requirements.json",
+          "createdAt": "2026-05-24T02:13:21.457Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.455Z",
+      "completedAt": "2026-05-24T02:13:21.458Z"
+    },
+    "spec-review-gate": {
+      "stageId": "spec-review-gate",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:spec-review-gate",
+          "type": "spec-review-gate",
+          "path": "docs/spec-review-gate.json",
+          "createdAt": "2026-05-24T02:13:21.459Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.459Z",
+      "completedAt": "2026-05-24T02:13:21.460Z"
+    },
+    "contract": {
+      "stageId": "contract",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:contracts:index",
+          "type": "contract-index",
+          "path": "docs/contracts/_index.json",
+          "createdAt": "2026-05-24T02:13:21.461Z"
+        },
+        {
+          "id": "audit-test:contract:FR-01",
+          "type": "contract-document",
+          "path": "docs/contracts/fr-01-2026-05-24.json",
+          "createdAt": "2026-05-24T02:13:21.461Z"
+        },
+        {
+          "id": "audit-test:test-plan",
+          "type": "test-plan",
+          "path": "src/tests/_test-plan.json",
+          "createdAt": "2026-05-24T02:13:21.462Z"
+        },
+        {
+          "id": "audit-test:test:FR-01",
+          "type": "test-file",
+          "path": "src/tests/fr-01-2026-05-24.test.ts",
+          "createdAt": "2026-05-24T02:13:21.462Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.460Z",
+      "completedAt": "2026-05-24T02:13:21.463Z"
+    },
+    "contract-review-gate": {
+      "stageId": "contract-review-gate",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:contract-review-gate",
+          "type": "contract-review-gate",
+          "path": "docs/contract-review-gate.json",
+          "createdAt": "2026-05-24T02:13:21.464Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.463Z",
+      "completedAt": "2026-05-24T02:13:21.465Z"
+    },
+    "implement": {
+      "stageId": "implement",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:implement-manifest",
+          "type": "implement-manifest",
+          "path": "src/implement-manifest.json",
+          "createdAt": "2026-05-24T02:13:21.466Z"
+        },
+        {
+          "id": "audit-test:impl:FR-01",
+          "type": "implement-source",
+          "path": "src/fr-01-2026-05-24/index.ts",
+          "createdAt": "2026-05-24T02:13:21.466Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.465Z",
+      "completedAt": "2026-05-24T02:13:21.467Z"
+    },
+    "review": {
+      "stageId": "review",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:review-report",
+          "type": "review-report",
+          "path": "docs/review-report.json",
+          "createdAt": "2026-05-24T02:13:21.468Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.467Z",
+      "completedAt": "2026-05-24T02:13:21.469Z"
+    },
+    "smoke-test": {
+      "stageId": "smoke-test",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "smoke-test-66fc669e",
+          "type": "stage-output",
+          "path": "artifacts/smoke-test/smoke-test-output.md",
+          "createdAt": "2026-05-24T02:13:21.470Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.469Z",
+      "completedAt": "2026-05-24T02:13:21.470Z"
+    },
+    "ux-acceptance": {
+      "stageId": "ux-acceptance",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "ux-acceptance-0ab116de",
+          "type": "stage-output",
+          "path": "artifacts/ux-acceptance/ux-acceptance-output.md",
+          "createdAt": "2026-05-24T02:13:21.471Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.470Z",
+      "completedAt": "2026-05-24T02:13:21.471Z"
+    },
+    "regression": {
+      "stageId": "regression",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:regression",
+          "type": "regression-report",
+          "path": "docs/regression.json",
+          "createdAt": "2026-05-24T02:13:21.472Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:21.471Z",
+      "completedAt": "2026-05-24T02:13:22.290Z"
+    },
+    "publish-generalization-gate": {
+      "stageId": "publish-generalization-gate",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:publish-gen-gate",
+          "type": "publish-generalization-gate",
+          "path": "docs/publish-generalization-gate.json",
+          "createdAt": "2026-05-24T02:13:22.292Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:22.291Z",
+      "completedAt": "2026-05-24T02:13:22.294Z"
+    },
+    "deploy": {
+      "stageId": "deploy",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:deploy",
+          "type": "deploy-report",
+          "path": "docs/deploy.json",
+          "createdAt": "2026-05-24T02:13:22.296Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:22.295Z",
+      "completedAt": "2026-05-24T02:13:22.297Z"
+    },
+    "verify": {
+      "stageId": "verify",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:verify",
+          "type": "verify-report",
+          "path": "docs/verify.json",
+          "createdAt": "2026-05-24T02:13:22.298Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:22.297Z",
+      "completedAt": "2026-05-24T02:13:22.452Z"
+    },
+    "post-release-validation": {
+      "stageId": "post-release-validation",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "post-release-validation-cbccf4c5",
+          "type": "stage-output",
+          "path": "artifacts/post-release-validation/post-release-validation-output.md",
+          "createdAt": "2026-05-24T02:13:22.454Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:22.453Z",
+      "completedAt": "2026-05-24T02:13:22.454Z"
+    },
+    "ledger": {
+      "stageId": "ledger",
+      "status": "passed",
+      "artifacts": [
+        {
+          "id": "audit-test:ledger:json",
+          "type": "ledger-json",
+          "path": "docs/ledger.json",
+          "createdAt": "2026-05-24T02:13:22.455Z"
+        },
+        {
+          "id": "audit-test:ledger:md",
+          "type": "ledger-md",
+          "path": "docs/ledger.md",
+          "createdAt": "2026-05-24T02:13:22.455Z"
+        },
+        {
+          "id": "audit-test:ledger:notice",
+          "type": "ledger-notice",
+          "path": "docs/ledger-notice.txt",
+          "createdAt": "2026-05-24T02:13:22.455Z"
+        }
+      ],
+      "startedAt": "2026-05-24T02:13:22.454Z",
+      "completedAt": "2026-05-24T02:13:22.456Z"
+    }
+  },
+  "history": [
+    {
+      "stage": "spec",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:21.458Z",
+      "artifacts": [
+        "docs/product-requirements.md",
+        "docs/product-requirements.json"
+      ],
+      "reason": "Wrote spec with 1 FR / 3 AC (llm=false)."
+    },
+    {
+      "stage": "spec-review-gate",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:21.460Z",
+      "artifacts": [
+        "docs/spec-review-gate.json"
+      ],
+      "reason": "Spec review passed: 4/4 sections, 1 FR, 3 AC."
+    },
+    {
+      "stage": "contract",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:21.463Z",
+      "artifacts": [
+        "docs/contracts/_index.json",
+        "docs/contracts/fr-01-2026-05-24.json",
+        "src/tests/_test-plan.json",
+        "src/tests/fr-01-2026-05-24.test.ts"
+      ],
+      "reason": "Wrote 1 contract document(s) and test plan for 1 FR."
+    },
+    {
+      "stage": "contract-review-gate",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:21.465Z",
+      "artifacts": [
+        "docs/contract-review-gate.json"
+      ],
+      "reason": "Contract review passed: 1 contracts cover 1 FR."
+    },
+    {
+      "stage": "implement",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:21.467Z",
+      "artifacts": [
+        "src/implement-manifest.json",
+        "src/fr-01-2026-05-24/index.ts"
+      ],
+      "reason": "Wrote 1 source file(s) covering 1 FR (llm=false)."
+    },
+    {
+      "stage": "review",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:21.469Z",
+      "artifacts": [
+        "docs/review-report.json"
+      ],
+      "reason": "Review passed: 1 FR fully covered (1 source files)."
+    },
+    {
+      "stage": "smoke-test",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:21.470Z",
+      "artifacts": [
+        "artifacts/smoke-test/smoke-test-output.md"
+      ]
+    },
+    {
+      "stage": "ux-acceptance",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:21.471Z",
+      "artifacts": [
+        "artifacts/ux-acceptance/ux-acceptance-output.md"
+      ]
+    },
+    {
+      "stage": "regression",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:22.290Z",
+      "artifacts": [
+        "docs/regression.json"
+      ],
+      "reason": "Regression passed: 3 tests in 1 file(s)."
+    },
+    {
+      "stage": "publish-generalization-gate",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:22.294Z",
+      "artifacts": [
+        "docs/publish-generalization-gate.json"
+      ],
+      "reason": "Generalization gate passed: 0 hard-coded leaks across 14 files."
+    },
+    {
+      "stage": "deploy",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:22.297Z",
+      "artifacts": [
+        "docs/deploy.json"
+      ],
+      "reason": "Deploy intent recorded: sevo 1.12.2 -> 1.12.3 (dry-run)."
+    },
+    {
+      "stage": "verify",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:22.452Z",
+      "artifacts": [
+        "docs/verify.json"
+      ],
+      "reason": "Verify passed: 3 check(s) all green."
+    },
+    {
+      "stage": "post-release-validation",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:22.454Z",
+      "artifacts": [
+        "artifacts/post-release-validation/post-release-validation-output.md"
+      ]
+    },
+    {
+      "stage": "ledger",
+      "outcome": "passed",
+      "at": "2026-05-24T02:13:22.456Z",
+      "artifacts": [
+        "docs/ledger.json",
+        "docs/ledger.md",
+        "docs/ledger-notice.txt"
+      ],
+      "reason": "Ledger written: 10 stage row(s), overall=pass."
+    }
+  ],
+  "createdAt": "2026-05-24T02:13:21.306Z",
+  "updatedAt": "2026-05-24T02:13:22.456Z"
+}

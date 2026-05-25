@@ -1,0 +1,12 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "generatedAt": "2026-05-24T02:13:21.461Z",
+  "frCount": 1,
+  "contracts": [
+    {
+      "frId": "FR-01",
+      "relPath": "docs/contracts/fr-01-2026-05-24.json"
+    }
+  ]
+}

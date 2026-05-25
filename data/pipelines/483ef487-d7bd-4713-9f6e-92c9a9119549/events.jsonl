@@ -1,0 +1,4 @@
+{"timestamp":"2026-05-08T05:50:28.435Z","pipelineId":"483ef487-d7bd-4713-9f6e-92c9a9119549","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-claw-design-mowhxob4","level":"L2+"}}
+{"timestamp":"2026-05-08T05:50:28.436Z","pipelineId":"483ef487-d7bd-4713-9f6e-92c9a9119549","stage":"spec","eventType":"stage_activated","payload":{}}
+{"event":"stage-completed","stageId":"spec","timestamp":"2026-05-16T04:10:00.000Z","agent":"pm-01","artifact":"projects/claw-design/docs/design/impl-spec-wave-b01-b03-c02-c05.md"}
+{"event":"stage-activated","stageId":"spec-review-gate","timestamp":"2026-05-16T04:10:00.000Z","agent":"pm-01"}

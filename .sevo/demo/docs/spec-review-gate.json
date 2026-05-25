@@ -1,0 +1,35 @@
+{
+  "pipelineId": "demo",
+  "projectSlug": "demo",
+  "evaluatedAt": "2026-05-24T02:02:27.955Z",
+  "verdict": "pass",
+  "sections": [
+    {
+      "name": "用户人群",
+      "present": true,
+      "evidence": "userSegment"
+    },
+    {
+      "name": "痛点",
+      "present": true,
+      "evidence": "painPoints"
+    },
+    {
+      "name": "原始需求",
+      "present": true,
+      "evidence": "originalRequirement"
+    },
+    {
+      "name": "UX 流",
+      "present": true,
+      "evidence": "uxFlow"
+    }
+  ],
+  "frCount": 1,
+  "acCount": 3,
+  "issues": [],
+  "inputs": {
+    "mdExists": true,
+    "jsonExists": true
+  }
+}

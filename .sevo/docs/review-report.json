@@ -1,0 +1,27 @@
+{
+  "pipelineId": "demo",
+  "projectSlug": "demo",
+  "evaluatedAt": "2026-05-24T01:57:24.815Z",
+  "verdict": "block",
+  "frCount": 1,
+  "coveredFrCount": 0,
+  "sourceFileCount": 1,
+  "matrix": [
+    {
+      "frId": "FR-01",
+      "impl": [
+        "src/fr-01-demo-31ee4dba/index.ts"
+      ],
+      "tests": [],
+      "covered": false
+    }
+  ],
+  "findings": [
+    {
+      "severity": "P1",
+      "frId": "FR-01",
+      "description": "No test file found for FR-01"
+    }
+  ],
+  "llmFindingsCount": 0
+}

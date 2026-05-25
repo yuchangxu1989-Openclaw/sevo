@@ -1,0 +1,64 @@
+{
+  "pipelineId": "demo",
+  "projectSlug": "demo",
+  "frId": "FR-01",
+  "title": "测试描述",
+  "generatedAt": "2026-05-24T02:02:27.957Z",
+  "api": {
+    "cli": [
+      {
+        "command": "demo item",
+        "description": "按用户描述实现:测试描述"
+      }
+    ],
+    "functions": [
+      {
+        "name": "item",
+        "description": "按用户描述实现:测试描述",
+        "signature": "(input: FR-01Input) => Promise<FR-01Output>"
+      }
+    ]
+  },
+  "events": [
+    {
+      "name": "fr-01.completed",
+      "payload": {
+        "frId": "string",
+        "success": "boolean",
+        "timestamp": "ISO8601"
+      }
+    }
+  ],
+  "data": [
+    {
+      "shape": "FR-01Input",
+      "fields": [
+        {
+          "name": "request",
+          "type": "unknown",
+          "description": "caller-supplied payload"
+        }
+      ]
+    },
+    {
+      "shape": "FR-01Output",
+      "fields": [
+        {
+          "name": "success",
+          "type": "boolean",
+          "description": "whether call succeeded"
+        },
+        {
+          "name": "artifacts",
+          "type": "string[]",
+          "description": "paths of files written"
+        }
+      ]
+    }
+  ],
+  "acceptanceCriteria": [
+    "用户调用对应 CLI 命令时返回 exit 0",
+    "产出文件落盘,路径可追溯到本 FR",
+    "验收数据可在 ledger 中查到"
+  ]
+}

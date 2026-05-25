@@ -1,0 +1,22 @@
+/** Built-in demo requirements used by `sevo demo` (AC-16F.2). */
+export const DEMO_REQUIREMENTS_MARKDOWN = [
+  '# hello-sevo — Product Requirements',
+  '',
+  '## Goal',
+  'A first-time user can run the demo pipeline and see a concrete delivery artifact within five minutes.',
+  '',
+  '## Functional Requirements',
+  '',
+  '### FR-1: Initialize demo workspace',
+  '- AC-1.1: The demo creates a standalone SEVO project directory.',
+  '- AC-1.2: The demo writes pipeline state and ledger evidence.',
+  '',
+  '### FR-2: Produce spec artifact automatically',
+  '- AC-2.1: The spec stage starts without requiring a manual follow-up command.',
+  '- AC-2.2: The generated spec contains requirements and acceptance criteria.',
+  '',
+  '### FR-3: Complete onboarding pipeline',
+  '- AC-3.1: The demo completes spec, review, implementation, smoke-test, and deploy stages.',
+  '- AC-3.2: The final validation reports all gaps fixed.',
+  '',
+].join('\n');

@@ -1,0 +1,1 @@
+SEVO pipeline demo for project demo wrote ledger at /root/.openclaw/workspace/projects/sevo/.sevo/demo/docs/ledger.json (overall=pass) on 2026-05-24T02:02:29.672Z.

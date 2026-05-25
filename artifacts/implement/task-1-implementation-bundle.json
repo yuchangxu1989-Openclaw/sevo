@@ -1,0 +1,36 @@
+{
+  "executions": [
+    {
+      "taskId": "task-1:wp-1",
+      "workPackageId": "wp-1",
+      "input": "Test WP",
+      "output": "done",
+      "allowedScope": [
+        "FR-01"
+      ],
+      "evidence": [
+        {
+          "type": "code_change",
+          "content": "impl",
+          "timestamp": "2026-05-03T00:00:00Z"
+        }
+      ],
+      "testResults": [
+        {
+          "name": "test1",
+          "passed": true
+        }
+      ],
+      "testFirstTimestamp": "2026-05-03T00:00:00Z",
+      "implTimestamp": "2026-05-03T00:00:00Z",
+      "tddOrderFollowed": true
+    }
+  ],
+  "summary": "Executed 1 tasks across 1 work packages. Tests: 1 passed, 0 failed.",
+  "traceability": {
+    "FR-01": [
+      "task-1:wp-1"
+    ]
+  },
+  "generatedAt": "2026-05-03T00:00:00Z"
+}

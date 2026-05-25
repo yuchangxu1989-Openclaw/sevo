@@ -1,0 +1,14 @@
+{
+  "pipelineId": "demo",
+  "projectSlug": "demo",
+  "generatedAt": "2026-05-24T01:57:24.813Z",
+  "frCount": 1,
+  "usedLlm": false,
+  "files": [
+    {
+      "frId": "FR-01",
+      "relPath": "src/fr-01-demo-31ee4dba/index.ts",
+      "source": "stub"
+    }
+  ]
+}

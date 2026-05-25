@@ -1,0 +1,16 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "ranAt": "2026-05-24T02:13:22.296Z",
+  "verdict": "pass",
+  "package": {
+    "name": "sevo",
+    "currentVersion": "1.12.2",
+    "proposedVersion": "1.12.3",
+    "bumpKind": "patch"
+  },
+  "publish": {
+    "executed": false
+  },
+  "issues": []
+}
