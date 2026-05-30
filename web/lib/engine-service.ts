@@ -63,7 +63,13 @@ import type {
   GateRuleConfigView,
   PrincipleView,
 } from '@/types';
-import { getStageLabel, USER_MACRO_STAGE_MAP } from '@/types';
+import { USER_MACRO_STAGE_MAP } from '@/types';
+import {
+  getRealPipelineRuns,
+  readRealArtifactFile,
+  getRealFrTitle,
+  type RealPipelineRun,
+} from './real-data-reader';
 
 // ── Request dedup cache (MIN-03: idempotency) ──────────────────
 
@@ -519,11 +525,34 @@ function makeArtifact(
   };
 }
 
-function previewContentFor(path: string): string | undefined {
-  if (path.endsWith('.md')) {
-    return `# ${path.split('/').pop()}\n\n线上预览使用 markdown 渲染，后续会接真实工件服务。`;
-  }
-  return undefined;
+// ── Real-data stage labels (covers stages beyond the typed StageId set) ──
+
+const REAL_STAGE_LABELS: Record<string, string> = {
+  spec: '需求澄清',
+  'spec-review-gate': '需求评审',
+  'test-case-authoring': '测试设计',
+  'ux-interaction-design': 'UX 交互设计',
+  'architecture-design': '架构设计',
+  contract: '方案规划',
+  'contract-review-gate': '方案评审',
+  implement: '执行落地',
+  review: '质量复核',
+  'smoke-test': '冒烟测试',
+  'ux-acceptance': 'UX 验收',
+  regression: '回归验证',
+  'publish-generalization-gate': '发布通用化门禁',
+  deploy: '部署发布',
+  verify: '结果确认',
+  'post-release-validation': '发布后验证',
+  ledger: '交付账本',
+};
+
+function stageLabelOf(stageId: string): string {
+  return REAL_STAGE_LABELS[stageId] ?? stageId;
+}
+
+function realRunTitle(run: RealPipelineRun): string {
+  return getRealFrTitle(run.pipelineId) ?? run.description ?? run.pipelineId;
 }
 
 export function getDashboardSummary(): DashboardSummary {
@@ -551,22 +580,10 @@ export function getDashboardSummary(): DashboardSummary {
     completedFrs,
     failedFrs,
     dataSources: {
-      systemCall: {
-        type: 'derived',
-        description: '基于 /api/v1/dashboard/summary 聚合的派生视图，来源是 engine-service.ts 里按 FR 流水线快照计算出的健康摘要。',
-      },
-      pipelineStages: {
-        type: 'derived',
-        description: '基于 /api/v1/dashboard/summary 的 macroStageDistribution 派生到 11 阶段展示，不是 runtime ledger 逐阶段实时计数。',
-      },
-      riskQueue: {
-        type: 'derived',
-        description: '基于 /api/v1/todos 聚合出的风险动作列表，来源包括门禁、澄清和失败 FR 的文件/内存聚合结果。',
-      },
-      runtimeMetrics: {
-        type: 'derived',
-        description: '基于 dashboard summary 与 todos 的派生指标卡，展示失败、门禁、推进中、已进账本等聚合数字。',
-      },
+      systemCall: { type: 'derived', description: '由各 pipeline 阶段状态聚合计算' },
+      pipelineStages: { type: 'runtime', description: '读取各 pipeline 当前阶段分布' },
+      riskQueue: { type: 'derived', description: '由阻断与失败的 FR 推导风险队列' },
+      runtimeMetrics: { type: 'derived', description: '由历史与当前指标计算趋势' },
     },
     trends: {
       totalFrs: { percent: 12, direction: 'up' as const, current: total, previous: Math.max(0, total - 2) },
@@ -1151,25 +1168,30 @@ function qualityBand(pi: PipelineInstance): 'green' | 'yellow' | 'red' {
 }
 
 export function getDeliverableIndex(): DeliverableIndexView {
-  const items: DeliverableIndexItem[] = MOCK_PIPELINES.flatMap((pi) =>
-    pi.stages.flatMap((stage) =>
-      artifactsForStage(pi, stage).map((artifact, index) => ({
-        deliverableId: `${pi.instanceId}-${stage.stageId}-${index}`,
-        frId: pi.instanceId,
-        frCode: pi.instanceId,
-        frTitle: frTitle(pi.instanceId),
-        projectSlug: pi.projectSlug,
-        stageId: stage.stageId,
-        stageLabel: getStageLabel(stage.stageId),
-        name: artifact.path.split('/').pop() ?? artifact.path,
-        type: inferDeliverableType(artifact.path),
-        path: artifact.path,
-        createdAt: artifact.createdAt,
-        previewable: artifact.path.endsWith('.md'),
-        previewContent: previewContentFor(artifact.path),
-      })),
-    ),
-  );
+  const runs = getRealPipelineRuns();
+  const items: DeliverableIndexItem[] = [];
+
+  for (const run of runs) {
+    for (const stage of Object.values(run.stages)) {
+      const artifacts = stage.artifacts ?? [];
+      for (const artifact of artifacts) {
+        items.push({
+          deliverableId: `${run.pipelineId}::${stage.stageId}::${artifact.id}`,
+          frId: run.pipelineId,
+          frCode: run.pipelineId,
+          frTitle: realRunTitle(run),
+          projectSlug: run.projectSlug,
+          stageId: stage.stageId as StageId,
+          stageLabel: stageLabelOf(stage.stageId),
+          name: artifact.path.split('/').pop() ?? artifact.path,
+          type: inferDeliverableType(artifact.path),
+          path: artifact.path,
+          createdAt: artifact.createdAt,
+          previewable: artifact.path.endsWith('.md'),
+        });
+      }
+    }
+  }
 
   return {
     items: items.sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
@@ -1268,47 +1290,48 @@ export function getCrossProjectAnalytics(timeRange: AnalyticsTimeRange = '30d'):
 }
 
 export function getLedgerView(): LedgerView {
-  const entries: LedgerEntryView[] = MOCK_PIPELINES.flatMap((pi) =>
-    pi.stages
-      .filter((stage) => stage.status !== 'pending')
-      .map((stage) => {
-        const actionType: LedgerActionType =
-          stage.stageId === 'ledger'
-            ? pi.status === 'completed'
-              ? 'delivered'
-              : 'aborted'
-            : stage.status === 'failed'
-              ? 'stage-failed'
-              : stage.stageId.includes('gate')
-                ? 'gate-approved'
-                : 'stage-passed';
+  const runs = getRealPipelineRuns();
+  const entries: LedgerEntryView[] = [];
 
-        const evidence: LedgerEvidenceLink[] = artifactsForStage(pi, stage).map((artifact) => ({
-          label: artifact.path.split('/').pop() ?? artifact.path,
-          path: artifact.path,
-          type: artifact.type,
-        }));
+  for (const run of runs) {
+    const stages = Object.values(run.stages).filter((stage) => stage.status !== 'pending');
+    for (const stage of stages) {
+      const isGate = stage.stageId.includes('gate');
+      const actionType: LedgerActionType =
+        stage.stageId === 'ledger'
+          ? run.status === 'completed'
+            ? 'delivered'
+            : 'aborted'
+          : stage.status === 'failed'
+            ? 'stage-failed'
+            : isGate
+              ? 'gate-approved'
+              : 'stage-passed';
 
-        return {
-          entryId: `${pi.instanceId}-${stage.stageId}`,
-          frId: pi.instanceId,
-          frCode: pi.instanceId,
-          frTitle: frTitle(pi.instanceId),
-          projectSlug: pi.projectSlug,
-          projectName: PROJECT_NAMES[pi.projectSlug] ?? pi.projectSlug,
-          stageId: stage.stageId,
-          actionType,
-          outcome: pi.status === 'completed' ? 'delivered' : pi.status === 'failed' ? 'aborted' : 'in-progress',
-          artifactCount: evidence.length,
-          timestamp: stage.completedAt ?? stage.startedAt ?? pi.updatedAt,
-          summary:
-            stage.stageId === 'ledger'
-              ? `${frTitle(pi.instanceId)} 已进入账本归档。`
-              : `${STAGE_LABELS[stage.stageId]} 阶段 ${stage.status === 'failed' ? '失败' : '完成'}。`,
-          evidence,
-        };
-      }),
-  );
+      const evidence: LedgerEvidenceLink[] = (stage.artifacts ?? []).map((artifact) => ({
+        label: artifact.path.split('/').pop() ?? artifact.path,
+        path: artifact.path,
+        type: artifact.type,
+      }));
+
+      entries.push({
+        entryId: `${run.pipelineId}::${stage.stageId}`,
+        frId: run.pipelineId,
+        frCode: run.pipelineId,
+        frTitle: realRunTitle(run),
+        projectSlug: run.projectSlug,
+        projectName: PROJECT_NAMES[run.projectSlug] ?? run.projectSlug,
+        stageId: stage.stageId as StageId,
+        actionType,
+        outcome:
+          run.status === 'completed' ? 'delivered' : run.status === 'failed' ? 'aborted' : 'in-progress',
+        artifactCount: evidence.length,
+        timestamp: stage.completedAt ?? stage.startedAt ?? run.updatedAt ?? run.createdAt ?? '',
+        summary: `${stageLabelOf(stage.stageId)} 状态：${stage.status}`,
+        evidence,
+      });
+    }
+  }
 
   return {
     entries: entries.sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
@@ -1543,22 +1566,8 @@ export function getDeliverableContent(deliverableId: string): { name: string; co
   const item = index.items.find(i => i.deliverableId === deliverableId);
   if (!item) return null;
 
-  // Generate synthetic content based on type
-  let content: string;
-  if (item.path.endsWith('.md')) {
-    content = `# ${item.name}\n\n## ${item.frTitle}\n\n**项目**: ${item.projectSlug}  \n**阶段**: ${item.stageLabel}  \n**创建时间**: ${item.createdAt}\n\n---\n\n这是 ${item.frTitle} 在 ${item.stageLabel} 阶段产出的文档。\n\n### 概述\n\n本文档记录了 ${item.frTitle} 的关键设计决策和实现细节。\n\n### 详细内容\n\n- 需求分析完成\n- 技术方案已评审\n- 实现符合 spec 定义的 AC\n\n### 验证结果\n\n所有验收条件已通过验证。\n`;
-  } else if (item.path.endsWith('.json')) {
-    content = JSON.stringify({
-      name: item.name,
-      project: item.projectSlug,
-      stage: item.stageId,
-      fr: item.frCode,
-      timestamp: item.createdAt,
-      status: 'completed',
-    }, null, 2);
-  } else {
-    content = `// ${item.name}\n// Project: ${item.projectSlug}\n// FR: ${item.frCode}\n// Stage: ${item.stageLabel}\n\n// Implementation file for ${item.frTitle}\n`;
-  }
+  const content = readRealArtifactFile(item.frId, item.path);
+  if (content == null) return null;
 
   return {
     name: item.name,

@@ -46,8 +46,32 @@ import type {
 
 // ── Configuration ───────────────────────────────────────────────
 
-const SEVO_PROJECT_ROOT = process.env.SEVO_PROJECT_ROOT
-  ?? path.resolve(process.cwd(), '..');
+/**
+ * Resolve the SEVO project root.
+ *
+ * Production: the Next.js server runs with cwd = <project>/web, so the
+ * project root is one level up. Tests/CLI may run with cwd = <project>.
+ * Rather than assume a fixed depth, walk up from cwd looking for the
+ * project marker (.sevo runtime dir or docs/product-requirements.md).
+ */
+function resolveSevoProjectRoot(): string {
+  if (process.env.SEVO_PROJECT_ROOT) return process.env.SEVO_PROJECT_ROOT;
+
+  let dir = process.cwd();
+  for (let depth = 0; depth < 6; depth += 1) {
+    const hasRuntime = fs.existsSync(path.join(dir, '.sevo'));
+    const hasSpec = fs.existsSync(path.join(dir, 'docs', 'product-requirements.md'));
+    if (hasRuntime || hasSpec) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  // Fall back to the historical one-level-up assumption (cwd = web/).
+  return path.resolve(process.cwd(), '..');
+}
+
+const SEVO_PROJECT_ROOT = resolveSevoProjectRoot();
 
 const SPEC_PATH = path.join(SEVO_PROJECT_ROOT, 'docs/product-requirements.md');
 const SCAN_SUMMARY_PATH = path.join(SEVO_PROJECT_ROOT, 'docs/gap-scan-summary.json');

@@ -1,1219 +1,676 @@
-# SEVO — arc42 架构文档
+# SEVO 架构设计方案
 
-Claude Code（OpenClaw ACP Agent）| 2026-04-24
+OpenClaw（sa-01 子Agent）｜2026-05-30
 
----
+## 1. 目标与边界
 
-## 目录
+这份文档回答一件事：SEVO 作为研发流水线引擎，嵌在 ACO（OpenClaw Gateway）的运行时里，到底怎么拆、怎么连、状态放哪、谁负责什么。
 
-1. [引言与目标](#1-引言与目标)
-2. [约束](#2-约束)
-3. [上下文与边界](#3-上下文与边界)
-4. [解决方案策略](#4-解决方案策略)
-5. [构建块视图](#5-构建块视图)
-6. [运行时视图](#6-运行时视图)
-7. [部署视图](#7-部署视图)
-8. [横切关注点](#8-横切关注点)
-9. [架构决策](#9-架构决策)
-10. [质量需求](#10-质量需求)
-11. [风险与技术债务](#11-风险与技术债务)
-12. [术语表](#12-术语表)
+先把边界说死：
+- **ACO** 负责运行时编排与宿主能力：Agent 池、任务派发、会话生命周期、Hook 触发、任务看板、通知、审计、资源池、异步纪律、spec-first dispatch guard。
+- **SEVO** 负责研发语义与阶段门禁：一条 FR 从 Spec → Review → Contract → Implement → Audit → Release → Verify → Ledger 的阶段定义、流转规则、门禁判定、工件链、终局验证。
+- 两者不是上下级关系，而是**宿主运行时（ACO） + 流水线领域引擎（SEVO）**的关系。ACO 不知道一条研发流水线该怎么走到终局；SEVO 也不自己维护 Agent 池和主会话消息循环。两者咬合后，才形成可运行的自动研发系统。
 
 ---
 
-## 1. 引言与目标
+## 2. 为什么要这样拆
 
-### 1.1 需求概述
+从 spec 看，SEVO 要解决的是“研发动作必须走完整闭环”，ACO 要解决的是“多 Agent 环境下任务怎么稳定派、稳态跑、失败自动接住”。
 
-SEVO（Spec-Execute-Verify-Operate）是 Agent 自动研发流水线。它把散落在 AGENTS.md 的流程规则固化为代码级状态机，保障全研发生命周期产出质量——从需求定义、架构设计到验证发布全流程自动化。
+这决定了两者天然应该分层：
+- **SEVO 管研发语义**：阶段、门禁、FR 覆盖、终局验证、发布证据、Ledger。
+- **ACO 管执行底座**：任务对象、Agent 发现、派发决策、completion chain、看板、通知、心跳、失败重派、运行时守卫。
 
-当前 AI Coding 工具只覆盖"写代码"环节。SEVO 的定位是把 Specify → Execute → Verify → Operate 四个阶段串成可编程、可审计、可自动推进的流水线，让 vibe coding 用户获得完整的研发质量保障。
+如果 SEVO 直接接管所有运行时调度，它会把 OpenClaw/ACO 的宿主能力重新实现一遍；如果 ACO 直接内嵌研发阶段知识，它会把通用调度系统绑死在 SEVO 这一条流水线上。现在的正确架构是：
 
-### 1.2 质量目标
-
-| 优先级 | 质量属性 | 目标 |
-|--------|----------|------|
-| 1 | 可控性 | 每个阶段有明确的门禁（Gate），不满足条件不放行 |
-| 2 | 可审计性 | 全流程事件追踪，Ledger 记录每次流水线执行的完整证据链 |
-| 3 | 通用性 | 核心状态机不绑死 OpenClaw，通过 Host Adapter 接入任意 Agent 宿主 |
-| 4 | 可靠性 | 插件层 fail-open，核心引擎 fail-safe；单模块故障不拖垮整条流水线 |
-| 5 | 可扩展性 | 阶段可配置（跳过/新增），门禁规则可插拔，Agent 映射可覆盖 |
-
-### 1.3 利益相关者
-
-| 角色 | 关注点 |
-|------|--------|
-| 用户（产品负责人） | 研发质量可见、进度透明、不需要手动推进流水线 |
-| OpenClaw 主会话 | 通过 hook 接收流水线事件，自动派发下一阶段任务 |
-| 子 Agent（编码/审计/架构/PM） | 接收阶段任务 prompt，产出 artifact，结果回流流水线 |
-| KIVO（知识引擎） | 消费 Ledger 产出的结构化研发记录，沉淀为可复用知识 |
-| AEO（效果运营） | 监控流水线执行指标，发现效果漂移 |
+**SEVO 输出“下一阶段应该做什么”，ACO 提供“把这件事可靠交给谁去做”的执行壳。**
 
 ---
 
-## 2. 约束
+## 3. SEVO 内部模块划分
 
-### 2.1 技术约束
+### 3.1 Plugin Shell（`index.js` + `openclaw.plugin.json`）
+一句话职责：**把 SEVO 作为 OpenClaw 插件挂进 ACO 的 Hook 生命周期。**
 
-| 约束 | 原因 |
-|------|------|
-| TypeScript 核心 + JS 插件 | 核心库（projects/sevo/src/）用 TS 编译为 JS；插件层（extensions/sevo-pipeline/）直接 JS，与 OpenClaw 插件体系一致 |
-| 核心不绑死单一宿主，但主动复用宿主高价值能力 | SOUL.md 核心设计原则：通用优先 + Host Adapter 模式 |
-| Stage-Bound Design | 能力/规范绑定流程阶段，不绑定特定 Agent 身份（AGENTS.md §核心设计原则） |
-| 单文件状态持久化（state.json） | 单 writer 模型，避免并发写冲突；事件日志 append-only（events.jsonl） |
-| 插件层 fail-open | 所有 hook handler 包裹 try-catch，错误记录但不阻断宿主调度 |
+它负责：
+- 注册 `subagent_ended`、`before_prompt_build`、`before_tool_call`、`after_tool_call` 等 Hook
+- 解析 SEVO label（`sevo:<projectSlug>:<stageId>:<attempt>`）
+- 把阶段推进、提示注入、路由拦截、通知提醒接到 Gateway 事件流上
+- 在 dist 缺失时 fail-open，避免拖死宿主
 
-### 2.2 组织约束
+### 3.2 Bridge（`bridge.js`）
+一句话职责：**在插件壳和编译后的 TypeScript 核心之间做懒加载桥接。**
 
-| 约束 | 原因 |
-|------|------|
-| SEVO 流水线强制 | 新建模块、跨域改动、>500 行或 >10 文件、数据模型变更必须走完整 SEVO 流水线 |
-| 开发与审计分离 | 编码 Agent 不做自审，审计由独立 Agent 执行 |
-| 长文档分段写作 | >300 行文档必须分段派发，降低单次写入失败风险 |
-| 研发流程改进双写 | 每条改进同时落地到 AGENTS.md（L6 临时兜底）和 SEVO 产品层（L1/L2 永久固化） |
+它负责：
+- 定位 `dist/` 与 `data/` 目录
+- lazy load `PipelineEngine`、`route`、`OpenClawAdapter`、clarification 等核心模块
+- 做缓存、失败回退、npm 安装路径兼容
 
-### 2.3 惯例约束
+这是 **JS 插件壳 ↔ TS 核心引擎** 的连接层。
 
-| 约束 | 原因 |
-|------|------|
-| 意图路由必须走 LLM | SOUL.md 术语纪律：禁止用关键词匹配实现意图理解 |
-| 文件产出强制 | 任务要求写文件时必须实际写入磁盘，只在回复中输出 = 任务失败 |
-| AC 逐条覆盖 | 编码任务必须逐条对照验收标准，审计只做质量把关不做需求补漏 |
+### 3.3 Router（`src/router/*`）
+一句话职责：**把任务描述和 scope 变成流水线级别与阶段计划。**
+
+它负责：
+- `classifyLevel`：L0 / L1 / L2+ 分级
+- `classifyDesignNeeds`：判断是否需要 UX 设计、架构设计
+- `route`：生成 `requiredStages`、`skippedStages`、matched rules
+- `StageGraph` / `StageRouter`：定义阶段 DAG 和推进关系
+
+这是 SEVO 的“入口判定器”。
+
+### 3.4 Pipeline Create / Instance（`src/pipeline/pipeline-create.ts` 等）
+一句话职责：**创建一条 FR 流水线实例，并把它落盘成可追踪对象。**
+
+它负责：
+- project slug 校验
+- active instance 冲突检查
+- instanceId 生成（`fr-<slug>-<yyyyMMdd>-<seq>`）
+- 项目目录初始化
+- 生成 routingResult 与 instance record
+
+这是“把用户一句研发目标变成一条正式流水线”的入口。
+
+### 3.5 Pipeline Engine（`src/pipeline/pipeline-engine.ts`）
+一句话职责：**维护每条流水线的状态机，决定阶段何时通过、阻断、回滚、重试、推进。**
+
+它负责：
+- 创建 `PipelineState`
+- 激活阶段、完成阶段、失败处理
+- 并行分支协调
+- clarification 阻断与解除
+- fix-loop / rollback
+- 持久化 `state.json` 与 `events.jsonl`
+
+这是 SEVO 的核心编排引擎。
+
+### 3.6 Gate Engine（`src/gate/*`）
+一句话职责：**给阶段结果做门禁判定，不让“做了”冒充“通过了”。**
+
+它负责：
+- Spec Review Gate、Contract Review Gate、Publish / Verify 等规则引擎
+- 审查结论三态：`passed / conditional / rejected`
+- blocker 聚合
+- 规则可插拔执行
+
+这是 SEVO 的质量门。
+
+### 3.7 Stage Handlers / Stage Implementations（`src/stages/*`）
+一句话职责：**定义每个阶段的输入输出结构和执行语义。**
+
+它覆盖的不是“所有执行细节都在本地跑”，而是：
+- 每个阶段应该产出什么工件
+- 阶段结果怎么结构化回写
+- Deploy / Verify / Post-Release Validation / Clean-Install Verification 这些内建阶段如何验证
+
+### 3.8 OpenClaw Adapter（`src/adapter/openclaw-adapter.ts`）
+一句话职责：**把 SEVO 的阶段语义翻译成 ACO / OpenClaw 能执行的派发动作。**
+
+它负责：
+- `dispatchTask(stage, payload)`
+- `collectArtifacts(taskId)`
+- `notifyGateResult(stage, verdict)`
+- `spawnSession(...)` / README sync / publish adapter
+- 从宿主读取 `ProjectConfig`
+
+这层是 **SEVO ↔ ACO 的正式适配边界**。
+
+### 3.9 Context Injection（`src/context-injection/*`）
+一句话职责：**按阶段提取 spec / architecture / code 上下文，注入给执行 Agent。**
+
+它负责：
+- specify 阶段读 spec/vision/scope
+- plan 阶段读 spec + ADR
+- implement 阶段读 contract + constraints
+- review 阶段读 AC + interface + code list
+
+这层保证 Agent 做事时拿到的是阶段相关上下文，而不是一坨散 prompt。
+
+### 3.10 Event Ledger / Status History（`src/pipeline/ledger.ts`、`status-history.ts`）
+一句话职责：**把流水线过程变成可追溯证据链。**
+
+它负责：
+- pipeline / stage 事件流
+- 通知事件映射
+- instance 状态迁移记录
+- 交付后 Ledger 归档前的中间事件链
+
+### 3.11 CLI Surface（`src/cli/*`, `bin/sevo.js`）
+一句话职责：**给用户和主会话一个显式命令入口。**
+
+它负责：
+- `sevo create`
+- `sevo from`
+- `sevo status`
+- `sevo advance`
+- `sevo doctor`
+- list/show/config/export/verify/gate 等命令
+
+CLI 是面向用户的显式入口；插件 Hook 是面向宿主的隐式入口。
 
 ---
 
-## 3. 上下文与边界
+## 4. SEVO ↔ ACO 的边界
 
-### 3.1 业务上下文
+### 4.1 SEVO 消费 ACO 的能力
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                      用户（产品负责人）                         │
-│              提出需求 / 做重大决策 / 最终验收                    │
-└──────────────────────┬───────────────────────────────────────┘
-                       │ 需求描述
-                       ▼
-┌──────────────────────────────────────────────────────────────┐
-│                   OpenClaw 主会话（调度层）                     │
-│  接收用户消息 → 判断意图 → 触发 SEVO → 按流水线自动推进         │
-└──────┬──────────────┬──────────────┬─────────────────────────┘
-       │              │              │
-       ▼              ▼              ▼
-┌────────────┐ ┌────────────┐ ┌────────────┐
-│  SEVO 核心  │ │   KIVO     │ │    AEO     │
-│  研发流水线  │ │  知识引擎   │ │  效果运营   │
-└──────┬─────┘ └────────────┘ └────────────┘
-       │
-       │  派发阶段任务 / 收集 artifact / 门禁评估
-       ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    Agent 执行层                                │
-│  PM(pm-01) | 架构师(sa-01) | 编码(cc/free-code/dev-*)        │
-│  审计(audit-01/02) | UX(ux-01)                               │
-└──────────────────────────────────────────────────────────────┘
-```
+SEVO 不自己创造这些能力，而是消费 ACO / OpenClaw 宿主提供的运行时：
 
-### 3.2 技术上下文
+#### 1）Hook 事件
+SEVO 直接挂在 ACO/Gateway 事件上：
+- `subagent_ended`：阶段任务结束后推进流水线
+- `before_prompt_build`：向主会话注入“下一步该派什么阶段任务”
+- `before_tool_call`：拦截 `sessions_spawn`，补 SEVO label / spec guard / 路由规则
+- `after_tool_call`：做 spec sync reminder、飞书提醒等补充动作
 
-| 外部系统 | 交互方式 | 协议 |
-|----------|----------|------|
-| OpenClaw Gateway | 插件 hook（subagent_ended / before_prompt_build / before_tool_call） | JS Plugin API |
-| OpenClaw sessions_spawn | 通过 Host Adapter 派发子 Agent 任务 | Gateway RPC |
-| 文件系统 | state.json / events.jsonl / artifact 文件 | POSIX FS |
-| KIVO | Ledger 产出 → KIVO 知识入库（未来集成） | API / 文件 |
-| AEO | 流水线指标 → AEO 监控（未来集成） | API / 文件 |
+这意味着 **ACO 提供事件总线，SEVO 提供事件解释器**。
 
-### 3.3 系统边界（明确不做）
+#### 2）任务派发能力
+通过 `OpenClawAdapter` / spawn client / `sessions_spawn`，SEVO 使用 ACO 的执行能力：
+- 选择 agentId
+- 带 label 派发任务
+- 设置 timeout
+- 并行 spawn
+- 收 completion event
 
-- 不做 Agent 调度（调度是 OpenClaw 主会话的职责，SEVO 只定义"下一步该做什么"）
-- 不做代码编辑/编译/测试执行（这些是 Agent 执行层的能力）
-- 不做用户认证/权限管理
-- 不做实时通信（通知通过 Host Adapter 委托宿主完成）
-- 不做知识管理（KIVO 的职责）
+#### 3）Agent 池与角色路由
+SEVO 自己知道某个阶段更适合什么角色，但真正的 Agent 池真相源来自 ACO/OpenClaw：
+- `openclaw.json -> agents.list`
+- stageAgentMap / roleAssignment
+- agent health / busy-idle / concurrency
+
+SEVO 只消费这些信息，不维护宿主级资源池。
+
+#### 4）审计、通知、看板基础设施
+SEVO 借用或对接 ACO 已有能力：
+- 子任务看板与 completion 链
+- Feishu/IM 通知链
+- dispatch audit log
+- health / doctor / runtime diagnostics
+
+#### 5）宿主配置
+SEVO 默认从宿主配置推断：
+- workspaceRoot
+- sevoRoot / data path
+- publish script path
+- notifications
+- openclaw model / llm 配置
+
+### 4.2 ACO 消费 SEVO 的能力
+
+ACO 并不理解“研发闭环”本身，它从 SEVO 获取这些高阶语义：
+
+#### 1）流水线阶段模型
+ACO 通过 SEVO 获取：
+- 这项研发任务该走哪些阶段
+- 哪些阶段必须、哪些可跳过
+- 哪些阶段并行、哪些串行
+- 阶段间 prerequisites 是什么
+
+#### 2）门禁结论
+ACO 知道某任务 succeeded / failed；但 **是否能进入下一研发阶段** 要看 SEVO 的 gate verdict：
+- `passed`
+- `conditional`
+- `rejected`
+- blocker 列表
+
+#### 3）阶段 prompt 标准
+SEVO 把每个阶段该注入什么标准、什么补充约束、什么 spec-first / UX / browser walkthrough 守卫整理好，ACO 只负责把 prompt 送出去。
+
+#### 4）流水线状态投影
+主会话说“现在到哪了”，真正需要的是 SEVO 的 pipeline state：
+- current stage
+- required / skipped stages
+- blocked reason
+- artifacts
+- fix loop / rollback 状态
+
+#### 5）终局验证语义
+ACO 能做派发与通知，但不知道“真正完成”是什么。SEVO 定义：
+- FR 覆盖
+- 真实数据门禁
+- 发布后验证
+- 干净环境安装验证
+- Ledger 留痕
+
+### 4.3 一句话总结边界
+
+- **ACO 输出执行能力，不输出研发语义。**
+- **SEVO 输出研发语义，不直接拥有宿主执行权。**
+- **OpenClawAdapter + Hook 机制** 是两者唯一正式咬合面。
 
 ---
 
-## 4. 解决方案策略
+## 5. 一个 FR 从 spec 到代码到审计的完整数据流
 
-| 策略 | 决策 | 理由 |
-|------|------|------|
-| 状态机驱动 | 12 阶段有限状态机，每个阶段有明确的状态转换规则 | 把 AGENTS.md 的文字规则变成可编程、可验证的状态约束 |
-| 三级路由 | L0（跳过）/ L1（轻量）/ L2+（完整），按任务规模自动分级 | 小改动不走完整流水线，大改动强制全流程 |
-| 规模路由 | Tier 1（直接执行）/ Tier 2（轻量含审计）/ Tier 3（完整 15 阶段） | 进一步细化路由粒度，琐碎操作不创建流水线 |
-| Gate 规则可插拔 | GateRule SPI，内置 FileExists/TypeCheck/TestPass/MinCoverage，可扩展 | 不同阶段的质量标准不同，规则需要灵活组合 |
-| Host Adapter 模式 | 核心通用 + OpenClawAdapter / StandaloneAdapter | 核心不绑死 OpenClaw，但主动复用其 hook/session/notification 能力 |
-| Spec Review 后并行分叉 | spec-review-gate 通过后，test-case-authoring 和 contract 并行启动 | 缩短流水线总耗时，两个活动无依赖 |
-| Clarification 协调 | 阶段执行中发现歧义 → 阻塞当前阶段 → 收集澄清 → 恢复 | 避免带着歧义继续执行导致返工 |
-| Ledger 审计账本 | 流水线完成后收集全部 artifact + stage record，写入不可变 Ledger | 提供完整的研发过程证据链 |
-| 事件溯源 | events.jsonl append-only，state.json 单 writer | 支持事后审计和状态重建 |
+下面用“新增一个受管功能”为例，描述真实数据怎么流。
+
+### 5.1 入口层：主会话识别研发动作
+1. 用户提出一个研发目标。
+2. ACO 的 dispatch / route guard 判断这是受管研发动作。
+3. SEVO 插件把任务路由到 `sevo:create / sevo:implement / sevo:fix / sevo:from` 入口。
+
+**此时主导者是 ACO，SEVO 负责把任务吸入流水线。**
+
+### 5.2 创建层：SEVO 建流水线实例
+4. `Pipeline Create` 校验 project slug、是否已有 active instance。
+5. Router 依据任务 scope 分出 L0 / L1 / L2+。
+6. Router 生成 `requiredStages + skippedStages`。
+7. 项目目录与 pipeline instance 落盘。
+
+产物：
+- `projects/<slug>/pipelines/<instance>.json`（实例视图）
+- `data/pipelines/<pipelineId>/state.json`（运行态状态）
+- `data/pipelines/<pipelineId>/events.jsonl`（事件流）
+
+### 5.3 规格层：Spec / Spec Review
+8. `before_prompt_build` 给主会话注入“下一步派 Spec 任务”。
+9. ACO 用自己的任务派发能力，把 Spec 任务派给 PM 角色或降级角色。
+10. 子 Agent 产出 spec 工件。
+11. `subagent_ended` 触发，SEVO 读取结果、做 artifact / substantial failure / clarification 检查。
+12. 通过后推进到 `spec-review-gate`。
+13. Gate Engine 汇总多维评审结论，决定是 passed、conditional 还是 rejected。
+
+产物流：
+- spec 文档
+- spec review bundle
+- clarification / blockers
+- 对应 artifacts 注册到 stage
+
+### 5.4 设计层：Contract / Architecture / UX
+14. Spec Review 通过后，SEVO 打开并行分支：
+   - contract
+   - test-case-authoring
+   - ux-acceptance-authoring
+   - commercial-acceptance-authoring
+   - ux-interaction-design
+   - architecture-design
+15. ACO 并行派发这些阶段任务。
+16. SEVO 在 `PipelineEngine` 中维护 prerequisites，只有关键分支完成，Implement 才能解锁。
+
+这里的关键点是：
+- **ACO 负责并发执行**
+- **SEVO 负责并发图的合法性**
+
+### 5.5 实现层：Implement
+17. Contract Review Gate 通过后，SEVO 解锁 Implement。
+18. `before_prompt_build` 或 `before_tool_call` 注入 implement prompt，强制携带 spec / contract / architecture 上下文。
+19. ACO 派编码任务。
+20. 子 Agent 完成代码改动、测试、AC 覆盖清单。
+21. `subagent_ended` 回来后，SEVO：
+   - 判定 succeeded 是否属于“实质成功”
+   - 校验输出文件是否真的存在
+   - 解析 AC coverage checklist
+   - 若 uncovered/partial，自动排补充任务，不进入 Review
+
+### 5.6 审计层：Review / Regression / Verify
+22. Implement 通过后进入 Review。
+23. Review 结论如果有 blocker，SEVO 不让进入后续阶段，而是进入 fix loop / rollback。
+24. 审计通过后，推进到 Smoke / UX Acceptance / PM Commercial Review / Regression。
+25. 通过 Publish/Deploy/Verify/Post-Release Validation/Clean-Install Verification，最终进入 Ledger。
+
+### 5.7 终局层：Ledger
+26. 所有关键阶段工件、结论、FR 覆盖、发布证据、验证结果归档为 Ledger entry。
+27. ACO 再基于 SEVO 的终态，向用户发送人话总结、记录看板和通知。
+
+### 5.8 数据流转图（文本版）
+
+```text
+用户任务
+  ↓
+ACO 调度守卫 / 路由识别
+  ↓
+SEVO 入口命令（create / implement / fix / from）
+  ↓
+Pipeline Create
+  ↓
+Router（L0/L1/L2+ + stages）
+  ↓
+Pipeline State / Instance / Events 落盘
+  ↓
+before_prompt_build 注入下一阶段指令
+  ↓
+ACO 派发子任务（sessions_spawn / board）
+  ↓
+子 Agent 产出工件
+  ↓
+subagent_ended
+  ↓
+SEVO 解析结果 + Gate Engine 判定 + Artifact 注册
+  ↓
+通过 → PipelineEngine 推进下一阶段
+失败/阻断 → clarification / fix loop / rollback / 重派
+  ↓
+Deploy / Verify / Post-Release Validation / Clean Install
+  ↓
+Ledger
+  ↓
+ACO 通知用户 + 看板闭环
+```
 
 ---
 
-## 5. 构建块视图
-
-### 5.1 Level 1 — 系统分解
-
-SEVO 由两层组成：核心库（通用）和插件层（OpenClaw 特化）。
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     SEVO 系统                                    │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │              核心库 (projects/sevo/src/)                  │    │
-│  │                                                          │    │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │    │
-│  │  │  Router   │  │ Pipeline │  │   Gate   │  │ Ledger  │ │    │
-│  │  │  路由器   │  │  Engine  │  │  Engine  │  │  Engine │ │    │
-│  │  └──────────┘  └──────────┘  └──────────┘  └─────────┘ │    │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │    │
-│  │  │Orchestr- │  │ Context  │  │Clarific- │              │    │
-│  │  │  ator    │  │ Injector │  │  ation   │              │    │
-│  │  └──────────┘  └──────────┘  └──────────┘              │    │
-│  │  ┌──────────────────────────────────────────┐           │    │
-│  │  │         Adapter Layer                     │           │    │
-│  │  │  OpenClawAdapter  |  StandaloneAdapter    │           │    │
-│  │  └──────────────────────────────────────────┘           │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │           插件层 (extensions/sevo-pipeline/)              │    │
-│  │                                                          │    │
-│  │  index.js ── bridge.js ── task-mapper.js ── methodology.js │    │
-│  │              label-protocol.js                           │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 5.2 Level 2 — 核心库模块职责
-
-#### Router（路由器）
-
-位置：`src/router/`
-
-职责：接收任务描述，根据触发规则判定流水线级别（L0/L1/L2+），输出所需阶段列表和跳过阶段列表。
-
-核心文件：
-- `stage-router.ts` — 路由入口，组合 level-classifier 和 stage-graph
-- `level-classifier.ts` — 根据 TaskScope 判定 TaskLevel
-- `stage-graph.ts` — 定义阶段依赖图，根据 level 裁剪阶段列表
-- `stage-context.ts` — 阶段上下文信息封装
-- `router.ts` — 对外暴露的 `route()` 函数
-
-关键类型：
-```typescript
-type TaskLevel = 'L0' | 'L1' | 'L2+';
-type TriggerRule = 'new-module' | 'cross-domain' | 'large-change'
-  | 'data-model-change' | 'governance-change'
-  | 'release-target-change' | 'user-explicit';
-
-interface RoutingResult {
-  taskId: string;
-  level: TaskLevel;
-  requiredStages: StageId[];
-  skippedStages: SkippedStage[];
-  matchedRules: TriggerRule[];
-}
-```
-
-触发规则（命中任一即 L2+ 完整流水线）：
-- 从零新建模块（new-module）
-- 跨域改动（cross-domain，涉及 2+ 域）
-- 大型变更（large-change，>500 行或 >10 文件）
-- 数据模型变更（data-model-change）
-- 治理规则变更（governance-change）
-- 发布目标变更（release-target-change）
-- 用户显式要求（user-explicit）
-
-规模路由（FR-D08）：
-
-Router 在收到需求后先评估规模，自动选择执行档位：
-
-| 档位 | 适用场景 | 阶段集 | 项目目录 |
-|------|----------|--------|----------|
-| Tier 1（直接执行） | 改配置、查状态、单文件修复 | 不创建流水线 | 不创建 |
-| Tier 2（轻量流水线） | 小功能、脚本、局部改动 | spec → implement → review → verify → ledger | 在现有目录中工作 |
-| Tier 3（完整流水线） | 新产品、新模块、跨域改动 | 完整 15 阶段 | projects/\<slug\>/ |
-
-Tier 2 必须包含 review（审计），保障最低质量门禁。用户可通过 `sevo:create my-tool --tier 2` 强制指定档位。
-
-#### Pipeline Engine（流水线引擎）
-
-位置：`src/pipeline/`
-
-职责：管理流水线实例的创建、阶段状态转换、并行分叉、持久化。这是 SEVO 的核心状态机。
-
-核心文件：
-- `stage-machine.ts` — 阶段状态转换规则（有限状态机）
-- `parallel-branch.ts` — Spec Review 通过后的并行分叉逻辑
-- `pipeline-create.ts` — 流水线实例创建（FR-12）
-- `directory-init.ts` — 项目目录结构初始化
-- `instance-id.ts` — 实例 ID 生成
-
-状态转换规则：
-```
-pending → active | skipped
-active  → passed | failed | blocked | clarification-blocked
-blocked → active                    (解除阻塞)
-clarification-blocked → active      (澄清完成)
-failed  → active                    (修复后重试)
-passed  → (终态)
-skipped → (终态)
-```
+## 6. 状态管理
+
+SEVO 不是单一状态源，而是**按职责拆成四层状态**。
+
+### 6.1 流水线实例状态（Project 视角）
+位置：`projects/<slug>/pipelines/*.json`
+
+作用：
+- 对应 FR 流程实例的业务视图
+- 记录 instanceId、projectSlug、routingResult、directoryStructure、status、statusHistory
+
+谁写：
+- Pipeline Create
+- CLI `from` / `advance` / status transition helper
+
+谁读：
+- CLI `status/show/list`
+- 主会话 / 排查脚本
+
+这是**项目级可读视图**。
+
+### 6.2 运行态状态（Pipeline Engine 视角）
+位置：`data/pipelines/<pipelineId>/state.json`
+
+结构核心：
+- `pipelineId`
+- `taskId`
+- `level`
+- `requiredStages[]`
+- `skippedStages[]`
+- `stages[stageId] -> StageRecord`
+- `currentStage`
+- `createdAt / updatedAt`
+- `pipelineStatus`
+- `rollbackCount`
+- `tieredScan`
+
+`StageRecord` 核心字段：
+- `stageId`
+- `status`：`pending / active / blocked / clarification-blocked / fix_pending / rolled_back / passed / failed / skipped`
+- `artifacts[]`
+- `attempt`
+- `blockReason / failureReason`
+- `clarificationSummary`
+
+谁写：
+- `PipelineEngine`
+
+谁读：
+- 插件 Hook
+- `advance`
+- Gate / verify / artifact check
+- 调试与审计工具
+
+这是**SEVO 的真实运行时状态机**。
+
+### 6.3 事件流状态（Append-only 证据链）
+位置：`data/pipelines/<pipelineId>/events.jsonl`
+
+事件类型包括：
+- `pipeline_created`
+- `stage_activated`
+- `stage_completed`
+- `stage_failed`
+- `stage_blocked`
+- `clarification_*`
+- `dispatch_role_mismatch`
+- `fix_attempt`
+- `stage_rolled_back`
+- `tiered_scan_*`
+
+谁写：
+- `PipelineEngine.appendEvent`
+- 插件 completion / gate / coverage hook
+
+谁读：
+- 调试、审计、回放、故障归因
+
+这是**不可逆过程证据**。
+
+### 6.4 插件运行态状态（Hook 协同视角）
+位置：
+- `state/active-pipelines.json`
+- `state/pending-advances.jsonl`
+- 插件进程内 `sevoGlobal`
+
+作用：
+- 当前有哪些活跃 pipeline
+- 哪些 stage advancement 已排队，等主会话注入
+- pending notices / pending clarifications / runtime config / degraded flag
+
+谁写：
+- `index.js` 插件 Hook
+
+谁读：
+- `before_prompt_build`
+- `subagent_ended`
+- route guidance / completion notice / clarification resume
+
+这是**插件编排缓存层**，不是长期真相源。
+
+### 6.5 CLI 本地模式状态（脱离宿主的兼容层）
+位置：`.sevo/<slug>/state.json`
 
-12 个阶段的完整序列：
-```
-spec → spec-review-gate → [test-case-authoring ∥ contract] →
-contract-review-gate → implement → review → regression →
-publish-generalization-gate → deploy → verify → ledger
-```
+作用：
+- 没有完整 OpenClaw / ACO 宿主时，CLI 仍可运行 pipeline-only mode
 
-其中 `∥` 表示 spec-review-gate 通过后 test-case-authoring 和 contract 并行启动。
+这层说明一件事：
+- **SEVO 核心语义可脱离 ACO 单跑**
+- 但完整自动推进、Hook 注入、多 Agent 路由仍依赖 ACO 宿主
 
-#### Gate Engine（门禁引擎）
+### 6.6 状态读写关系总结
+- **SEVO 核心真相源**：`data/pipelines/<id>/state.json`
+- **项目可读视图**：`projects/<slug>/pipelines/*.json`
+- **证据链**：`events.jsonl`
+- **插件协同缓存**：`active-pipelines.json`、`pending-advances.jsonl`、内存态
+- **宿主任务真相源**：ACO 的任务看板 / 审计日志 / session 状态，不在 SEVO 内部维护
 
-位置：`src/gate/`
-
-职责：评估阶段门禁，聚合多维度审查结论，输出 passed/conditional/rejected 裁决。
-
-核心文件：
-- `gate-engine.ts` — 门禁评估入口
-- `gate-rule.ts` — GateRule SPI 接口定义
-- `built-in-rules.ts` — 内置规则：FileExistsRule / TypeCheckRule / TestPassRule / MinCoverageRule
-- `verdict-aggregator.ts` — 多 ReviewBundle 聚合为最终裁决
-- `review-role-assigner.ts` — 根据阶段确定所需审查角色
-
-关键类型：
-```typescript
-type GateConclusion = 'passed' | 'conditional' | 'rejected';
-
-interface GateVerdict {
-  gateId: string;
-  conclusion: GateConclusion;
-  blockers: { item: string; owner: string }[];
-  reviewBundles: ReviewBundle[];
-}
-```
-
-门禁裁决语义：
-- `passed` — 放行，自动推进到下一阶段
-- `conditional` — 有条件通过，列出必须解决的问题，修复后重新评估
-- `rejected` — 不通过，回退到上一阶段重做
-
-#### Ledger Engine（审计账本）
-
-位置：`src/ledger/`
-
-职责：流水线完成后收集全部 artifact 和 stage record，写入不可变的 Ledger 条目，提供查询接口。
-
-核心文件：
-- `ledger-engine.ts` — Ledger 读写入口
-- `artifact-collector.ts` — 从各阶段收集 artifact 引用
-
-关键类型：
-```typescript
-interface LedgerEntry {
-  pipelineId: string;
-  version: string;
-  createdAt: string;
-  scope: string;
-  stages: StageRecord[];
-  conclusion: 'delivered' | 'aborted';
-  evidence: ArtifactRef[];
-  clarificationRefs?: ArtifactRef[];
-}
-```
-
-#### Task Orchestrator（任务编排器）
-
-位置：`src/orchestrator/`
-
-职责：组合 Router + Pipeline Engine + Gate Engine，提供高层 API：startPipeline → evaluateAndAdvance → getPipelineStatus。
-
-核心文件：
-- `task-orchestrator.ts` — 编排入口，串联路由→创建→推进→门禁
-- `pipeline-run.ts` — 单次流水线运行的状态封装
-- `orchestrator-events.ts` — 编排器事件定义（PipelineStarted / StageEntered / GateEvaluated / StageAdvanced / PipelineCompleted / PipelineFailed）
-
-#### Context Injector（上下文注入器）
-
-位置：`src/context-injection/`
-
-职责：根据当前阶段，向 Agent 任务 prompt 注入流水线上下文（前序 artifact 路径、阶段要求、质量标准）。
-
-#### Clarification Coordinator（澄清协调器）
-
-位置：`src/clarification/`
-
-职责：阶段执行中发现歧义时，阻塞当前阶段，收集澄清问题，协调解决后恢复执行。
-
-核心文件：
-- `clarification-coordinator.ts` — 澄清流程协调
-- `clarification-record.ts` — 澄清记录持久化
-- `ambiguity-detector.ts` — 歧义检测规则
-- `clarification-manager.ts` — 澄清生命周期管理
-
-#### Adapter Layer（适配层）
-
-位置：`src/adapter/`
-
-职责：将核心库的抽象操作（派发任务、收集 artifact、发送通知）映射到具体宿主环境。
-
-```typescript
-interface SevoHostAdapter {
-  dispatchTask(stage: StageId, payload: TaskPayload): Promise<string>;
-  collectArtifacts(taskId: string): Promise<ArtifactRef[]>;
-  notifyGateResult(stage: StageId, verdict: GateVerdict): void;
-  getProjectConfig(): ProjectConfig;
-  analyzeRequirements?(input: RequirementAnalysisRequest): Promise<RequirementAnalysisResponse>;
-}
-```
-
-两个实现：
-- `OpenClawAdapter` — 通过 OpenClaw Gateway Plugin API 派发任务、收集 artifact、发送飞书通知
-- `StandaloneAdapter` — 独立运行模式，用于测试和非 OpenClaw 环境
-
-#### Stage 实现层
-
-位置：`src/stages/`
-
-职责：每个阶段的具体行为定义（输入/输出类型、执行逻辑、验收标准）。
-
-已实现的阶段：
-
-| 阶段 | 文件 | 职责 |
-|------|------|------|
-| spec | spec-stage.ts | 需求规格编写，输出 product-requirements.md |
-| contract | contract-stage.ts | 架构设计，输出 arc42 + ADR |
-| test-case | test-case-stage.ts | 测试用例编写，基于冻结 spec |
-| implement | implement-stage.ts | 编码实现，按 spec + arc42 执行 |
-| debugging | debugging-stage.ts | 调试阶段（review 发现问题后的修复循环） |
-| review | review-stage.ts | 质量审计（代码质量/安全/spec 合规） |
-| review-fix-loop | review-fix-loop.ts | 审计→修复→复验自动闭环 |
-| regression | regression-stage.ts | 回归测试执行 |
-| deploy | deploy-stage.ts | 部署执行 |
-| verify | verify-stage.ts | 部署后验证（smoke test） |
-| ledger | ledger-stage.ts | Ledger 记录写入 |
-| publish-generalization-gate | publish-generalization-gate.ts | 发布前通用化检查（FR-08a） |
-
-#### Gate 实现层
-
-位置：`src/gates/`
-
-职责：具体门禁的评估逻辑。
-
-| 门禁 | 文件 | 评估维度 |
-|------|------|----------|
-| spec-review-gate | spec-review-gate.ts | 需求完整度、FR 边界清晰度、AC 可测试性 |
-| contract-review-gate | contract-review-gate.ts | spec-架构对齐、ADR 完整性、部署可行性 |
-
-### 5.3 Level 2 — 插件层模块职责
-
-插件层是 SEVO 核心库在 OpenClaw 宿主中的运行时桥梁。
-
-#### index.js（插件入口）
-
-位置：`extensions/sevo-pipeline/index.js`（3143 行）
-
-职责：注册 3 个 OpenClaw hook，实现流水线自动推进。
-
-Hook 注册：
-
-| Hook | 优先级 | 触发时机 | 行为 |
-|------|--------|----------|------|
-| subagent_ended | 200 | 子 Agent 任务完成 | 解析 SEVO label → 调用 PipelineEngine.advance() → 队列下一阶段 |
-| before_prompt_build | 850 | 主会话构建 prompt 前 | 消费 pendingAdvances 队列 → 注入下一阶段任务指令到主会话 |
-| before_prompt_build | 100 | 用户消息到达时 | 命令路由：解析 sevo:* 命令 → 执行对应 handler → 结果放入 pendingNotices |
-| before_tool_call | 800 | 工具调用前 | 路由 sessions_spawn → 注入 SEVO label 到子 Agent 参数 |
-
-运行模式：
-- 启动时检查 SEVO dist/ 是否存在
-- 存在 → active 模式，全部 hook 生效
-- 不存在 → degraded 模式，大部分 hook 变为 no-op
-- 降级模式下仍可用的命令：sevo:doctor、sevo:version、sevo:status、sevo:list（只读状态文件）
-
-#### 命令系统
-
-插件通过 `before_prompt_build`（priority 100）hook 路由用户消息中的 `sevo:*` 命令，路由到对应 handler。命令解析使用正则匹配，handler 执行结果放入 `pendingNotices` 队列，由 priority 850 的 hook 注入主会话 prompt。
-
-命令清单：
-
-| 命令 | 正则 | Handler | 降级可用 | 功能 |
-|------|------|---------|----------|------|
-| `sevo:create <slug> ["title"]` | `SEVO_CREATE_RE` | 创建完整流水线 | ❌ | 路由评估 → 创建 pipeline → 初始化项目目录 → 激活首阶段 |
-| `sevo:quickstart` | `SEVO_QUICKSTART_RE` | 创建 7 阶段精简流水线 | ❌ | 内置 hello-sevo 示例项目，跳过三方会审 |
-| `sevo:status [id]` | `SEVO_STATUS_RE` | 查询流水线状态 | ✅ | 无参数列出所有活跃流水线，有参数显示单个详情 |
-| `sevo:list` | `SEVO_LIST_RE` | 列出历史流水线 | ✅ | 读取 active-pipelines.json |
-| `sevo:doctor` | `SEVO_DOCTOR_RE` | 自检 | ✅ | 检查插件注册、hook、Agent 池、路径、写权限 |
-| `sevo:version` | `SEVO_VERSION_RE` | 版本查询 | ✅ | 输出 SEVO_VERSION 常量 |
-| `sevo:diagnose <id>` | `SEVO_DIAGNOSE_RE` | 深度诊断 | ❌ | 分析失败流水线的根因，输出结构化诊断报告 |
-| `sevo:retry <id> [stage]` | `SEVO_RETRY_RE` | 重试失败阶段 | ❌ | 重新激活 failed 阶段，attempt 计数递增 |
-| `sevo:pause <id>` | `SEVO_PAUSE_RE` | 暂停流水线 | ❌ | 设置 info.status='paused'，记录 pausedAt |
-| `sevo:skip <id> <stage>` | `SEVO_SKIP_RE` | 跳过阶段 | ❌ | 标记阶段 skipped，自动激活下一阶段 |
-| `sevo:resume <id>` | `SEVO_RESUME_RE` | 恢复流水线 | ❌ | 清除 paused 状态，从暂停点继续 |
-
-命令路由流程：
-```
-用户消息 → before_prompt_build(priority 100)
-  → extractUserMessage(evt)
-  → 按优先级匹配正则（doctor/version 最先，create 最后）
-  → 匹配成功 → 调用 handler → 结果 push 到 pendingNotices
-  → before_prompt_build(priority 850) 消费 pendingNotices → 注入主会话 prompt
-```
-
-#### bridge.js（桥接层）
-
-位置：`extensions/sevo-pipeline/bridge.js`
-
-职责：懒加载 SEVO TypeScript 编译产物（dist/），提供 PipelineEngine / LedgerEngine / route 的运行时访问。
-
-特性：
-- 模块级缓存 + TTL 过期（默认 30s）
-- 文件 mtime 变化检测，自动重新加载
-- 单模块故障不影响其他模块（per-module failure isolation）
-- 加载失败后 backoff，避免频繁重试
-
-#### task-mapper.js（任务映射器）
-
-位置：`extensions/sevo-pipeline/task-mapper.js`
-
-职责：将 StageId 映射为具体的 Agent 任务描述（prompt），包含前序 artifact 引用和阶段要求。
-
-默认阶段→Agent 映射：
-
-| 阶段 | 梯队 | 默认 Agent | 超时 |
-|------|------|-----------|------|
-| spec | PM | pm-01 | 1800s |
-| spec-review-gate | 架构 | sa-01 | 1200s |
-| test-case-authoring | 审计 | audit-01 | 1200s |
-| contract | 架构 | sa-01 | 3600s |
-| contract-review-gate | 审计 | audit-01 | 1200s |
-| implement | T1 | (auto) | 1200s |
-| review | 审计 | audit-01 | 1200s |
-| regression | T1 | (auto) | 1200s |
-| publish-generalization-gate | 架构 | sa-01 | 1200s |
-| deploy | T1 | (auto) | 600s |
-| verify | 审计 | audit-01 | 600s |
-| ledger | T4 | dev-01 | 600s |
-
-映射可通过 `state/config.json` 或插件配置覆盖（Stage-Bound Design：绑定阶段不绑定 Agent 身份）。
-
-#### methodology.js（方法论模块）
-
-位置：`extensions/sevo-pipeline/methodology.js`
-
-职责：为每个流水线阶段提供方法论指导 prompt，由 task-mapper.js 在构建 task prompt 时 spread 注入。
-
-导出函数（9 个，对应 9 类阶段方法论）：
-
-| 函数 | 注入阶段 | 方法论要点 |
-|------|----------|-----------|
-| specMethodology() | spec | 批判性思维、第一性原理、概念架构隔离、Phase 隔离（禁止技术选型） |
-| contractMethodology() | contract | arc42 模板、ADR 纪律、Gate Check 7 项 |
-| specReviewGateMethodology() | spec-review-gate | 7 维发散审查、交叉审计、三档结论 + 用户体验流完整性（第 9 维度） |
-| contractReviewGateMethodology() | contract-review-gate | 三方独立视角、7 维发散审查、综合裁决 |
-| reviewMethodology() | review | OWASP Top 10:2025、git diff-aware、置信度阈值 |
-| implementMethodology() | implement | 最小改动、最简实现、目标驱动执行 |
-| testCaseAuthoringMethodology() | test-case-authoring | AC 覆盖规则、边界值、负面路径、优先级分级 |
-| smokeTestMethodology() | smoke-test | 端到端用户视角、独立验证者、证据附带 |
-| getUserJourneyTemplate() | spec + ux-acceptance | 6 阶段用户体验旅程模板 |
-
-`getUserJourneyTemplate()` 返回结构化用户旅程模板，覆盖 6 个阶段：
-
-| 阶段 ID | 名称 | 审查问题示例 |
-|---------|------|-------------|
-| discover | 发现与获取 | 用户从哪里找到产品？获取方式是什么？ |
-| install | 安装与配置 | 能一条命令完成吗？零配置能跑吗？ |
-| first-use | 首次使用 | 5 分钟内能看到第一个成功结果吗？ |
-| core-flow | 核心流程 | 主要功能的完整使用流程是什么？ |
-| error-recovery | 错误恢复 | 错误信息能指导用户修复吗？ |
-| upgrade | 升级与维护 | 升级会不会破坏已有配置？ |
-
-注入点：spec 阶段要求 PM agent 在 spec 中画出完整用户旅程；spec-review-gate 将"用户体验流完整性"作为硬性审查维度（缺失 = P0 阻断）；ux-acceptance 阶段要求 UX agent 按流程逐步验收。
-
-注入机制：task-mapper.js 的 `STAGE_PROMPTS` 中通过 `...specMethodology()` 等 spread 语法将方法论 string[] 追加到阶段 prompt 末尾。方法论内容集中管理，阶段 prompt 与方法论解耦。
-
-#### label-protocol.js（标签协议）
-
-位置：`extensions/sevo-pipeline/label-protocol.js`
-
-职责：编码/解码 SEVO 流水线信息到 session label。
-
-格式：`sevo:<pipelineId>:<stageId>[:<attempt>]`
-
-用途：子 Agent session 通过 label 携带流水线上下文，completion event 到达时据此路由回正确的流水线实例。
+也就是说，**SEVO 管“研发阶段状态”，ACO 管“任务执行状态”**。这两个状态域不能混成一个文件。
 
 ---
 
-## 6. 运行时视图
+## 7. SEVO 暴露给主会话的命令接口
 
-### 6.1 场景一：新建流水线（Happy Path）
+### 7.1 流水线入口命令
+主会话最关键的接口是四个：
+- `sevo:create <project-slug>`：创建项目并初始化流水线
+- `sevo:implement <描述>`：以完整研发链处理新功能实现
+- `sevo:fix <描述>`：先核实 spec，再修问题并继续后续门禁
+- `sevo:from <stage> <project>`：从指定阶段重入
 
-```
-用户                 OpenClaw 主会话              SEVO 插件层              SEVO 核心
- │                       │                          │                      │
- │  "新建 XX 模块"       │                          │                      │
- │──────────────────────>│                          │                      │
- │                       │  判断意图 → 触发 SEVO     │                      │
- │                       │─────────────────────────>│                      │
- │                       │                          │  bridge.getRoute()   │
- │                       │                          │─────────────────────>│
- │                       │                          │                      │ route(taskScope)
- │                       │                          │                      │ → RoutingResult
- │                       │                          │                      │   {level: L2+,
- │                       │                          │                      │    requiredStages: [...]}
- │                       │                          │<─────────────────────│
- │                       │                          │  getPipelineEngine() │
- │                       │                          │─────────────────────>│
- │                       │                          │                      │ engine.create(routing)
- │                       │                          │                      │ → atomicWrite(state.json)
- │                       │                          │                      │ → appendEvent(pipeline_created)
- │                       │                          │                      │ → activateNext() → spec=active
- │                       │                          │<─────────────────────│
- │                       │                          │  queue pendingAdvance│
- │                       │                          │  (spec, pm-01)       │
- │                       │  before_prompt_build      │                      │
- │                       │<─────────────────────────│                      │
- │                       │  注入 spec 阶段任务指令    │                      │
- │                       │  sessions_spawn(pm-01)    │                      │
- │                       │─────────────────────────>│                      │
- │                       │                          │  before_tool_call    │
- │                       │                          │  注入 sevo label     │
- │                       │                          │  → sevo:<pid>:spec:1 │
- │                       │<─────────────────────────│                      │
- │                       │  派发 pm-01 子 Agent      │                      │
-```
+这四个不是普通 CLI 子命令名，而是**主会话路由协议**。SEVO 插件会在 `before_prompt_build` 中给出对应指引。
 
-关键步骤：
-1. Router 根据 TaskScope 判定 level（L0/L1/L2+），输出 requiredStages 和 skippedStages
-2. PipelineEngine.create() 原子写入 state.json，激活第一个阶段（spec）
-3. 插件层将下一阶段任务放入 pendingAdvances 队列
-4. before_prompt_build hook 消费队列，注入任务指令到主会话
-5. before_tool_call hook 在 sessions_spawn 时注入 SEVO label
+### 7.2 CLI 命令面
+从代码看，SEVO CLI 当前明确暴露：
+- `sevo init`
+- `sevo create`
+- `sevo status`
+- `sevo advance`
+- `sevo doctor`
+- `sevo list`
+- `sevo show`
+- `sevo config`
+- `sevo export`
+- `sevo fr`
+- `sevo pause`
+- `sevo resume`
+- `sevo cancel`
+- `sevo ledger`
+- `sevo goal`
+- `sevo from`
+- `sevo verify`
+- `sevo scan`
+- `sevo gate`
 
-### 6.2 场景二：阶段推进（Stage Advance）
+### 7.3 主会话真正依赖的不是命令名，而是三类接口
 
-```
-pm-01 子 Agent          OpenClaw Gateway            SEVO 插件层              SEVO 核心
- │                          │                          │                      │
- │  任务完成 (spec 产出)     │                          │                      │
- │─────────────────────────>│                          │                      │
- │                          │  subagent_ended event    │                      │
- │                          │─────────────────────────>│                      │
- │                          │                          │  decode(label)       │
- │                          │                          │  → pipelineId,       │
- │                          │                          │    stageId=spec      │
- │                          │                          │  engine.advance()    │
- │                          │                          │─────────────────────>│
- │                          │                          │                      │ record.status=passed
- │                          │                          │                      │ activateNext()
- │                          │                          │                      │ → spec-review-gate=active
- │                          │                          │<─────────────────────│
- │                          │                          │  queue pendingAdvance│
- │                          │                          │  (spec-review-gate)  │
- │                          │  before_prompt_build      │                      │
- │                          │<─────────────────────────│                      │
- │                          │  注入下一阶段任务          │                      │
-```
+#### 1）创建/重入接口
+- create
+- from
+- implement
+- fix
 
-推进逻辑：
-1. subagent_ended hook 解码 label，识别流水线和阶段
-2. 根据 evt.status 判定 outcome（passed/failed）
-3. PipelineEngine.advance() 更新状态 + 激活后续阶段
-4. 插件层队列化下一阶段任务，等待 before_prompt_build 注入
+#### 2）状态查询接口
+- status
+- show
+- list
+- ledger
+- doctor
 
-### 6.3 场景三：Gate 失败回退
+#### 3）阶段推进接口
+- advance
+- gate
+- verify
+- scan
 
-```
-audit-01 (review)       SEVO 插件层              SEVO 核心
- │                          │                      │
- │  spec-review-gate        │                      │
- │  结论: rejected          │                      │
- │─────────────────────────>│                      │
- │                          │  engine.advance()    │
- │                          │─────────────────────>│
- │                          │                      │ outcome=failed
- │                          │                      │ record.status=failed
- │                          │                      │ appendEvent(stage_failed)
- │                          │                      │ 不激活后续阶段
- │                          │<─────────────────────│
- │                          │                      │
- │                          │  pendingNotices +=    │
- │                          │  "[SEVO Rework Needed]│
- │                          │   stage spec-review-  │
- │                          │   gate failed"        │
- │                          │                      │
- │                          │  主会话收到通知 →      │
- │                          │  重新派发 spec 阶段    │
-```
+### 7.4 隐式接口：Prompt Injection 协议
+主会话和 SEVO 的真实高频接口，其实不是 CLI，而是这些隐式协议：
+- `before_prompt_build` 注入“下一步要派什么”
+- `before_tool_call` 给 `sessions_spawn` 注入 SEVO label、spec guard、角色导航
+- `subagent_ended` completion 反推下一阶段
 
-回退语义：
-- Gate rejected → 当前 gate 阶段标记 failed，不激活后续阶段
-- 插件层发出 rework notice，主会话据此重新派发前序阶段
-- 修复后可通过 engine.activate() 重新激活 failed 阶段（failed → active 是合法转换）
-- 重试时 attempt 计数递增，label 编码为 `sevo:<pid>:<stage>:<attempt>`
-
-### 6.4 场景四：并行分叉与合并
-
-```
-spec-review-gate passed
-         │
-         ├──────────────────────┐
-         ▼                      ▼
-  test-case-authoring       contract
-    (audit-01)              (sa-01)
-         │                      │
-         │                      ▼
-         │              contract-review-gate
-         │                (audit-01)
-         │                      │
-         └──────────┬───────────┘
-                    ▼
-               implement
-          (需要两条分支都 passed)
-```
-
-并行规则（parallel-branch.ts）：
-- spec-review-gate passed → 同时激活 contract 和 test-case-authoring
-- contract-review-gate 只等 contract（不等 test-case-authoring）
-- implement 需要 contract-review-gate passed；如果 test-case-authoring 未完成，implement 被 shouldBlockImplement() 阻塞
-- 两条分支完全独立执行，由不同 Agent 并行处理
-
-### 6.5 场景五：澄清阻塞与恢复
-
-```
-执行中 Agent              SEVO 核心                    用户/主会话
- │                          │                              │
- │  发现歧义                 │                              │
- │─────────────────────────>│                              │
- │                          │ scanClarifications()         │
- │                          │ → blocking=true              │
- │                          │ record.status=               │
- │                          │   clarification-blocked      │
- │                          │ appendEvent(                 │
- │                          │   clarification_opened)      │
- │                          │                              │
- │                          │  adapter.requestClarification│
- │                          │─────────────────────────────>│
- │                          │                              │ 用户回答
- │                          │  onClarificationResponse     │
- │                          │<─────────────────────────────│
- │                          │ resolve() →                  │
- │                          │   record.status=active       │
- │                          │ appendEvent(                 │
- │                          │   clarification_settled)     │
- │                          │                              │
- │  恢复执行                 │                              │
- │<─────────────────────────│                              │
-```
-
-澄清协调器（ClarificationCoordinator）管理完整生命周期：open → resolved → settled。BlockingLevel 决定是否阻塞当前阶段。
-
-### 6.6 场景六：命令路由处理
-
-```
-用户                 OpenClaw Gateway            SEVO 插件层
- │                       │                          │
- │  "sevo:pause sevo-abc"│                          │
- │──────────────────────>│                          │
- │                       │  before_prompt_build     │
- │                       │  (priority 100)          │
- │                       │─────────────────────────>│
- │                       │                          │ extractUserMessage(evt)
- │                       │                          │ SEVO_PAUSE_RE.test() match
- │                       │                          │ handlePauseCommand()
- │                       │                          │   info.status = 'paused'
- │                       │                          │   saveActivePipelines()
- │                       │                          │   appendEvent()
- │                       │                          │ pendingNotices.push()
- │                       │                          │
- │                       │  before_prompt_build     │
- │                       │  (priority 850)          │
- │                       │<─────────────────────────│
- │                       │  注入 pendingNotices      │
- │  "Pipeline paused"    │                          │
- │<──────────────────────│                          │
-```
-
-命令优先级（从高到低）：doctor/version → quickstart → status/list → diagnose/retry/pause/skip/resume → create。降级模式下只处理 doctor/version/status/list。
-
-### 6.7 场景七：FTUE 快速启动（sevo:quickstart）
-
-```
-用户                 SEVO 插件层                    SEVO 核心
- │                       │                              │
- │  "sevo:quickstart"    │                              │
- │──────────────────────>│                              │
- │                       │  内置 hello-sevo 需求         │
- │                       │  route({isNewModule:true})    │
- │                       │─────────────────────────────>│
- │                       │                              │ RoutingResult
- │                       │  engine.create(routing)       │
- │                       │─────────────────────────────>│
- │                       │                              │ state.json
- │                       │  覆盖 requiredStages =        │
- │                       │  QUICKSTART_STAGES            │
- │                       │  (7 阶段精简流水线)            │
- │                       │                              │
- │                       │  创建 projects/hello-sevo/    │
- │                       │    docs/ src/ tests/ reports/ │
- │                       │                              │
- │                       │  激活 spec 阶段               │
-```
-
-QUICKSTART_STAGES 精简流水线（7 阶段）：
-```
-spec → spec-review-gate → implement → review → smoke-test → verify → ledger
-```
-
-跳过的阶段：test-case-authoring、contract、contract-review-gate、regression、publish-generalization-gate、deploy。完成后输出产出物清单（spec、代码、review 报告路径）。
-
-### 6.8 场景八：手动干预状态机
-
-```
-                    +----------+
-                    |  active  |
-                    +----+-----+
-           sevo:pause    |    sevo:skip <stage>
-              +----------+----------+
-              v          |          v
-        +----------+     |    +----------+
-        |  paused  |     |    | skipped  |
-        +----+-----+     |    +----+-----+
-  sevo:resume|           |         | 自动激活下一阶段
-              v          |         v
-        +----------+     |   +--------------+
-        |  active  |     |   | next stage   |
-        +----------+     |   |   active     |
-                         |   +--------------+
-                         |
-                    sevo:retry
-                         |
-                    +----v-----+
-                    |  active  |  (attempt++)
-                    +----------+
-```
-
-持久化机制：
-- pause/resume：修改 `active-pipelines.json` 中 `info.status` 字段（'paused' / 'active'），记录 `pausedAt` 时间戳
-- skip：调用 `updateStageProgress()` 标记阶段为 'skipped'，自动查找 `requiredStages` 中的下一阶段并激活
-- retry：重新激活 failed 阶段，attempt 计数递增，label 编码为 `sevo:<pid>:<stage>:<attempt>`
-- 所有干预操作写入事件日志（type: 'manual_intervention'，action: pause/skip/resume）
-
-skip 的审计警告：跳过 review/audit 类阶段时输出 WARNING 提示质量保障降级。
-
-### 6.9 场景九：项目隔离与目录初始化
-
-`sevo:create <slug>` 或 `sevo:quickstart` 触发时，插件自动创建隔离的项目目录：
-
-```
-projects/<slug>/
-+-- docs/
-|   +-- design/              <- spec 产出
-|   +-- architecture/
-|       +-- decisions/       <- ADR 产出
-+-- src/                     <- 编码产出
-+-- tests/                   <- 测试用例
-+-- reports/                 <- 审计/评审报告
-+-- scripts/                 <- 验证脚本
-```
-
-projectRoot 传递链路：
-```
-sevo:create → projectRoot = "projects/<slug>"
-  → active-pipelines.json[pipelineId].projectRoot
-  → getProjectRoot(pipelineId) 读取
-  → buildTaskPrompt(stageId, state, projectSlug, projectRoot)
-  → task prompt 中所有产出路径基于 projectRoot
-```
-
-多项目并行时，每个项目的产出物在独立目录中，互不干扰。projectRoot 作为参数贯穿整个任务派发链路，确保所有阶段的 artifact 路径一致。
+换句话说，**CLI 是显式 API，Hook + Label 协议是运行时 API。**
 
 ---
 
-## 7. 部署视图
+## 8. ACO 与 SEVO 的咬合面清单
 
-### 7.1 部署拓扑
+把两者的接触面按类型列成清单：
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        宿主机 (Linux)                                │
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                   OpenClaw Gateway 进程                       │   │
-│  │                                                               │   │
-│  │  ┌─────────────────────────────────────────────────────────┐ │   │
-│  │  │              Plugin Runtime                              │ │   │
-│  │  │                                                          │ │   │
-│  │  │  ┌──────────────────────────────────────┐               │ │   │
-│  │  │  │  sevo-pipeline (extensions/)          │               │ │   │
-│  │  │  │  index.js + bridge.js + task-mapper   │               │ │   │
-│  │  │  │  + label-protocol.js                  │               │ │   │
-│  │  │  └──────────────┬───────────────────────┘               │ │   │
-│  │  │                 │ lazy-load (bridge.js)                  │ │   │
-│  │  └─────────────────┼───────────────────────────────────────┘ │   │
-│  │                    │                                          │   │
-│  └────────────────────┼──────────────────────────────────────────┘   │
-│                       │                                              │
-│                       ▼                                              │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │              SEVO 核心 (projects/sevo/dist/)                  │   │
-│  │  pipeline-engine.js | gate-engine.js | ledger-engine.js      │   │
-│  │  router.js | clarification-coordinator.js                    │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │              数据层 (projects/sevo/data/)                     │   │
-│  │  pipelines/<id>/state.json    — 流水线状态（单 writer）        │   │
-│  │  pipelines/<id>/events.jsonl  — 事件日志（append-only）       │   │
-│  │  ledger/                      — Ledger 条目                  │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │              插件运行态 (extensions/sevo-pipeline/state/)     │   │
-│  │  config.json          — 运行时配置覆盖                        │   │
-│  │  active-pipelines.json — 活跃流水线追踪                       │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
-```
+### 8.1 事件咬合
+- ACO 发：`before_prompt_build`
+- ACO 发：`before_tool_call`
+- ACO 发：`after_tool_call`
+- ACO 发：`subagent_ended`
+- SEVO 收到后：更新 pipeline、排下一阶段、给主会话提醒
 
-### 7.2 与 OpenClaw Gateway 的集成方式
+### 8.2 派发咬合
+- ACO 提供 `sessions_spawn` / board enqueue / session completion
+- SEVO 提供 stage → task prompt → label → timeout → role preference
 
-SEVO 插件通过 `openclaw.plugin.json` 声明式注册到 Gateway Plugin Runtime：
+### 8.3 配置咬合
+- ACO 维护 `openclaw.json`
+- SEVO 读取 workspaceRoot、agents.list、模型、通知、stageAgentMap
+- ACO 不维护 stage semantics
+- SEVO 不维护 agent pool 真相源
 
-| 集成点 | 机制 | 说明 |
-|--------|------|------|
-| 插件发现 | `openclaw.plugin.json` | Gateway 启动时扫描 extensions/ 目录，加载 plugin manifest |
-| 插件初始化 | `plugin.register(api)` | Gateway 调用 register()，传入 logger + config + hook 注册 API |
-| 事件订阅 | `api.on(hookName, handler, { priority })` | 3 个 hook 按优先级注册到 Gateway 事件总线 |
-| 子 Agent 派发 | `sessions_spawn` 工具调用 | 主会话通过 Gateway RPC 派发子 Agent，插件在 before_tool_call 注入 label |
-| 任务完成通知 | `subagent_ended` 事件 | Gateway 在子 Agent 结束时广播，插件据此推进流水线 |
-| Prompt 注入 | `before_prompt_build` 返回 `{ prependContext }` | 插件向主会话 prompt 前置注入流水线指令 |
-
-### 7.3 降级模式
-
-插件启动时检查 `dist/pipeline/pipeline-engine.js` 是否存在：
-- 存在 → active 模式，3 个 hook 全部生效
-- 不存在 → degraded 模式，所有 hook 变为 no-op，记录 `sevo_degraded` 事件
-
-降级不影响 Gateway 其他插件和主会话正常运行。
-
-### 7.4 配置解析优先级
-
-```
-plugin.register(api.config)  >  state/config.json  >  环境变量  >  硬编码默认值
-```
-
-可配置项：workspaceRoot、sevoRoot、sevoDistPath、sevoDataPath、cacheTtlMs、stageAgentMap。
+### 8.4 证据咬合
+- ACO 维护任务看板、dispatch audit、notify channel
+- SEVO 维护 pipeline state、events、gate verdict、artifacts、ledger
+- 用户问“现在到哪了”，需要两个层一起看：
+  - 任务有没有跑完：看 ACO
+  - 研发阶段能不能过：看 SEVO
 
 ---
 
-## 8. 横切关注点
+## 9. 当前架构的技术约束
 
-### 8.1 错误处理
+### 9.1 Hook 驱动，天然偏事件最终一致
+SEVO 不是把所有推进都放在一个同步事务里完成，而是靠：
+- completion event
+- prompt injection
+- pending advance queue
+- state 文件
 
-**插件层：fail-open**
+好处是宿主侵入小；坏处是天然存在：
+- Hook 丢事件风险
+- pending advance 与真实 session 状态短暂不一致
+- 需要主会话保持空闲，不能长阻塞
 
-所有 hook handler 通过 `safeSevoHook()` 包裹：
-- 同步异常 → try-catch 捕获，记录 `sevo_hook_error` 事件，返回 null
-- 异步异常 → Promise.catch() 捕获，同样记录并返回 null
-- 单个 hook 失败不阻断 Gateway 事件总线，不影响其他插件
+### 9.2 状态分散在多个文件域
+现在状态至少分四层：
+- project instance
+- runtime state
+- event log
+- plugin cache
 
-**核心层：fail-safe**
+优点是职责清楚；缺点是排障时需要跨文件对齐。文档和工具如果不补齐，用户会觉得“状态全靠猜”。
 
-- PipelineEngine.advance() 中的状态转换通过 `assertTransition()` 强制校验，非法转换抛异常
-- 文件写入使用 `atomicWriteJson()`（write-tmp + rename），避免半写状态
-- Bridge 模块级故障隔离：PipelineEngine 加载失败不影响 LedgerEngine 和 Router
+### 9.3 插件壳是 JS，核心是 TS dist
+这带来一个现实约束：
+- 插件能 fail-open，不拖死宿主
+- 但 dist 缺失、版本不一致、bridge 路径漂移时，SEVO 会降级成 no-op
 
-**Result 类型**
+所以 bridge 这一层虽然看起来不起眼，实际上是运行成败关键点。
 
-核心库使用 `Result<T, E>` 联合类型（ok/error 二选一），避免异常穿透：
-```typescript
-type Result<T, E = RouterError> = { ok: true; value: T } | { ok: false; error: E };
-```
+### 9.4 主会话仍然是调度者
+从 FR-13 的定义看，PipelineEngine 当前更多是**编排决策器**，不是彻底托管的执行器。它通过 prompt/hook 告诉主会话“现在该派什么”，但不会完全替代主会话。
 
-**错误诊断体系**
+这意味着：
+- 当前形态仍然受主会话异步纪律约束
+- 如果主会话阻塞，SEVO 自动推进能力也会打折
 
-插件层定义结构化错误码表 `SEVO_ERRORS`，每个错误码包含描述、原因、修复建议：
-
-| 错误码 | 描述 | 修复建议 |
-|--------|------|----------|
-| SEVO-E001 | No coding agent available | 等待任务完成或添加 agent |
-| SEVO-E002 | Spec file not found | 检查 spec 任务输出，sevo:retry |
-| SEVO-E003 | Stage gate failed | 修复 P0 问题，sevo:retry |
-| SEVO-E004 | Task timeout | 增加超时或拆分任务 |
-| SEVO-E005 | Pipeline state corrupted | 检查文件权限和 JSON 语法 |
-| SEVO-E006 | Agent task failed | 检查 agent 日志，sevo:retry |
-| SEVO-E007 | Hook registration missing | 运行 init.sh 重新注册 |
-| SEVO-E008 | Project directory creation failed | 检查磁盘空间和目录权限 |
-
-`formatError(code, context)` 统一格式化错误输出，包含错误码、描述、原因、修复建议，可选附加 stage/pipelineId/error 上下文。`sevo:diagnose <id>` 命令对失败流水线做深度诊断，分析当前阶段状态、失败原因、产出物完整性。
-
-**版本管理与状态迁移**
-
-- `SEVO_VERSION` 常量（当前 `0.2.0`）标识插件版本，`sevo:version` 命令输出
-- `CURRENT_SCHEMA_VERSION` 常量（当前 `2`）标识 active-pipelines.json 的 schema 版本
-- `migrateState(state)` 在加载状态文件时自动执行 schema 迁移：
-  - v1 → v2：为每个 pipeline 条目添加 `frTracking` 默认值（`{ total: [], completed: [], remaining: [], lastUpdatedAt: null }`）
-- `loadActivePipelinesWithMigration()` 封装加载+迁移+保存的完整流程，迁移发生时写入 `sevo_state_migrated` 事件
-- 升级安全：迁移函数只做向前兼容的增量修改，不删除已有字段
-
-**配置验证（sevo:doctor）**
-
-`handleDoctorCommand()` 执行 5 项自检，输出 Errors/Warnings/OK 三级结果：
-
-| 检查项 | 通过条件 | 失败级别 |
-|--------|----------|----------|
-| 插件注册 | openclaw.json plugins 中存在且 enabled | Error |
-| Hook 注册 | 非 degraded 模式 | Warning |
-| Agent 池 | coding agent ≥1 | Error（coding）/ Warning（audit） |
-| 状态文件可写 | STATE_DIR 可写入 | Error |
-| 路径配置 | workspaceRoot 和 extensionRoot 存在 | Error |
-
-### 8.2 日志与审计
-
-**事件日志（events.jsonl）**
-
-每个流水线实例有独立的 events.jsonl，append-only 语义：
-- 事件类型：pipeline_created / pipeline_completed / stage_activated / stage_completed / stage_failed / stage_blocked / stage_skipped / artifact_registered / clarification_opened / clarification_resolved / clarification_settled
-- 每条事件包含 timestamp、pipelineId、stage、eventType、payload
-- 用于事后审计和状态重建
-
-**插件事件日志**
-
-插件层维护独立的事件日志（`logs/sevo-pipeline-events.jsonl`），记录：
-- sevo_hook_error — hook 执行异常
-- sevo_completion_received — 收到子 Agent 完成事件
-- sevo_advanced — 流水线推进
-- sevo_engine_unavailable — 核心引擎不可用
-- sevo_prompt_injected — prompt 注入
-- sevo_label_injected — label 注入
-- sevo_degraded — 降级模式激活
-
-**Ledger（审计账本）**
-
-流水线完成后，LedgerEngine 收集全部 artifact 和 stage record，写入不可变 LedgerEntry：
-- conclusion: delivered | aborted
-- evidence: 全部 artifact 引用
-- stages: 每个阶段的完整记录
-
-### 8.3 安全
-
-| 关注点 | 措施 |
-|--------|------|
-| 开发与审计分离 | 编码 Agent 不做自审；review/audit 阶段由独立 Agent 执行 |
-| 审查 Agent 工具隔离 | review/audit Agent 的工具白名单 schema-level 隔离写权限（无 Edit/Write/Bash） |
-| 状态完整性 | state.json 原子写入（write-tmp + rename），避免并发损坏 |
-| Label 注入防护 | label 编解码有严格格式校验（`sevo:` 前缀 + 结构化 decode） |
-| 插件隔离 | 插件层 fail-open，单插件故障不影响 Gateway 和其他插件 |
-| 文件路径解析 | 所有路径通过 `resolveConfiguredPath()` 规范化，防止路径穿越 |
-
-### 8.4 可测试性
-
-| 层次 | 测试策略 |
-|------|----------|
-| 核心库单元测试 | `src/__tests__/` 下覆盖 Router、Pipeline Engine、Gate Engine、Orchestrator、Adapter |
-| 阶段单元测试 | `src/stages/__tests__/` 每个阶段独立测试 |
-| Gate 单元测试 | `src/gate/__tests__/gate-engine.test.ts` |
-| E2E 测试 | `src/__tests__/e2e.test.ts` + `full-pipeline-e2e.test.ts` 全流水线端到端 |
-| StandaloneAdapter | 独立运行模式，脱离 OpenClaw 环境可测试核心逻辑 |
-| 插件层 | 通过 mock Gateway API 测试 hook 注册和事件处理 |
-
-### 8.5 持久化策略
-
-| 数据 | 文件 | 写入模式 | 一致性保证 |
-|------|------|----------|-----------|
-| 流水线状态 | `pipelines/<id>/state.json` | 单 writer + atomic write | write-tmp + rename，无半写 |
-| 事件日志 | `pipelines/<id>/events.jsonl` | append-only（O_APPEND） | 单行 JSON，断电最多丢最后一行 |
-| Ledger | `ledger/` | 不可变写入 | 写入后不修改 |
-| 活跃流水线 | `state/active-pipelines.json` | write-tmp + rename | 同 state.json |
-| 插件配置 | `state/config.json` | 手动编辑 | 读取时 try-catch 容错 |
-
-### 8.6 模块缓存与热重载
-
-Bridge 层实现模块级缓存 + 自动失效：
-- 缓存 TTL 默认 30s（可通过 cacheTtlMs 配置）
-- 文件 mtime 变化检测，自动重新加载编译产物
-- 加载失败后 backoff（同 TTL 时间内不重试）
-- cache-bust 通过 URL query parameter（`?v=<mtime>`）实现
+### 9.5 CLI 模式与插件模式并存
+这提高了通用性，但也让接口面更宽：
+- CLI 独立跑得通
+- 插件宿主模式自动推进更强
+- 两套入口要持续保持语义一致，否则会出现“CLI 能做，插件态不一致”或反过来
 
 ---
 
-## 9. 架构决策
+## 10. 演进方向
 
-以下为 SEVO 关键架构决策摘要。完整 ADR 存放于 `docs/decisions/` 目录。
+### 10.1 从“提示主会话推进”升级到“宿主内核原生推进”
+现在 SEVO 仍偏“半自动编排”：通过 Hook 注入推进建议，再由主会话执行派发。长期应该往前走一步：
+- 让 ACO 暴露稳定的 programmatic dispatch API
+- SEVO 直接提交 stage task，而不是主要依赖 prompt 注入
+- 主会话只看摘要，不再承担推进责任
 
-### ADR-001: 状态机驱动 vs 规则引擎
+目标是把“人肉看提示再派发”继续压缩掉。
 
-- Context：需要一种机制保障 12 个阶段按序执行、不跳步
-- Decision：采用有限状态机（FSM），每个阶段有明确的状态转换规则（stage-machine.ts）
-- Consequences：状态转换可形式化验证；新增阶段需修改状态图；比规则引擎更刚性但更可预测
+### 10.2 收敛状态真相源
+建议长期保留两层真相源即可：
+- **执行真相源**：ACO task board / audit / session store
+- **研发真相源**：SEVO pipeline state / events / ledger
 
-### ADR-002: 核心通用 + Host Adapter 模式
+插件缓存层应尽量继续薄化，降低 `sevoGlobal + state/*.json` 的运行复杂度。
 
-- Context：SEVO 需要在 OpenClaw 内运行，但不应绑死单一宿主
-- Decision：核心库不依赖 OpenClaw API，通过 SevoHostAdapter 接口抽象宿主能力
-- Consequences：可独立测试（StandaloneAdapter）；OpenClaw 特化逻辑集中在 OpenClawAdapter；新宿主只需实现 adapter 接口
+### 10.3 明确 Host Adapter 契约，支持更多宿主
+现在 OpenClawAdapter 已经是正确方向，但契约还应该更显式：
+- dispatch
+- spawn parallel
+- collect artifacts
+- notify
+- stage trigger
+- project config
+- publish
+- readme sync
 
-### ADR-003: 三级路由（L0/L1/L2+）
+只要这份 Host Adapter 契约收紧，SEVO 就能从“OpenClaw 内部插件”演进成“可嵌入任意 Agent runtime 的研发流水线内核”。
 
-- Context：不是所有改动都需要走完整 12 阶段流水线
-- Decision：Router 根据 TaskScope 自动分级——L0 跳过、L1 轻量、L2+ 完整
-- Consequences：小改动快速通过；大改动强制全流程；分级规则可配置
+### 10.4 把 ACO 的治理规则与 SEVO 的阶段规则对齐成统一协议
+当前 spec-first guard、角色守卫、异步纪律、doctor 等规则，部分在 ACO，部分在 SEVO prompt supplement。长期应该把两类规则分层明文化：
+- **ACO guard**：任务是否允许派发
+- **SEVO gate**：阶段是否允许通过
 
-### ADR-004: Spec Review 后并行分叉
+两边都叫“规则”，但职责完全不同。把协议分层写清楚后，排障会简单很多。
 
-- Context：test-case-authoring 和 contract 无依赖关系，串行执行浪费时间
-- Decision：spec-review-gate 通过后同时激活两条分支；implement 等待两条分支都完成
-- Consequences：缩短流水线总耗时；parallel-branch.ts 管理分叉/合并逻辑；增加了状态管理复杂度
+### 10.5 从“阶段通过”继续升级到“终局价值通过”
+SEVO spec 已经把真实数据、clean install、post-release validation、tiered gap scan 写进来了。下一步重点不是再加阶段，而是把这些终局门禁变成更稳定的自动化证据链。
 
-### ADR-005: 单文件状态 + 事件溯源
-
-- Context：需要持久化流水线状态，同时支持审计
-- Decision：state.json 单 writer 模型 + events.jsonl append-only
-- Consequences：无并发写冲突；事件日志支持状态重建和审计；不适合高并发场景（当前单流水线足够）
-
-### ADR-006: 插件层 fail-open
-
-- Context：插件运行在 Gateway 进程内，异常可能影响整个系统
-- Decision：所有 hook handler 包裹 safeSevoHook()，异常记录但不传播
-- Consequences：单 hook 故障不拖垮 Gateway；错误可能被静默吞掉（通过事件日志补偿可观测性）
-
-### ADR-007: GateRule SPI 可插拔门禁
-
-- Context：不同阶段的质量标准不同，需要灵活组合
-- Decision：定义 GateRule 接口，内置 FileExists/TypeCheck/TestPass/MinCoverage，支持扩展
-- Consequences：新增质量规则只需实现 GateRule 接口；规则组合通过 verdict-aggregator 聚合
-
-### ADR-008: Label Protocol 流水线上下文传递
-
-- Context：子 Agent session 需要携带流水线上下文，completion 时路由回正确实例
-- Decision：通过 session label 编码 `sevo:<pipelineId>:<stageId>:<attempt>`
-- Consequences：零额外通信开销；依赖 Gateway label 机制；label 格式变更需要前后兼容
-
-### ADR-009: 命令系统通过 Hook 拦截实现
-
-- Context：用户需要通过对话控制流水线（创建/暂停/跳过/查询），需要一种命令路由机制
-- Decision：在 `before_prompt_build`（priority 100）hook 中用正则匹配 `sevo:*` 命令，路由到对应 handler，结果通过 `pendingNotices` 注入主会话 prompt
-- Consequences：命令处理在 prompt 构建前完成，主会话无需感知命令解析逻辑；正则匹配足够覆盖结构化命令格式；降级模式下只读命令（doctor/version/status/list）仍可用
-
-### ADR-010: 项目产出物目录隔离
-
-- Context：多个 SEVO 项目并行时，产出物散落在 workspace 根目录会互相干扰
-- Decision：每个项目创建独立的 `projects/<slug>/` 目录，所有阶段产出物路径基于 projectRoot；projectRoot 持久化到 active-pipelines.json 并贯穿整个任务派发链路
-- Consequences：多项目并行互不干扰；项目目录可直接作为独立 Git 仓库；需要在 buildTaskPrompt 中始终传递 projectRoot 参数
-
-### ADR-011: 状态 Schema 迁移策略
-
-- Context：active-pipelines.json 的数据结构随功能演进需要变更（如新增 frTracking 字段）
-- Decision：引入 `schemaVersion` 字段和 `migrateState()` 函数，加载时自动执行向前兼容的增量迁移
-- Consequences：升级无需手动干预；迁移只做增量修改不删除字段；迁移事件写入日志可追溯
+方向很明确：
+- 少增加新阶段
+- 多增强 Verify / Validation / Ledger 的自动采证质量
 
 ---
 
-## 10. 质量需求
+## 11. 最终结论
 
-### 10.1 质量属性场景树
+SEVO 和 ACO 的正确关系不是“谁包含谁”，而是：
 
-```
-                        SEVO 质量属性
-                             │
-         ┌───────────┬───────┼───────┬───────────┐
-         ▼           ▼       ▼       ▼           ▼
-      可控性       可审计性  通用性   可靠性     可扩展性
-```
+- **ACO 是宿主运行时**：负责 Agent、任务、事件、看板、通知、调度守卫。
+- **SEVO 是研发流水线内核**：负责阶段、门禁、状态机、工件链、终局验证。
+- **OpenClawAdapter + Hook 事件 + Label 协议** 是两者的标准咬合面。
 
-### 10.2 质量属性场景
+把这层关系讲清楚之后，后面所有问题都会简单很多：
+- 任务没派出去，先查 ACO。
+- 阶段没推进，先查 SEVO。
+- completion 到了但主会话没动，查 Hook / pending advances。
+- 任务完成了但研发不能过，查 gate verdict / artifacts / runtime state。
 
-| ID | 质量属性 | 场景 | 度量 |
-|----|----------|------|------|
-| QA-01 | 可控性 | Gate 评估为 rejected 时，流水线不放行后续阶段 | 100% 阻断率，零漏放 |
-| QA-02 | 可控性 | 非法状态转换（如 passed → active）被拒绝 | assertTransition() 抛异常，状态不变 |
-| QA-03 | 可审计性 | 任意流水线可通过 events.jsonl 重建完整执行历史 | 事件覆盖所有状态转换，无遗漏 |
-| QA-04 | 可审计性 | Ledger 记录流水线全部 artifact 和结论 | LedgerEntry 包含 stages + evidence + conclusion |
-| QA-05 | 通用性 | 核心库在无 OpenClaw 环境下可独立运行和测试 | StandaloneAdapter 通过全部单元测试 |
-| QA-06 | 通用性 | 新增宿主只需实现 SevoHostAdapter 接口 | 接口方法 ≤6 个，无隐式依赖 |
-| QA-07 | 可靠性 | 插件层单 hook 异常不影响 Gateway 和其他插件 | safeSevoHook() 100% 捕获，Gateway 事件总线不中断 |
-| QA-08 | 可靠性 | state.json 写入过程中断电不产生损坏文件 | atomic write（write-tmp + rename）保证 |
-| QA-09 | 可靠性 | Bridge 单模块加载失败不影响其他模块 | per-module failure isolation，独立 backoff |
-| QA-10 | 可扩展性 | 新增阶段只需：定义 stage 实现 + 更新 stage-graph + 注册 agent 映射 | 改动 ≤3 个文件 |
-| QA-11 | 可扩展性 | 新增门禁规则只需实现 GateRule 接口 | 零核心代码修改 |
-| QA-12 | 可扩展性 | 阶段→Agent 映射可通过 config 覆盖 | stageAgentMap 配置项，无需改代码 |
-| QA-13 | 可用性 | 用户通过 sevo:doctor 一条命令完成安装自检 | 5 项检查全覆盖，Errors/Warnings/OK 三级输出 |
-| QA-14 | 可用性 | 流水线失败时用户看到结构化错误码和修复建议 | SEVO_ERRORS 8 种错误码，formatError 统一格式 |
-| QA-15 | 可用性 | sevo:quickstart 5 分钟内跑通首个流水线 | 7 阶段精简流水线，内置示例需求 |
-| QA-16 | 可控性 | 用户可暂停/跳过/重试流水线任意阶段 | pause/skip/resume/retry 4 种干预操作，状态持久化 |
-| QA-17 | 可靠性 | 状态 schema 变更时自动迁移，无需手动干预 | migrateState 增量迁移 + 事件日志记录 |
-| QA-18 | 隔离性 | 多项目并行时产出物互不干扰 | projects/\<slug\>/ 独立目录，projectRoot 贯穿链路 |
+一句话收口：
 
----
-
-## 11. 风险与技术债务
-
-### 11.1 已知风险
-
-| ID | 风险 | 影响 | 缓解措施 |
-|----|------|------|----------|
-| R-01 | 核心库未编译（dist/ 不存在） | 插件降级为 no-op，流水线不可用 | 降级模式 + 事件日志记录；CI 应确保 dist/ 始终可用 |
-| R-02 | 单 writer 模型在多流水线并发时可能竞争 | state.json 写入冲突 | 当前单流水线场景足够；未来需引入文件锁或数据库 |
-| R-03 | 子 Agent 超时或静默失败 | 流水线卡在某阶段不推进 | 依赖 Gateway aco-run-watchdog 插件检测超时；需补充流水线级超时机制 |
-| R-04 | Gate 评估目前只支持 pass/fail 二元 | conditional（有条件通过）语义未在插件层实现 | 核心层已支持 conditional；插件层 TODO 标记待实现 |
-| R-05 | 澄清协调依赖宿主 adapter 实现 | StandaloneAdapter 的澄清能力有限 | 核心层接口已定义；OpenClawAdapter 需完善交互式澄清 |
-
-### 11.2 技术债务
-
-| ID | 债务 | 位置 | 优先级 |
-|----|------|------|--------|
-| TD-01 | 插件层 subagent_ended 只解析 pass/fail，未处理 conditional/rejected 门禁裁决 | index.js:284 TODO | P1 |
-| TD-02 | Bridge 模块缓存使用 URL cache-bust，依赖 Node.js ESM loader 行为 | bridge.js:131 | P2 |
-| TD-03 | 活跃流水线追踪（active-pipelines.json）与核心 state.json 存在数据冗余 | index.js:164-170 | P3 |
-| TD-04 | 插件事件日志与核心事件日志分离，缺乏统一查询接口 | index.js / pipeline-engine.ts | P2 |
-| TD-05 | KIVO 集成（Ledger → 知识入库）和 AEO 集成（指标 → 监控）尚未实现 | 架构预留，代码未写 | P2 |
-| TD-06 | 流水线级超时机制缺失，依赖外部 watchdog | pipeline-engine.ts | P1 |
-| TD-07 | ~~规模路由（FR-D08）~~ 已实现 | router / index.js | P2 |
-| TD-08 | 命令解析使用正则匹配，复杂参数场景可能需要升级为解析器 | index.js:1170-1180 | P3 |
-
----
-
-## 12. 术语表
-
-| 术语 | 定义 |
-|------|------|
-| SEVO | Spec-Execute-Verify-Operate，Agent 自动研发流水线 |
-| SDD | Specify-Design-Develop，SEVO 的前身流程规范（AGENTS.md 中定义） |
-| Stage | 流水线阶段，12 个阶段构成完整流水线 |
-| Gate | 门禁，阶段间的质量检查点，输出 passed/conditional/rejected |
-| StageId | 阶段标识符，枚举类型（spec / spec-review-gate / ... / ledger） |
-| StageStatus | 阶段状态：pending / active / blocked / clarification-blocked / passed / failed / skipped |
-| TaskLevel | 任务级别：L0（跳过）/ L1（轻量）/ L2+（完整流水线） |
-| TriggerRule | 触发规则，决定任务是否需要完整流水线（new-module / cross-domain / large-change 等） |
-| RoutingResult | Router 输出，包含 level、requiredStages、skippedStages、matchedRules |
-| PipelineState | 流水线完整状态，持久化到 state.json |
-| StageRecord | 单个阶段的执行记录，包含 status、artifacts、attempt 等 |
-| StageTransition | advance() 的返回值，描述从哪个阶段转换到哪个阶段 |
-| GateVerdict | 门禁评估结果，包含 conclusion、blockers、reviewBundles |
-| GateRule | 门禁规则 SPI 接口，可插拔的质量检查规则 |
-| ReviewBundle | 单个审查者的审查结论，包含 reviewer、role、conclusion、issues |
-| LedgerEntry | 审计账本条目，记录流水线完整执行证据 |
-| ArtifactRef | 产物引用，包含 id、type、path、createdAt |
-| Host Adapter | 宿主适配器，将核心抽象操作映射到具体宿主环境 |
-| OpenClawAdapter | OpenClaw 宿主适配器实现 |
-| StandaloneAdapter | 独立运行适配器，用于测试和非 OpenClaw 环境 |
-| Bridge | 插件层懒加载桥梁，管理核心编译产物的加载和缓存 |
-| Label Protocol | 流水线上下文编码协议，格式 `sevo:<pipelineId>:<stageId>:<attempt>` |
-| pendingAdvances | 插件层内存队列，缓存待注入主会话的下一阶段任务 |
-| fail-open | 错误处理策略：异常记录但不阻断，保证系统可用性 |
-| fail-safe | 错误处理策略：异常阻断操作，保证数据一致性 |
-| atomic write | 原子写入：write-tmp + rename，避免半写状态 |
-| ClarificationCoordinator | 澄清协调器，管理歧义发现→阻塞→解决→恢复的完整生命周期 |
-| BlockingLevel | 澄清阻塞级别，决定歧义是否阻塞当前阶段执行 |
-| SEVO_ERRORS | 结构化错误码表，每个错误码包含描述、原因、修复建议 |
-| formatError | 统一错误格式化函数，输出错误码 + 描述 + 原因 + 修复建议 + 上下文 |
-| SEVO_VERSION | 插件版本常量（当前 0.2.0），sevo:version 命令输出 |
-| migrateState | 状态 schema 迁移函数，加载时自动执行向前兼容的增量迁移 |
-| QUICKSTART_STAGES | FTUE 精简流水线阶段集（7 阶段），跳过三方会审和 UX 验收 |
-| projectRoot | 项目产出物根目录（projects/\<slug\>/），贯穿整个任务派发链路 |
-| getUserJourneyTemplate | 6 阶段用户体验旅程模板函数，注入 spec 和 ux-acceptance 阶段 |
-| pendingNotices | 插件层内存队列，缓存命令执行结果，由 before_prompt_build 注入主会话 |
-| KIVO | Agent 知识迭代引擎（未来集成） |
-| AEO | Agent 效果运营平台（未来集成） |
+**ACO 负责把事派对、跑稳、接住；SEVO 负责保证这件事沿着受控研发链一直走到真交付。**

@@ -16,7 +16,7 @@ REPORT_LINES=()
 usage() {
   cat <<'USAGE'
 Usage:
-  verify-l1.js --package <pkg@ver|path> --bin <name> --commands "cmd1" "cmd2" ...
+  verify-l1.sh --package <pkg@ver|path> --bin <name> --commands "cmd1" "cmd2" ...
 
 Options:
   --package <spec>    npm package specifier (for example: sevo@1.2.3 or /path/to/pkg.tgz)

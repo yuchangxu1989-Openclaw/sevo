@@ -213,8 +213,8 @@ describe('buildTriggerStagePrompt', () => {
         projectRoot,
       });
 
-      expect(prompt.startsWith('## Spec 全量阅读（强制）')).toBe(true);
-      expect(prompt).toContain(`- Spec 路径：${path.join(projectRoot, 'docs', 'product-requirements.md')}`);
+      expect(prompt.startsWith('## Spec 全量阅读（强制，L2 插件注入）')).toBe(true);
+      expect(prompt).toContain(`Spec 路径：${path.join(projectRoot, 'docs', 'product-requirements.md')}`);
       expect(prompt).toContain('必须实现 spec 中定义的所有功能');
     } finally {
       fs.rmSync(root, { recursive: true, force: true });

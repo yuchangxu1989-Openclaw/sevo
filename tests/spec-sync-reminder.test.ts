@@ -67,11 +67,12 @@ describe('sevo spec sync reminder helpers', () => {
   it('builds the required reminder text with complete command template', () => {
     const { projectRoot, specPath } = setupProject();
     const reminder = mod.buildSpecSyncReminder(specPath, projectRoot, TOKEN);
-    expect(reminder).toContain('检测到 product-requirements.md 被修改。飞书文档是 spec 唯一真相源，必须同步推送：');
-    expect(reminder).toContain(`修改文件：${specPath}`);
+    expect(reminder).toContain('检测到 product-requirements.md 被修改。飞书文档是 spec 唯一真相源，用户也会直接在飞书上修改；本地文件只是 Git 备份副本。正确顺序如下：');
+    expect(reminder).toContain(`修改文件（本地工作副本）：${specPath}`);
     expect(reminder).toContain(`当前检测到：${path.join(projectRoot, 'docs', 'SOURCE-OF-TRUTH.md')}`);
-    expect(reminder).toContain(`lark-cli docs +update --doc ${TOKEN} --mode overwrite --markdown "$(cat ${specPath})" --as bot`);
-    expect(reminder).toContain('未推送飞书 = spec 变更不完整。');
+    expect(reminder).toContain(`先用 lark-cli docs +update --doc ${TOKEN} ... 直接更新飞书真相源`);
+    expect(reminder).toContain(`lark-cli docs +fetch --doc ${TOKEN}`);
+    expect(reminder).toContain('未按上述顺序完成 = spec 变更不完整。');
   });
 
   it('queues from subagent write/edit events and consumes only once per modification', () => {
