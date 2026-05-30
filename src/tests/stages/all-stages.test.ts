@@ -19,6 +19,7 @@ import {
   implementHandler,
   ledgerHandler,
   publishGeneralizationGateHandler,
+  readmeHandler,
   regressionHandler,
   reviewFixLoopHandler,
   reviewHandler,
@@ -45,7 +46,7 @@ afterEach(() => {
   fs.rmSync(workspaceRoot, { recursive: true, force: true });
 });
 
-function ctxOf(): StageHandlerContext {
+function ctxOf(previousResults: StageHandlerContext['previousResults'] = {}): StageHandlerContext {
   return {
     pipelineId: 'pipe-stage-001',
     projectSlug: 'demo',
@@ -53,7 +54,7 @@ function ctxOf(): StageHandlerContext {
     projectRoot,
     frDescription: '让用户用一句话描述功能。',
     now: () => '2026-05-24T01:00:00.000Z',
-    previousResults: {},
+    previousResults,
   };
 }
 
@@ -262,6 +263,45 @@ describe('Stage handler — endgame-scan', () => {
     const r = await endgameScanHandler(ctxOf());
     expect(r.verdict).toBe('block');
     expect(r.metadata?.usable).toBe(0);
+  });
+});
+
+describe('Stage handler — readme', () => {
+  it('passes when README already covers changed FRs', async () => {
+    fs.writeFileSync(
+      path.join(projectRoot, 'README.md'),
+      '# Demo\n\nFR-01 lets users describe a feature and publish package artifacts to npm and github.\n',
+    );
+    await specifyHandler(ctxOf());
+    const r = await readmeHandler(ctxOf({
+      verify: {
+        stageId: 'verify',
+        verdict: 'pass',
+        artifacts: [],
+        summary: 'verify passed',
+        issues: [],
+        metadata: { changedFrs: ['FR-01'] },
+      },
+    }));
+    expect(r.verdict).toBe('pass');
+    expect(fs.existsSync(path.join(projectRoot, 'docs', 'readme-sync.json'))).toBe(true);
+  });
+
+  it('blocks when README misses changed FR coverage', async () => {
+    fs.writeFileSync(path.join(projectRoot, 'README.md'), '# Demo\n\nSetup only.\n');
+    await specifyHandler(ctxOf());
+    const r = await readmeHandler(ctxOf({
+      verify: {
+        stageId: 'verify',
+        verdict: 'pass',
+        artifacts: [],
+        summary: 'verify passed',
+        issues: [],
+        metadata: { changedFrs: ['FR-01'] },
+      },
+    }));
+    expect(r.verdict).toBe('block');
+    expect(r.issues[0]).toContain('FR-01');
   });
 });
 

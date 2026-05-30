@@ -28,6 +28,7 @@ export const STAGE_IDS = {
   PUBLISH_GENERALIZATION_GATE: 'publish-generalization-gate' as StageId,
   DEPLOY: 'deploy' as StageId,
   VERIFY: 'verify' as StageId,
+  README: 'readme' as StageId,
   POST_RELEASE_VALIDATION: 'post-release-validation' as StageId,
   CLEAN_INSTALL_VERIFICATION: 'clean-install-verification' as StageId,
   LEDGER: 'ledger' as StageId,
@@ -53,6 +54,7 @@ export const ALL_STAGES: readonly StageId[] = [
   STAGE_IDS.PUBLISH_GENERALIZATION_GATE,
   STAGE_IDS.DEPLOY,
   STAGE_IDS.VERIFY,
+  STAGE_IDS.README,
   STAGE_IDS.POST_RELEASE_VALIDATION,
   STAGE_IDS.CLEAN_INSTALL_VERIFICATION,
   STAGE_IDS.LEDGER,
@@ -148,5 +150,6 @@ export const DEFAULT_STAGES: StageId[] = [
   STAGE_IDS.PM_COMMERCIAL_REVIEW,
   STAGE_IDS.PUBLISH_GENERALIZATION_GATE,
   STAGE_IDS.DEPLOY,
+  STAGE_IDS.README,
   STAGE_IDS.LEDGER,
 ];

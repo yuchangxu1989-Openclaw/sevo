@@ -19,6 +19,7 @@ import * as path from 'node:path';
 
 import type { StageHandler, StageHandlerResult } from './types.js';
 import { ensureDir, makeArtifact, nowIso, readJsonIfExists, writeFileEnsure } from './utils.js';
+import { ReadmeSyncStage } from '../stages/readme-sync-stage.js';
 
 interface KnownReport {
   filename: string;
@@ -37,6 +38,7 @@ const REPORT_FILES: KnownReport[] = [
   { filename: 'publish-generalization-gate.json', stageId: 'publish-generalization-gate', verdictKey: 'verdict' },
   { filename: 'deploy.json', stageId: 'deploy', verdictKey: 'verdict' },
   { filename: 'verify.json', stageId: 'verify', verdictKey: 'verdict' },
+  { filename: 'readme-sync.json', stageId: 'readme', verdictKey: 'verdict' },
   { filename: 'endgame-scan.json', stageId: 'endgame-scan', verdictKey: 'verdict' },
 ];
 
@@ -116,6 +118,28 @@ export const ledgerHandler: StageHandler = async (ctx): Promise<StageHandlerResu
   const docsDir = path.join(ctx.projectRoot, 'docs');
   ensureDir(docsDir);
 
+  const readmeResult = await new ReadmeSyncStage({ now: ctx.now }).execute({
+    taskId: ctx.pipelineId,
+    pipelineId: ctx.pipelineId,
+    projectSlug: ctx.projectSlug,
+    specPath: path.join(docsDir, 'product-requirements.json'),
+    readmePath: path.join(ctx.projectRoot, 'README.md'),
+    changedFRs: [],
+    artifactBasePath: path.join(ctx.projectRoot, 'artifacts', 'readme-sync'),
+  });
+
+  const readmeReportPath = path.join(docsDir, 'readme-sync.json');
+  writeFileEnsure(readmeReportPath, JSON.stringify({
+    pipelineId: ctx.pipelineId,
+    projectSlug: ctx.projectSlug,
+    generatedAt,
+    verdict: readmeResult.verdict,
+    coverage: readmeResult.coverage,
+    missingFrs: readmeResult.missingFrs,
+    updateTask: readmeResult.updateTask,
+    ledgerPath: readmeResult.artifact.path,
+  }, null, 2) + '\n');
+
   const rows: LedgerRow[] = [];
   for (const def of REPORT_FILES) {
     const filePath = path.join(docsDir, def.filename);
@@ -173,6 +197,14 @@ export const ledgerHandler: StageHandler = async (ctx): Promise<StageHandlerResu
     stageId: 'ledger',
     verdict: 'pass',
     artifacts: [
+      readmeResult.artifact,
+      makeArtifact({
+        id: `${ctx.pipelineId}:readme-report`,
+        type: 'readme-sync-report',
+        filePath: readmeReportPath,
+        createdAt: generatedAt,
+        metadata: { verdict: readmeResult.verdict, missingFrCount: readmeResult.missingFrs.length },
+      }),
       {
         id: `${ctx.pipelineId}:ledger:json`,
         type: 'ledger-json',

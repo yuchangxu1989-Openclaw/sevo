@@ -178,7 +178,7 @@ export const CANONICAL_14_STAGES: StageId[] = [
   STAGE_IDS.PUBLISH_GENERALIZATION_GATE,
   STAGE_IDS.DEPLOY,
   STAGE_IDS.VERIFY,
-  STAGE_IDS.POST_RELEASE_VALIDATION,
+  STAGE_IDS.README,
   STAGE_IDS.LEDGER,
 ];
 
@@ -252,6 +252,7 @@ const STAGE_BINDINGS: StageBinding[] = [
   { stageId: STAGE_IDS.PUBLISH_GENERALIZATION_GATE, stageClass: PublishGeneralizationGate, isGate: true },
   { stageId: STAGE_IDS.DEPLOY, stageClass: DeployStage },
   { stageId: STAGE_IDS.VERIFY, stageClass: VerifyStage },
+  { stageId: STAGE_IDS.README, stageClass: VerifyStage },
   { stageId: STAGE_IDS.POST_RELEASE_VALIDATION, stageClass: PostReleaseValidationStage },
   { stageId: STAGE_IDS.CLEAN_INSTALL_VERIFICATION, stageClass: CleanInstallVerificationStage },
   { stageId: STAGE_IDS.LEDGER, stageClass: LedgerStage },

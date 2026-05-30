@@ -25,6 +25,7 @@ export type StageId =
   | 'publish-generalization-gate'
   | 'deploy'
   | 'verify'
+  | 'readme'
   | 'post-release-validation'
   | 'clean-install-verification'
   | 'ledger';

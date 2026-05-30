@@ -21,6 +21,7 @@
  *   publish-generalization-gate   -> publish-generalization-gate
  *   deploy                        -> deploy
  *   verify                        -> verify
+ *   readme                        -> readme
  *   endgame-scan                  -> (cross-cuts post-release-validation + clean-install-verification)
  *   ledger                        -> ledger
  */
@@ -35,6 +36,7 @@ import { endgameScanHandler } from './endgame-scan-handler.js';
 import { implementHandler } from './implement-handler.js';
 import { ledgerHandler } from './ledger-handler.js';
 import { publishGeneralizationGateHandler } from './publish-generalization-gate-handler.js';
+import { readmeHandler } from './readme-handler.js';
 import { regressionHandler } from './regression-handler.js';
 import { reviewFixLoopHandler } from './review-fix-loop-handler.js';
 import { reviewHandler } from './review-handler.js';
@@ -56,6 +58,7 @@ export type StageHandlerKey =
   | 'publish-generalization-gate'
   | 'deploy'
   | 'verify'
+  | 'readme'
   | 'endgame-scan'
   | 'ledger';
 
@@ -72,6 +75,7 @@ export const STAGE_HANDLERS: Record<StageHandlerKey, StageHandler> = {
   'publish-generalization-gate': publishGeneralizationGateHandler,
   deploy: deployHandler,
   verify: verifyHandler,
+  readme: readmeHandler,
   'endgame-scan': endgameScanHandler,
   ledger: ledgerHandler,
 };
@@ -89,6 +93,7 @@ export const STAGE_HANDLER_ORDER: readonly StageHandlerKey[] = [
   'publish-generalization-gate',
   'deploy',
   'verify',
+  'readme',
   'endgame-scan',
   'ledger',
 ] as const;
@@ -107,6 +112,7 @@ export const STAGE_HANDLER_TO_STAGE_ID: Record<StageHandlerKey, StageId | null> 
   'publish-generalization-gate': 'publish-generalization-gate',
   deploy: 'deploy',
   verify: 'verify',
+  readme: 'readme',
   'endgame-scan': null, // covers post-release-validation + clean-install-verification
   ledger: 'ledger',
 };
@@ -125,6 +131,7 @@ export { endgameScanHandler } from './endgame-scan-handler.js';
 export { implementHandler } from './implement-handler.js';
 export { ledgerHandler } from './ledger-handler.js';
 export { publishGeneralizationGateHandler } from './publish-generalization-gate-handler.js';
+export { readmeHandler } from './readme-handler.js';
 export { regressionHandler } from './regression-handler.js';
 export { reviewFixLoopHandler } from './review-fix-loop-handler.js';
 export { reviewHandler } from './review-handler.js';
