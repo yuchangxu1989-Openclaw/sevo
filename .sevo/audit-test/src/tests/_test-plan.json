@@ -1,0 +1,14 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "generatedAt": "2026-05-24T02:13:21.462Z",
+  "frCount": 1,
+  "testCount": 3,
+  "files": [
+    {
+      "frId": "FR-01",
+      "relPath": "src/tests/fr-01-2026-05-24.test.ts",
+      "testCount": 3
+    }
+  ]
+}

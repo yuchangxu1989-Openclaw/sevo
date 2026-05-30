@@ -1,0 +1,14 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "generatedAt": "2026-05-24T02:13:21.466Z",
+  "frCount": 1,
+  "usedLlm": false,
+  "files": [
+    {
+      "frId": "FR-01",
+      "relPath": "src/fr-01-2026-05-24/index.ts",
+      "source": "stub"
+    }
+  ]
+}

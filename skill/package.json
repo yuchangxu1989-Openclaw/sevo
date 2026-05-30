@@ -1,0 +1,13 @@
+{
+  "name": "sevo-skill-pack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SEVO multi-skill pack for OpenClaw",
+  "scripts": {
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "tsx": "^4.20.6"
+  }
+}

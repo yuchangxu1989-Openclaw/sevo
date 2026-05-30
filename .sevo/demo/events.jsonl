@@ -1,0 +1,29 @@
+{"timestamp":"2026-05-24T02:02:27.763Z","pipelineId":"demo","eventType":"pipeline_created","stages":["spec","spec-review-gate","contract","contract-review-gate","implement","review","smoke-test","ux-acceptance","regression","publish-generalization-gate","deploy","verify","post-release-validation","ledger"]}
+{"timestamp":"2026-05-24T02:02:27.952Z","pipelineId":"demo","eventType":"stage_activated","stage":"spec"}
+{"timestamp":"2026-05-24T02:02:27.954Z","pipelineId":"demo","eventType":"stage_completed","stage":"spec","artifacts":["docs/product-requirements.md","docs/product-requirements.json"],"reason":"Wrote spec with 1 FR / 3 AC (llm=false)."}
+{"timestamp":"2026-05-24T02:02:27.955Z","pipelineId":"demo","eventType":"stage_activated","stage":"spec-review-gate"}
+{"timestamp":"2026-05-24T02:02:27.956Z","pipelineId":"demo","eventType":"stage_completed","stage":"spec-review-gate","artifacts":["docs/spec-review-gate.json"],"reason":"Spec review passed: 4/4 sections, 1 FR, 3 AC."}
+{"timestamp":"2026-05-24T02:02:27.957Z","pipelineId":"demo","eventType":"stage_activated","stage":"contract"}
+{"timestamp":"2026-05-24T02:02:27.960Z","pipelineId":"demo","eventType":"stage_completed","stage":"contract","artifacts":["docs/contracts/_index.json","docs/contracts/fr-01-item.json","src/tests/_test-plan.json","src/tests/fr-01-item.test.ts"],"reason":"Wrote 1 contract document(s) and test plan for 1 FR."}
+{"timestamp":"2026-05-24T02:02:27.961Z","pipelineId":"demo","eventType":"stage_activated","stage":"contract-review-gate"}
+{"timestamp":"2026-05-24T02:02:27.962Z","pipelineId":"demo","eventType":"stage_completed","stage":"contract-review-gate","artifacts":["docs/contract-review-gate.json"],"reason":"Contract review passed: 1 contracts cover 1 FR."}
+{"timestamp":"2026-05-24T02:02:27.963Z","pipelineId":"demo","eventType":"stage_activated","stage":"implement"}
+{"timestamp":"2026-05-24T02:02:27.965Z","pipelineId":"demo","eventType":"stage_completed","stage":"implement","artifacts":["src/implement-manifest.json","src/fr-01-item/index.ts"],"reason":"Wrote 1 source file(s) covering 1 FR (llm=false)."}
+{"timestamp":"2026-05-24T02:02:27.965Z","pipelineId":"demo","eventType":"stage_activated","stage":"review"}
+{"timestamp":"2026-05-24T02:02:27.967Z","pipelineId":"demo","eventType":"stage_completed","stage":"review","artifacts":["docs/review-report.json"],"reason":"Review passed: 1 FR fully covered (1 source files)."}
+{"timestamp":"2026-05-24T02:02:27.967Z","pipelineId":"demo","eventType":"stage_activated","stage":"smoke-test"}
+{"timestamp":"2026-05-24T02:02:27.968Z","pipelineId":"demo","eventType":"stage_completed","stage":"smoke-test","artifacts":["artifacts/smoke-test/smoke-test-output.md"]}
+{"timestamp":"2026-05-24T02:02:27.969Z","pipelineId":"demo","eventType":"stage_activated","stage":"ux-acceptance"}
+{"timestamp":"2026-05-24T02:02:27.969Z","pipelineId":"demo","eventType":"stage_completed","stage":"ux-acceptance","artifacts":["artifacts/ux-acceptance/ux-acceptance-output.md"]}
+{"timestamp":"2026-05-24T02:02:27.970Z","pipelineId":"demo","eventType":"stage_activated","stage":"regression"}
+{"timestamp":"2026-05-24T02:02:29.465Z","pipelineId":"demo","eventType":"stage_completed","stage":"regression","artifacts":["docs/regression.json"],"reason":"Regression passed: 3 tests in 1 file(s)."}
+{"timestamp":"2026-05-24T02:02:29.465Z","pipelineId":"demo","eventType":"stage_activated","stage":"publish-generalization-gate"}
+{"timestamp":"2026-05-24T02:02:29.469Z","pipelineId":"demo","eventType":"stage_completed","stage":"publish-generalization-gate","artifacts":["docs/publish-generalization-gate.json"],"reason":"Generalization gate passed: 0 hard-coded leaks across 14 files."}
+{"timestamp":"2026-05-24T02:02:29.469Z","pipelineId":"demo","eventType":"stage_activated","stage":"deploy"}
+{"timestamp":"2026-05-24T02:02:29.471Z","pipelineId":"demo","eventType":"stage_completed","stage":"deploy","artifacts":["docs/deploy.json"],"reason":"Deploy intent recorded: sevo 1.12.2 -> 1.12.3 (dry-run)."}
+{"timestamp":"2026-05-24T02:02:29.471Z","pipelineId":"demo","eventType":"stage_activated","stage":"verify"}
+{"timestamp":"2026-05-24T02:02:29.670Z","pipelineId":"demo","eventType":"stage_completed","stage":"verify","artifacts":["docs/verify.json"],"reason":"Verify passed: 3 check(s) all green."}
+{"timestamp":"2026-05-24T02:02:29.671Z","pipelineId":"demo","eventType":"stage_activated","stage":"post-release-validation"}
+{"timestamp":"2026-05-24T02:02:29.671Z","pipelineId":"demo","eventType":"stage_completed","stage":"post-release-validation","artifacts":["artifacts/post-release-validation/post-release-validation-output.md"]}
+{"timestamp":"2026-05-24T02:02:29.672Z","pipelineId":"demo","eventType":"stage_activated","stage":"ledger"}
+{"timestamp":"2026-05-24T02:02:29.675Z","pipelineId":"demo","eventType":"stage_completed","stage":"ledger","artifacts":["docs/ledger.json","docs/ledger.md","docs/ledger-notice.txt"],"reason":"Ledger written: 10 stage row(s), overall=pass."}

@@ -1,0 +1,2 @@
+{"timestamp":"2026-05-06T19:07:39.330Z","pipelineId":"da778b47-2c3e-437b-91a4-4d41011513b5","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-kivo-web-fix-moufj5ix","level":"L2+"}}
+{"timestamp":"2026-05-06T19:07:39.331Z","pipelineId":"da778b47-2c3e-437b-91a4-4d41011513b5","stage":"spec","eventType":"stage_activated","payload":{}}

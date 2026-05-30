@@ -1,0 +1,99 @@
+{
+  "pipelineId": "demo2",
+  "taskId": "demo2-cb8a9a97",
+  "description": "测试描述2",
+  "level": "L2+",
+  "status": "created",
+  "currentStage": "spec",
+  "requiredStages": [
+    "spec",
+    "spec-review-gate",
+    "contract",
+    "contract-review-gate",
+    "implement",
+    "review",
+    "smoke-test",
+    "ux-acceptance",
+    "regression",
+    "publish-generalization-gate",
+    "deploy",
+    "verify",
+    "post-release-validation",
+    "ledger"
+  ],
+  "stages": {
+    "spec": {
+      "stageId": "spec",
+      "status": "pending",
+      "artifacts": []
+    },
+    "spec-review-gate": {
+      "stageId": "spec-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract": {
+      "stageId": "contract",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract-review-gate": {
+      "stageId": "contract-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "implement": {
+      "stageId": "implement",
+      "status": "pending",
+      "artifacts": []
+    },
+    "review": {
+      "stageId": "review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "smoke-test": {
+      "stageId": "smoke-test",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance": {
+      "stageId": "ux-acceptance",
+      "status": "pending",
+      "artifacts": []
+    },
+    "regression": {
+      "stageId": "regression",
+      "status": "pending",
+      "artifacts": []
+    },
+    "publish-generalization-gate": {
+      "stageId": "publish-generalization-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "deploy": {
+      "stageId": "deploy",
+      "status": "pending",
+      "artifacts": []
+    },
+    "verify": {
+      "stageId": "verify",
+      "status": "pending",
+      "artifacts": []
+    },
+    "post-release-validation": {
+      "stageId": "post-release-validation",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ledger": {
+      "stageId": "ledger",
+      "status": "pending",
+      "artifacts": []
+    }
+  },
+  "history": [],
+  "createdAt": "2026-05-24T02:02:29.913Z",
+  "updatedAt": "2026-05-24T02:02:29.913Z"
+}

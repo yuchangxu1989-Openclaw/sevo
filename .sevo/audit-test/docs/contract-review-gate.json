@@ -1,0 +1,21 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "evaluatedAt": "2026-05-24T02:13:21.464Z",
+  "verdict": "pass",
+  "frCount": 1,
+  "contractCount": 1,
+  "coveredFrs": [
+    "FR-01"
+  ],
+  "missingForFrs": [],
+  "strayContracts": [],
+  "contracts": [
+    {
+      "file": "docs/contracts/fr-01-2026-05-24.json",
+      "frId": "FR-01",
+      "valid": true
+    }
+  ],
+  "issues": []
+}

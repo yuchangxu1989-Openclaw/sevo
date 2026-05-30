@@ -1,0 +1,16 @@
+{
+  "pipelineId": "demo",
+  "projectSlug": "demo",
+  "ranAt": "2026-05-24T02:02:29.470Z",
+  "verdict": "pass",
+  "package": {
+    "name": "sevo",
+    "currentVersion": "1.12.2",
+    "proposedVersion": "1.12.3",
+    "bumpKind": "patch"
+  },
+  "publish": {
+    "executed": false
+  },
+  "issues": []
+}

@@ -1,0 +1,8 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "evaluatedAt": "2026-05-24T02:13:22.292Z",
+  "verdict": "pass",
+  "scannedFiles": 14,
+  "matches": []
+}

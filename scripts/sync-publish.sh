@@ -1,0 +1,1 @@
+/root/.openclaw/extensions/sevo-pipeline/scripts/sync-publish.sh

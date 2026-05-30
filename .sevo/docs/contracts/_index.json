@@ -1,0 +1,12 @@
+{
+  "pipelineId": "demo",
+  "projectSlug": "demo",
+  "generatedAt": "2026-05-24T01:57:24.809Z",
+  "frCount": 1,
+  "contracts": [
+    {
+      "frId": "FR-01",
+      "relPath": "docs/contracts/fr-01-demo-31ee4dba.json"
+    }
+  ]
+}

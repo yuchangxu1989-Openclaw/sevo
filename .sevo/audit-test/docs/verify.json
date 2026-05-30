@@ -1,0 +1,24 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "evaluatedAt": "2026-05-24T02:13:22.298Z",
+  "verdict": "pass",
+  "checks": [
+    {
+      "name": "cli-help",
+      "passed": true,
+      "detail": "Binary ../../bin/sevo.js responded to --help."
+    },
+    {
+      "name": "contracts-trace",
+      "passed": true,
+      "detail": "All 1 contract(s) trace to spec FRs."
+    },
+    {
+      "name": "test-files-exist",
+      "passed": true,
+      "detail": "All 1 test file(s) on disk."
+    }
+  ],
+  "issues": []
+}

@@ -1,0 +1,1 @@
+{"timestamp":"2026-05-24T02:02:29.914Z","pipelineId":"demo2","eventType":"pipeline_created","stages":["spec","spec-review-gate","contract","contract-review-gate","implement","review","smoke-test","ux-acceptance","regression","publish-generalization-gate","deploy","verify","post-release-validation","ledger"]}

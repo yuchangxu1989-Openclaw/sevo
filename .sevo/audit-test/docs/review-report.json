@@ -1,0 +1,23 @@
+{
+  "pipelineId": "audit-test",
+  "projectSlug": "audit-test",
+  "evaluatedAt": "2026-05-24T02:13:21.468Z",
+  "verdict": "pass",
+  "frCount": 1,
+  "coveredFrCount": 1,
+  "sourceFileCount": 1,
+  "matrix": [
+    {
+      "frId": "FR-01",
+      "impl": [
+        "src/fr-01-2026-05-24/index.ts"
+      ],
+      "tests": [
+        "src/tests/fr-01-2026-05-24.test.ts"
+      ],
+      "covered": true
+    }
+  ],
+  "findings": [],
+  "llmFindingsCount": 0
+}
