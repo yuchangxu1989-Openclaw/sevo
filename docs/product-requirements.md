@@ -2056,3 +2056,14 @@ spec 中出现的每个名词实体（会成为系统中的对象、状态机、
 - 审计失败后，Pipeline 必须进入 review→fix loop：将 Finding 转成修复 Task，回到 Implement 修复，修复完成后重新进入 Review 复验，直到通过或达到既有重试上限。
 - Finding 未关闭时，对应 Stage 不能标记 passed；所有关键 Finding 关闭后，Stage 才能进入下一阶段。
 - 审计日志至少记录 implement completion、audit dispatch、audit result、修复任务创建、复验结论和后续推进结果。
+
+##### 发布 / 部署门禁补充：独立仓库同步验证
+
+OpenClaw（pm-01 子Agent）2026-05-30
+
+流水线 endgame 阶段必须把独立仓库同步纳入发布与部署验证范围。主仓库 push 后，只要本次变更涉及 `projects/<name>/` 路径，endgame 就必须验证对应独立 GitHub 仓库已经完成同步。
+
+- AC1:endgame 阶段必须检查本次发布链是否涉及 `projects/<name>/` 路径变更；涉及时必须执行独立仓库同步验证。
+- AC2:独立仓库同步验证必须确认对应独立 GitHub 仓库已收到同一轮变更；验证未通过时，endgame 判定不通过。
+- AC3:未同步、同步失败、同步状态不可确认，均视为发布闭环失败；流水线不得宣布完成。
+- AC4:endgame 的失败原因必须明确指出缺失的项目名、目标独立仓库和建议动作，便于下一轮修复任务直接接手。
