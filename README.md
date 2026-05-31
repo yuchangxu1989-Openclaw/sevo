@@ -53,6 +53,30 @@ Every stage transition passes an LLM-driven quality gate, so missing evidence, w
 
 ---
 
+## Design Principles
+
+Three principles govern every pipeline, no matter where work enters.
+
+- **Any entry runs to the end.** Whichever entry point you use (`create`, `implement`, `review`, `fix`, or `from`), SEVO checks which upstream stages are already satisfied and keeps advancing until the whole loop closes. There is no "fixed it, so stop."
+- **Any entry verifies the spec first.** No entry skips requirement checking. SEVO confirms the current problem is correctly covered by the spec, and patches the spec before moving on when it finds a gap.
+- **Consistency closure check.** Before each stage advances, an alignment gate confirms that spec, design, implementation, audit, and delivery all describe the same thing. If any layer drifts, the pipeline pauses until the gap is closed.
+
+---
+
+## Deliverability Deep Audit
+
+SEVO includes a scheduled deliverability audit (`sevo-l2-daily-scan.sh`) that goes beyond CI/CD:
+
+- **Plugin effectiveness verification** — detects plugins that are registered but never triggered at runtime (dead code in production)
+- **Event field contract validation** — confirms plugins read the same field names the Gateway actually emits
+- **Path resolution verification** — catches broken relative paths before they silently fail
+- **LLM routing liveness** — verifies semantic routing is active, not silently falling back to regex
+- **Stranger-ready installation check** — validates that a fresh `npm install && init` produces working functionality
+
+When a defense is written but not working, the deliverability audit catches it before users do.
+
+---
+
 ## Mainline Delivery Pipeline
 
 ```
