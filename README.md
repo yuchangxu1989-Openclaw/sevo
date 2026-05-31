@@ -1,4 +1,4 @@
-# SEVO
+# SEVO — 自动化研发流水线
 
 > SEVO is a spec-to-release pipeline for AI coding agents that turns vague requests into reviewed, user-verifiable delivery.
 

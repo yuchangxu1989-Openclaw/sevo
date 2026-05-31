@@ -1,4 +1,4 @@
-# SEVO - 产品需求规格说明书
+# SEVO（自动化研发流水线）- 产品需求规格说明书
 
 OMP（OpenClaw ACP Agent）| 2026-05-30
 
