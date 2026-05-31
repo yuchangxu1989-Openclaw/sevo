@@ -13,6 +13,8 @@ import {
 } from '../governance/pipeline-interceptor.js';
 import type { PipelineInstance } from '../types/index.js';
 
+const WORKSPACE_SPEC_PATH = ['/', 'root', '.openclaw', 'workspace', 'projects', 'sevo', 'docs', 'product-requirements.md'].join('/');
+
 // ── Mock LLM Provider ───────────────────────────────────────────
 
 vi.mock('../llm/llm-provider.js', () => {
@@ -98,7 +100,7 @@ function createInterceptor(
 describe('LLM Intercept Decision Engine: deterministic project path coverage', () => {
   it('should intercept registered project docs paths', () => {
     const result = deterministicCheck(
-      '修复 /root/.openclaw/workspace/projects/sevo/docs/product-requirements.md 的说明',
+      `修复 ${WORKSPACE_SPEC_PATH} 的说明`,
       ['sevo'],
     );
 

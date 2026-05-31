@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { ReadmeSyncStage } from '../stages/readme-sync-stage.js';
 import type { StageHandler } from './types.js';
 import { makeArtifact, nowIso } from './utils.js';
+const README_STANDARD_RELATIVE_PATH = 'projects/sevo/docs/readme-standard.md';
 
 export const readmeHandler: StageHandler = async (ctx) => {
   const docsDir = path.join(ctx.projectRoot, 'docs');
@@ -24,6 +25,10 @@ export const readmeHandler: StageHandler = async (ctx) => {
     changedFRs,
     artifactBasePath,
   });
+  const updateTask = result.updateTask ? {
+    ...result.updateTask,
+    description: [result.updateTask.description, `Mandatory standard: ${README_STANDARD_RELATIVE_PATH}`].join(' '),
+  } : null;
 
   const generatedAt = nowIso(ctx.now);
   const reportPath = path.join(docsDir, 'readme-sync.json');
@@ -34,7 +39,7 @@ export const readmeHandler: StageHandler = async (ctx) => {
     verdict: result.verdict,
     coverage: result.coverage,
     missingFrs: result.missingFrs,
-    updateTask: result.updateTask,
+    updateTask,
     ledgerPath: result.artifact.path,
   };
 
@@ -61,13 +66,13 @@ export const readmeHandler: StageHandler = async (ctx) => {
     ],
     summary: result.verdict === 'pass'
       ? `README already covers ${result.coverage.length} changed FR(s).`
-      : `README sync blocked: ${result.missingFrs.length} changed FR(s) need documentation updates.`,
+      : `README sync blocked: ${result.missingFrs.length} changed FR(s) need documentation updates. Follow ${README_STANDARD_RELATIVE_PATH}.`,
     issues: result.missingFrs.map((frId) => `README missing coverage for ${frId}`),
     metadata: {
       changedFrs: result.ledgerEntry.changedFRs,
       coverage: result.coverage,
       missingFrs: result.missingFrs,
-      updateTask: result.updateTask,
+      updateTask,
       ledgerPath: result.artifact.path,
       reportPath,
     },

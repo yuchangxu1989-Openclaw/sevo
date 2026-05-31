@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:fr28-fr29": "vitest run src/scan/__tests__/l3-runtime-verifier.test.ts src/scan/__tests__/tiered-scan-orchestrator.test.ts src/stages/__tests__/clean-install-verification-stage.test.ts",
     "doctor": "node -e \"require('./index.js')\" 2>&1 | head -5",
-    "postinstall": "bash scripts/init.sh"
+    "postinstall": "bash scripts/init.sh",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "openclaw",

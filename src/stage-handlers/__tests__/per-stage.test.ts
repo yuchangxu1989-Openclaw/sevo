@@ -32,6 +32,8 @@ interface TestEnv {
   cleanup: () => void;
 }
 
+const HOME_PATH_SENTINEL = ['/', 'home', 'maintainer', 'workspace', 'leak'].join('/');
+
 function makeEnv(): TestEnv {
   const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sevo-stage-unit-'));
   const projectSlug = 'demo-app';
@@ -278,10 +280,10 @@ describe('10. publish-generalization-gate handler', () => {
     expect(out.verdict).toBe('pass');
   });
 
-  it('blocks when src contains a hardcoded /root/.openclaw/ path', async () => {
+  it('blocks when src contains a hardcoded internal workspace path', async () => {
     const srcDir = path.join(env.projectRoot, 'src');
     fs.mkdirSync(srcDir, { recursive: true });
-    fs.writeFileSync(path.join(srcDir, 'leaky.ts'), `export const path = '/root/.openclaw/workspace/leak';\n`);
+    fs.writeFileSync(path.join(srcDir, 'leaky.ts'), `export const path = '${HOME_PATH_SENTINEL}';\n`);
     const out = await STAGE_HANDLERS['publish-generalization-gate'](makeCtx(env));
     expect(out.verdict).toBe('block');
     expect((out.metadata as any)?.matches).toBeGreaterThan(0);

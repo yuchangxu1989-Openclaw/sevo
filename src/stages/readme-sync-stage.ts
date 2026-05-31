@@ -114,7 +114,9 @@ export class ReadmeSyncStage {
       title: 'Update README for newly changed functional requirements',
       description: [
         `Update ${input.readmePath} so it accurately documents the changed capabilities in ${input.specPath}.`,
+        'Use projects/sevo/docs/readme-standard.md as mandatory writing guidance.',
         'Add user-facing wording for each missing FR, including what the capability does and how to use it.',
+        'Keep the README aligned with first-time user entrypoint requirements: hero, tagline, proof chips, Quickstart, user-visible outcomes, how it works, usage boundaries, production setup, and docs/community links.',
         `Missing FRs: ${missingFrs.map((fr) => `${fr.id} ${fr.title || fr.id}`).join('; ')}`,
       ].join(' '),
       missingFrs: missingFrs.map((fr) => ({

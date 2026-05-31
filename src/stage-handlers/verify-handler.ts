@@ -23,6 +23,8 @@ import * as path from 'node:path';
 import type { StageHandler, StageHandlerResult } from './types.js';
 import { ensureDir, makeArtifact, nowIso, readJsonIfExists, writeFileEnsure } from './utils.js';
 
+const HEALTHCHECK_STANDARD_RELATIVE_PATH = 'projects/sevo/docs/healthcheck-standard.md';
+
 interface PackageJson {
   name?: string;
   bin?: string | Record<string, string>;
@@ -156,6 +158,7 @@ export const verifyHandler: StageHandler = async (ctx): Promise<StageHandlerResu
     projectSlug: ctx.projectSlug,
     evaluatedAt,
     verdict,
+    standardPath: HEALTHCHECK_STANDARD_RELATIVE_PATH,
     checks,
     issues: checks.filter((c) => !c.passed).map((c) => `${c.name}: ${c.detail}`),
   };
@@ -175,9 +178,9 @@ export const verifyHandler: StageHandler = async (ctx): Promise<StageHandlerResu
     ],
     summary:
       verdict === 'pass'
-        ? `Verify passed: ${checks.length} check(s) all green.`
-        : `Verify blocked: ${checks.filter((c) => !c.passed).length} check(s) failed.`,
+        ? `Verify passed: ${checks.length} check(s) all green. Standard: ${HEALTHCHECK_STANDARD_RELATIVE_PATH}.`
+        : `Verify blocked: ${checks.filter((c) => !c.passed).length} check(s) failed. Follow ${HEALTHCHECK_STANDARD_RELATIVE_PATH}.`,
     issues: checks.filter((c) => !c.passed).map((c) => `${c.name}: ${c.detail}`),
-    metadata: { checks, reportPath },
+    metadata: { checks, reportPath, standardPath: HEALTHCHECK_STANDARD_RELATIVE_PATH },
   };
 };

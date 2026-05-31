@@ -5,7 +5,7 @@
  * trying to install the npm package on a fresh machine. Anything matching
  * the following is flagged:
  *
- *   /root/.openclaw/                — workspace-specific
+ *   maintainer OpenClaw workspace   — workspace-specific
  *   /home/<specific-user>/          — developer machine
  *   /Users/<specific-user>/         — macOS dev machines
  *   localhost:<port>                — only allowed in tests/dev configs

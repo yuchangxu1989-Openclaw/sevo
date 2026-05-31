@@ -32,7 +32,8 @@
   "regression": { "title": "Regression standards", "principles": ["逐条回归 AC 和已修 P0/P1，不扩大测试边界。", "结论必须包含命令/操作结果和未覆盖风险。"] },
   "publish-generalization-gate": { "title": "Publish generalization gate standards", "principles": ["发布前确认通用化、安装初始化、配置参考和陌生用户路径。", "未通过不得发布。"] },
   "deploy": { "title": "Deploy standards", "principles": ["使用项目统一发布脚本，完成 npm、ClawHub、GitHub/宿主平台同步。", "发布后验证真实可安装、可运行。"] },
-  "verify": { "title": "Verify standards", "principles": ["按 spec FR/AC 做终局差距扫描，差距为零才通过。", "验证运行态可用，不用静态文件存在替代。"] },
+  "verify": { "title": "Verify standards", "principles": ["按 spec FR/AC 做终局差距扫描，差距为零才通过。", "验证运行态可用，不用静态文件存在替代。", "Use projects/sevo/docs/healthcheck-standard.md as the unified healthcheck entry for CLI smoke, Web browser walkthrough, and registry identity consistency."] },
+  "readme": { "title": "README stage standards", "principles": ["Evaluate and update README as the first-time user entrypoint, not as an internal changelog.", "Use projects/sevo/docs/readme-standard.md as mandatory writing guidance when creating or updating README content.", "README must cover hero, tagline, proof chips, Quickstart, user-visible outcomes, how it works, usage boundaries, production setup, and docs/community links."] },
   "post-release-validation": { "title": "Post release validation standards", "principles": ["发布后从干净环境验证安装、初始化、核心流程和产物。", "发现差距立即标记阻断并回流修复。"] },
   "clean-install-verification": { "title": "Clean install verification standards", "principles": ["在干净目录完成安装、初始化、核心命令和示例流程。", "任何依赖本机隐藏状态的步骤都视为失败。"] },
   "ledger": { "title": "Ledger standards", "principles": ["沉淀最终交付、证据、版本和未解决风险。", "记录给读者看的事实，不写过程噪音。"] }

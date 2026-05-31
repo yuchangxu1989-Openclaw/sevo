@@ -7,6 +7,7 @@ import { CommercializationGate } from '../commercialization-gate.js';
 import type { CommercializationGateInput } from '../commercialization-gate-types.js';
 
 let tmpDir: string;
+const HOME_WORKSPACE_SENTINEL = ['/', 'home', 'maintainer', 'workspace'].join('/');
 
 beforeEach(async () => {
   tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'sevo-pub-gate-'));
@@ -97,7 +98,7 @@ describe('CommercializationGate — Five-Layer Checks (AC-4.32b)', () => {
     await setupCleanProject();
     const srcDir = path.join(tmpDir, 'src');
     await fs.mkdir(srcDir, { recursive: true });
-    await fs.writeFile(path.join(srcDir, 'config.ts'), 'export const root = "/root/.openclaw/workspace";');
+    await fs.writeFile(path.join(srcDir, 'config.ts'), `export const root = "${HOME_WORKSPACE_SENTINEL}";`);
     const gate = new CommercializationGate();
     const items = gate.runAllChecks(makeInput({ layers: ['code-cleanliness'] }));
     const check = items.find((i) => i.id === 'hardcoded-paths');

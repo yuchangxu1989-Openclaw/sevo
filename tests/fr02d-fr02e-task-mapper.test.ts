@@ -55,6 +55,12 @@ describe('FR-02d / FR-02e task mapper integration', () => {
   });
 
 
+  it('builds readme-update prompt with standard injection', () => {
+    const prompt = buildTaskPrompt('readme-update', state, 'demo', 'projects/demo');
+    expect(prompt).toContain('README update review for project "demo"');
+    expect(prompt).toContain('projects/sevo/docs/readme-standard.md');
+  });
+
 
   it('injects UX and architecture design artifacts into contract review gate prompt', () => {
     const prompt = buildTaskPrompt('contract-review-gate', state, 'demo', 'projects/demo');

@@ -86,6 +86,7 @@ describe('ReadmeSyncStage', () => {
 
       const ledger = JSON.parse(fs.readFileSync(output.artifact.path, 'utf8'));
       expect(ledger.updateTask.title).toContain('Update README');
+      expect(output.updateTask?.description).toContain('projects/sevo/docs/readme-standard.md');
       expect(ledger.coverage[0].covered).toBe(false);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });

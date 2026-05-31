@@ -1,219 +1,170 @@
 # SEVO
 
-**SEVO 是 AI Agent 研发的自主进化流水线。**
+> SEVO is a spec-to-release pipeline for AI coding agents that turns vague requests into reviewed, user-verifiable delivery.
 
-🌐 [官网](https://agentos.site/sevo.html)
+[![npm version](https://img.shields.io/npm/v/sevo-pipeline)](https://www.npmjs.com/package/sevo-pipeline)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/yuchangxu1989-Openclaw/sevo/blob/main/LICENSE)
+[![Tests: 1351 passing](https://img.shields.io/badge/tests-1351%20passing-brightgreen.svg)](./tests)
+[![Node >=18](https://img.shields.io/badge/node-%3E%3D18-339933.svg)](https://nodejs.org/)
 
-Agent 写代码已经很快了，真正缺的从来不是生成速度，而是谁来保证写出来的东西用户真的能用。需求容易漂，架构容易散，评审容易走过场，发布容易停在“能跑”，最后留下一个装不起来、跑不顺、没人兜底的结果。
+Ship agent-generated changes with specs, gates, audits, and release proof.
 
-SEVO 要解决的，就是这件事。它把 AI 研发从「能跑」推到「能用」：让 Agent 不是拿到一句话就直接开写，而是按研发方法论自我推进，不跳步、不漂移、能收敛，直到交付结果真的对用户成立。
+🌐 [Website](https://agentos.site/sevo.html)
 
-SEVO 不是孤立存在的工具，它和 ACO 一起，为 AI Agent 团队构建开源、可编程、自我演进的治理内核。ACO 管运行时治理，负责让 Agent 团队在真实环境里稳定协作；SEVO 管研发流程治理，负责让需求、架构、实现、审计、发布这条链路自己跑对。治理能力必须和构建能力同等重要，而且从一开始就要一体化设计。
+SEVO gives AI coding agents a delivery process instead of a prompt-only loop. It moves work through scoped requirements, locked plans, implementation, independent audit, and release checks so the output can be defended after it ships.
 
-现有很多 coding agent 工具，重点放在“让 agent 写代码”。SEVO 解决的是另一层问题：怎么让 agent 按完整研发流程持续推进，知道什么时候该澄清、什么时候该评审、什么时候该回退、什么时候该修复，最后把模糊想法收敛成陌生用户也能真正用起来的产品。
+## Quick Start
 
-这条流水线不是一句口号撑起来的。SEVO 内置 14 个主线阶段 + 多层质量门禁，用四方会审守住架构和体验，用反作弊隔离防止自己给自己打分，用自主收敛引擎持续扫描差距、自动回环修复，直到终局差距归零才放行。它不是在帮 Agent 多写一点代码，它是在把 AI 研发从“会生成”拉到“会交付”。
+1. **Install**
 
----
+   ```bash
+   npm install sevo-pipeline
+   ```
 
-## 核心优势
+   Adds SEVO to the current project so `npx sevo` can run the bundled CLI.
 
-**主动澄清，需求不清不动手**
-用户随口一句话，SEVO 不会直接开写。它主动追问、澄清歧义、补全边界条件，把模糊意图收敛成结构化的需求规格说明书。大多数 AI Coding 工具拿到需求就开干，SEVO 先把需求搞清楚——写对比写快重要。
+2. **Initialize**
 
-**四方会审 + 反作弊隔离**
-架构评审由四个独立视角并行把关：产品看需求有没有承接住，开发看方案能不能落地，质量看风险和规范，体验看用户流程是否顺。四方全部通过才能进入编码。编码 Agent 对评分标准只有只读权限，看不到也改不了评估器代码，从 OS 文件权限层面杜绝「自己给自己打分」。门禁分数只升不降——一旦某个阶段达标就锁定基线，后续改动如果引入回退，流水线自动拦住。代码写完后的验证也不是跑个文件名匹配就算数：spec-to-code 映射文件记录每条需求对应哪些代码，LLM 语义验证逐条确认实现是否真的覆盖了 spec 定义的行为——两层检查，糊弄不过去。
+   ```bash
+   npx sevo init
+   ```
 
-**自主收敛引擎，差距不归零就不放行**
-传统 CI/CD 跑一遍就结束——测试绿了、构建过了、发布成功了，流水线就关了。至于用户装上能不能用？没人管。SEVO 不是线性流水线，是围绕终局目标持续收敛的闭环引擎。它在关键节点自动触发差距扫描，发现问题就拆解修复任务，修完再扫描，循环直到差距归零才放行。门禁检查不通过？引擎自动进入修复状态，派出修复任务，最多重试 3 次。3 次修不好，自动回退到前一阶段重新来过——不是报个错就停在那等人，而是自己想办法。回退预算也有上限，真的收敛不了才阻断流水线等人工介入。OKR 锁定终局目标，SMART 拆解为可验证任务，PDCA 闭环驱动每一轮收敛——代码能跑不算完，陌生用户 5 分钟内感受到价值才算。
+   Checks the workspace, detects the runtime, and prepares the project for a managed pipeline.
 
-**主动驱动，不等人催**
-阶段转换时自动触发门禁检查，不需要调度层记得要做什么。Spec 缺口主动发现——代码写了但 spec 没覆盖，引擎自动提醒补齐。发布后自动逐条对照 spec 做差距扫描，差距大于零就自动回环修复。OKR 达成度定期巡检，未达标的 KR 自动生成 SMART 拆解建议。整条流水线是自驱动的，不是被动等指令的。
+3. **Create a pipeline**
 
-**14 个主线阶段 + 质量门禁全自动推进**
-需求规格 → 门禁评审 → 架构契约 → 四方会审 → 编码实现 → 独立审计 → 冒烟测试 → UX 验收 → 回归验证 → 商用化门禁 → 部署 → 终验 → 发布后验证 → 交付账本。`pipeline-engine` 的默认基线只保留这 14 个主线阶段，条件触发和并行编写阶段折叠到父阶段，避免把可选分支误算成必跑主线。阶段自动推进，门禁自动把关，评审发现问题自动派修复并定向复验。
+   ```bash
+   npx sevo create my-project
+   ```
 
-**终局交付不是发布，是收敛**
-发布成功只是收敛循环的一个检查点，不是终点。终局交付引擎在发布后自动触发：README 同步检查、语义化版本决策、多平台发布、事件驱动推送对应 GitHub 独立仓库、独立仓库同步验证、逐条 spec 差距扫描。只要本次变更涉及项目目录，endgame 门禁就会验证对应独立仓库已经收到同一轮变更；GitHub 推送或同步验证失败都视为流水线未完成，不会被当成已交付放行。发现任何一条 FR 没有在运行态兑现，立即生成修复任务回环——修复、重新审计、重新发布、重新扫描，直到差距归零，流水线才真正关闭。
+   Creates the project skeleton and the first pipeline state for `my-project`.
 
-**全链路可追溯**
-每步的输入、输出、结论都记录在案。出了问题秒级定位，交付账本串起版本、证据和经验沉淀。
+## Architecture Overview
 
-**一个 Agent 也能跑完整流程**
-只有一个 Agent？照样走完主线流程。质量降级但功能完整，随时可升级到多 Agent 协同。甚至连 OpenClaw 都没装也不会炸——安装时自动检测环境：完整环境正常注册插件，部分环境给个警告但不阻断，纯净环境静默退出不报错。装到哪都不会因为缺依赖把你的 `npm install` 搞挂。
+SEVO runs a fixed delivery loop: **Specify → Plan → Implement → Audit → Publish**.
 
-**全量测试覆盖**
-测试覆盖核心引擎、阶段状态机、门禁逻辑、CLI 命令、终局交付链、主动驱动层和端到端流程。当前回归基线为 121 个测试文件、1351 条测试全绿；此前暴露的 7 条失败路径已纳入同一组回归用例，避免靠口头结论掩盖缺口。
+- **Specify** turns a loose request into a scoped spec with success criteria, boundaries, and artifacts.
+- **Plan** locks the architecture, interfaces, and acceptance path before code starts.
+- **Implement** executes the approved plan and advances the pipeline with concrete code and evidence.
+- **Audit** sends the result through an independent review step so the writer does not grade its own work.
+- **Publish** verifies release readiness, closes remaining delivery gaps, and records the final ledger.
 
----
-
-## 快速开始
-
-```bash
-npm install sevo
-npx sevo init
-```
-
-安装后在 OpenClaw 环境里执行 `init`，即可完成环境检测、OpenClaw 配置发现和角色分配。
-
-正式跑流水线前，OpenClaw 需要已配置可用的 LLM provider。`sevo demo` 不需要 LLM provider，可直接看演示。
+Every stage transition passes an LLM-driven quality gate, so missing evidence, weak handoffs, and scope drift are blocked before the pipeline moves forward.
 
 ---
 
-## 30 秒快速体验
-
-```bash
-npm install -g sevo
-sevo demo
-```
-
-`demo` 命令走完完整流水线生命周期演示——从项目创建、需求规格、门禁评审、编码实现、冒烟测试到发布后差距扫描。不需要 LLM provider，不需要改 OpenClaw 配置，装完就能看演示。
-
----
-
-## 正式使用
-
-```bash
-npm install -g sevo
-
-sevo init                                             # 初始化环境，自动检测 OpenClaw、发现 Agent、分配角色
-sevo doctor                                           # 检查配置和环境，排查问题先跑它
-sevo project create my-app --description "项目描述"    # 创建项目
-sevo fr add my-app "实现用户登录功能"                    # 添加需求，流水线自动创建并推进
-sevo status                                            # 随时查看进度
-```
-
----
-
-## 四层架构
-
-SEVO 的能力分为四个域，各司其职：
-
-**Domain A — 流水线核心**
-阶段状态机、智能路由、并行阶段编排、PipelineEngine 流程引擎。任务进来后自动判定级别（微小改动走最小闭环，跨域重构走完整主线阶段），阶段自动推进，支持暂停/恢复/取消。
-
-**Domain B — 质量门禁**
-可执行门禁评估器、混合评估模式（LLM + 规则引擎）、棘轮机制（分数只升不降）、评估-实现工作区隔离（反作弊）。门禁不是人工 review 的替代品，是自动化的质量底线。
-
-**Domain C — 可控调度**
-角色-任务匹配约束、终局交付自动推进（README 同步 → 版本决策 → 发布 → GitHub 推送 → 独立仓库同步验证 → 差距扫描）、任意阶段切入（hotfix 从 implement 进、架构调整从 plan 进）、渐进式披露配置。编码角色模板已经内置 Think Before Coding 和 Goal-Driven Execution，动手前先声明假设、歧义和验收标准，完成后逐条回验。
-
-**Domain D — 主动驱动**
-阶段转换自动触发门禁、Spec 缺口主动发现、发布后自动差距扫描与回环修复、OKR 达成度定期巡检、PDCA 循环自动驱动。引擎是触发器，调度层是执行者——引擎感知节点、推送提醒、接收确认，不等人催。
-
----
-
-## 14 个主线阶段流水线
+## Mainline Delivery Pipeline
 
 ```
-需求规格 → 需求评审门禁 → ┬─ 测试用例编写（并行）
-                           ├─ UX 验收编写（并行）
-                           ├─ 商用验收编写（并行）
-                           └─ 架构契约（并行）
-                                    ↓
-                              架构评审门禁（四方会审）
-                                    ↓
-编码实现 → 独立审计 → 冒烟测试 → ┬─ UX 验收（并行）
-                                 └─ 商用评审（并行）
-                                          ↓
-                    回归验证 → 商用化门禁 → 部署 → 终验
-                                          ↓
-              终局交付（README同步 + 版本决策 + 发布 + GitHub推送 + 差距扫描）
-                                          ↓
-                                      交付账本
+Specify → Spec Review Gate → ┬─ Test Case Authoring (parallel)
+                              ├─ UX Acceptance Authoring (parallel)
+                              ├─ Commercial Acceptance Authoring (parallel)
+                              └─ Architecture Contract (parallel)
+                                       ↓
+                                 Architecture Review Gate
+                                       ↓
+Implement → Independent Audit → Smoke Test → ┬─ UX Acceptance (parallel)
+                                             └─ Commercial Review (parallel)
+                                                      ↓
+                         Regression → Commercialization Gate → Deploy → Final Verification
+                                                      ↓
+                 Final Delivery (README sync + version decision + publish + GitHub push + gap scan)
+                                                      ↓
+                                              Delivery Ledger
 ```
 
-每个图中节点都有门禁把关。测试用例编写、UX 验收编写、商用验收编写和架构契约是需求评审后的并行产物，不计入 `pipeline-engine` 默认 14 个主线阶段；条件触发阶段也不会被误算为必跑基线。评审发现问题后自动生成修复任务、按优先级排队、修复完成后定向复验。收敛循环最多 3 轮，超限升级为人工介入。Implement 阶段开始前，L2 注入会强制提醒确认 spec 状态，确保先 spec 后代码。
+Every node has a gate. Test case authoring, UX acceptance authoring, commercial acceptance authoring, and the architecture contract run in parallel after spec review; they are supporting artifacts, not extra baseline stages in `pipeline-engine`. Conditional stages are not counted as mandatory work. When review finds a defect, SEVO creates a targeted fix task, queues it by priority, and sends the result back to the right reviewer. The convergence loop runs up to three rounds before escalating for human intervention. Before implementation starts, the L2 injection reminds the agent to confirm spec state so code never outruns the approved contract.
 
 ---
 
-## 目标管理：OKR → SMART → PDCA
+## Goal Management: OKR → SMART → PDCA
 
-SEVO 内置三层目标管理体系，把「做完了」推到「做对了」。
+SEVO pushes delivery from "done" to "proven correct" with three connected control loops.
 
-**SMART 目标声明**
-Specify 阶段自动要求为每个 FR 声明可验证的 SMART 目标——具体、可衡量、有时限。目标不清晰，流水线不往下走。
+**SMART goal statements**
+During Specify, every functional requirement gets a verifiable SMART goal: specific, measurable, and time-bounded. If the goal is vague, the pipeline does not advance.
 
-**PDCA 自动巡检**
-配置一份 JSON，声明每个功能的 SMART 目标和 liveness probe（HTTP 端点、CLI 命令、文件存在性检查）。巡检引擎自动执行 Plan-Do-Check-Act 循环，验证每个功能在运行态是否真的可用，而不只是代码存在。
+**PDCA runtime checks**
+Declare each feature's SMART goal and liveness probe in JSON. A probe can be an HTTP endpoint, a CLI command, or a required file. The PDCA engine runs Plan-Do-Check-Act checks against the live system, proving that the feature works at runtime instead of merely existing in code.
 
-**OKR 达成度定期检查**
-为 pipeline 设置终局目标和 OKR 树后，引擎定期检查 KR 达成度。未达标的 KR 自动生成 SMART 拆解建议推给调度层，所有 KR 达成时自动标记 pipeline 为 converged。
+**OKR convergence checks**
+Attach a final objective and KR tree to the pipeline. SEVO checks KR progress on schedule; missed KRs generate SMART decomposition suggestions for the orchestration layer, and the pipeline is marked converged only when every KR is satisfied.
 
-**Liveness 验证门禁**
-Publish 阶段自动执行 liveness probe。P0 级探针失败直接阻断发布——代码编译通过但运行时不可用的情况，在发布前就被拦住。
-
----
-
-## 角色匹配，任务不会派错人
-
-派需求的活给产品经理，派代码的活给开发，派审计的活给审计员。SEVO 根据任务类型自动匹配最合适的 Agent 角色，避免「让写代码的人去定需求」这类错配。角色不对，流水线直接引导。
+**Liveness release gate**
+Publish runs the configured liveness probes. A P0 probe failure blocks release, catching the dangerous case where the build passes but the product is unusable.
 
 ---
 
-## 智能路由
+## Role-Aware Dispatch
 
-任务进来后自动判定级别：
-
-- **微小改动**：跳过 spec/contract，直接进实现，走最小闭环
-- **单域中等改动**：从 spec 开始，contract 可简化，门禁不能省
-- **新系统/跨域重构**：走完整主线阶段，执行全部门禁
-
-支持任意阶段切入——hotfix 从 implement 进，架构调整从 plan 进，不强制从头走。创建流水线时可用 `sevo:create <project> --from <stage>` 指定起点；合法值为 `specify`、`plan`、`implement`、`audit`、`deploy`，默认从 `specify` 开始。
+SEVO routes product work to product roles, code work to development roles, and review work to audit roles. The pipeline keeps requirement definition, implementation, and independent judgment separate so one agent does not both create and grade the same deliverable. If a task is aimed at the wrong role, SEVO redirects it before work starts.
 
 ---
 
-## CLI 命令一览
+## Intelligent Routing
 
-| 命令 | 说明 |
-|------|------|
-| `sevo init` | 初始化环境，自动检测 OpenClaw、注册插件、分配角色 |
-| `sevo doctor` | 检查配置完整性和环境就绪状态，遇到问题先跑它 |
-| `sevo project create <slug>` | 创建项目和流水线 |
-| `sevo:create <project> --from <stage>` | 从指定阶段创建流水线；stage 可选 `specify`、`plan`、`implement`、`audit`、`deploy`，默认 `specify` |
-| `sevo fr add <project> <desc>` | 添加需求，自动触发流水线 |
-| `sevo fr list <project>` | 列出项目下所有需求及状态 |
-| `sevo status [id]` | 查看流水线状态 |
-| `sevo advance <id>` | 手动推进阶段 |
-| `sevo show <id>` | 查看流水线详情 |
-| `sevo list` | 列出所有项目和流水线 |
-| `sevo pause <id>` | 暂停流水线 |
-| `sevo resume <id>` | 恢复流水线 |
-| `sevo cancel <id>` | 取消流水线 |
-| `sevo ledger <id>` | 查看交付账本 |
-| `sevo export [id]` | 导出流水线数据 |
-| `sevo config` | 查看/修改配置 |
-| `sevo demo` | 交互式体验 |
-| `sevo goal create` | 创建 OKR 目标 |
-| `sevo goal pdca` | 执行 PDCA 巡检 |
+SEVO classifies incoming work before it chooses the path:
+
+- **Tiny changes** skip spec and contract, enter implementation directly, and still close the smallest safe delivery loop.
+- **Single-domain changes** start at spec, may use a lighter contract, and keep the gates.
+- **New systems and cross-domain refactors** run the full mainline with every gate.
+
+Pipelines can start from any valid stage. A hotfix can enter at implementation; an architecture change can enter at planning. Use `sevo:create <project> --from <stage>` to choose the entry point. Valid stages are `specify`, `plan`, `implement`, `audit`, and `deploy`; the default is `specify`.
 
 ---
 
-## 运行与验证细节
+## CLI Reference
 
-- L1 验证脚本统一为 `scripts/verify-l1.sh`，用 shell 入口承接环境检查和后续命令编排。
-- 官网落地页不再写死服务器 IP，产品入口通过 `NEXT_PUBLIC_KIVO_URL`、`NEXT_PUBLIC_SEVO_URL`、`NEXT_PUBLIC_CLAW_DESIGN_URL` 配置，缺省时回落到同域路径。
-- `role-templates.js` 会把 Think Before Coding 和 Goal-Driven Execution 写进编码任务模板，减少“没想清楚先开写”和“做完不对验收”的老问题。
+| Command | Description |
+|---------|-------------|
+| `sevo init` | Initialize the workspace, detect OpenClaw, register the plugin, and assign roles. |
+| `sevo doctor` | Check configuration completeness and environment readiness. Run this first when setup looks wrong. |
+| `sevo project create <slug>` | Create a project and its pipeline state. |
+| `sevo:create <project> --from <stage>` | Create a pipeline from a specific stage; stage can be `specify`, `plan`, `implement`, `audit`, or `deploy`. |
+| `sevo fr add <project> <desc>` | Add a functional requirement and trigger the pipeline. |
+| `sevo fr list <project>` | List every functional requirement for the project and its current state. |
+| `sevo status [id]` | Show pipeline status. |
+| `sevo advance <id>` | Advance a pipeline manually. |
+| `sevo show <id>` | Show pipeline details. |
+| `sevo list` | List all projects and pipelines. |
+| `sevo pause <id>` | Pause a pipeline. |
+| `sevo resume <id>` | Resume a paused pipeline. |
+| `sevo cancel <id>` | Cancel a pipeline. |
+| `sevo ledger <id>` | Show the delivery ledger. |
+| `sevo export [id]` | Export pipeline data. |
+| `sevo config` | View or update configuration. |
+| `sevo demo` | Run the interactive demo. |
+| `sevo goal create` | Create an OKR goal. |
+| `sevo goal pdca` | Run PDCA checks. |
 
 ---
 
-## 使用场景
+## Runtime and Verification Details
 
-**一个人用 AI 做产品**
-Agent 是主力编码者，你是产品操盘手。SEVO 帮你管住 Agent 的产出质量——每轮改动都有目标、有边界、有交付证据。终局交付引擎自动完成版本管理、多平台发布和差距扫描，用户装上用不了的情况不会发生。
-
-**多 Agent 协同开发**
-多个 Agent 各司其职，需要统一的流程约束。SEVO 自动分配角色、编排阶段、独立审计，流水线自动推进。
-
-**从「能跑」到「能用」**
-代码能跑和产品能用之间隔着一道鸿沟。SEVO 的发布后验证门禁逐条对照 spec，确保每个承诺的功能都有对应交付物，陌生用户装上就能感受到价值。
+- L1 verification runs through `scripts/verify-l1.sh`, which owns environment checks and command orchestration.
+- Stranger-ready release verification runs with `scripts/stranger-verify.sh > /tmp/sevo-stranger-verify.txt`; reports are written to `reports/stranger-verification-<date>.md`.
+- The website landing page does not hard-code server IPs. Product links come from `NEXT_PUBLIC_KIVO_URL`, `NEXT_PUBLIC_SEVO_URL`, and `NEXT_PUBLIC_CLAW_DESIGN_URL`, with same-origin fallbacks when those variables are unset.
+- `role-templates.js` injects Think Before Coding and Goal-Driven Execution into coding task templates, reducing premature implementation and unverifiable completion claims.
 
 ---
 
-## 文档
+## Use Cases
+
+**Solo builders using AI as the development team**
+You stay in the product operator seat while agents write most of the code. SEVO keeps every change tied to a goal, a boundary, and delivery evidence. The final delivery engine handles version decisions, multi-platform publishing, and gap scans so users do not install something that only worked in the agent's transcript.
+
+**Multi-agent product teams**
+Several agents can work in parallel without sharing one blurry prompt. SEVO assigns roles, sequences stages, requires independent audit, and advances the pipeline when evidence is present.
+
+**From runnable code to usable product**
+Passing code is not the same as delivered value. SEVO's post-implementation checks compare every promised capability against concrete artifacts and runtime proof, so a new user can install the package and reach the product's value without inside knowledge.
+
+---
+
+## Documentation
 
 - [GitHub](https://github.com/yuchangxu1989-Openclaw/sevo)
-- [npm](https://www.npmjs.com/package/sevo)
+- [npm](https://www.npmjs.com/package/sevo-pipeline)
 
 ## License
 

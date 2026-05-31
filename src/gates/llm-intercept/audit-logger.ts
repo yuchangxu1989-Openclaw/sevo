@@ -7,7 +7,7 @@ import type { InterceptAuditEntry } from './types.js';
  *   1. SEVO_LLM_GATE_AUDIT_LOG env var (explicit override)
  *   2. <SEVO_PROJECTS_DIR or process.cwd()>/.sevo/logs/sevo-llm-gate-audit.jsonl
  *
- * The legacy hard-coded `/root/.openclaw/workspace/logs/...` was a true leak that
+ * The legacy hard-coded maintainer workspace log path was a true leak that
  * blocked stranger users from running the LLM intercept gate (permission denied
  * outside the maintainer's host).  We resolve lazily so test/CI fixtures can
  * mutate env before the first call.

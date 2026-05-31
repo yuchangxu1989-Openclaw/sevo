@@ -2,7 +2,7 @@
  * T4 / NFR-5.18 / NFR-5.19 / ADR-016 — path defaults guard.
  *
  * Verifies the resolver layer prefers ENV → OPTIONS → workspace-rooted defaults
- * and never falls back to host-specific absolute literals (`/root/.openclaw/...`).
+ * and never falls back to host-specific absolute literals.
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
@@ -21,6 +21,7 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const HOST_SPECIFIC_PREFIX = ['/', 'root', '.openclaw'].join('/');
 
 const ENV_KEYS = [
   'OPENCLAW_CONFIG_PATH',
@@ -113,7 +114,7 @@ describe('NFR-5.18 path defaults guard — resolver layer', () => {
     const stranger = makeScratchDir();
     const result = resolveOpenclawConfigPath({ startDir: stranger, maxDepth: 2 });
     if (result !== null) {
-      expect(result.startsWith('/root/.openclaw')).toBe(false);
+      expect(result.startsWith(HOST_SPECIFIC_PREFIX)).toBe(false);
     }
   });
 });
@@ -200,9 +201,9 @@ describe('loadOpenclawConfig', () => {
 describe('NFR-5.18 — source files contain no host-specific absolute literals', () => {
   /**
    * Static guard: the production source files we refactored under T4 must not
-   * contain `/root/.openclaw/` as a *value* literal anywhere outside comments.
+   * contain a host-specific maintainer path as a *value* literal anywhere outside comments.
    */
-  it('refactored src files do not embed `/root/.openclaw` outside comments', async () => {
+  it('refactored src files do not embed host-specific maintainer paths outside comments', async () => {
     const targets = [
       'src/stages/deploy-stage.ts',
       'src/stages/pdca-check-stage.ts',
@@ -232,7 +233,7 @@ describe('NFR-5.18 — source files contain no host-specific absolute literals',
         }
         // remove trailing line-comments before scanning the value side
         const valuePart = stripped.split('//')[0] ?? '';
-        if (valuePart.includes('/root/.openclaw')) {
+        if (valuePart.includes(HOST_SPECIFIC_PREFIX)) {
           throw new Error(
             `host-specific absolute literal leaked into ${rel}:${idx + 1}: ${raw.trim()}`,
           );

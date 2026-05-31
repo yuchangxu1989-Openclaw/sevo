@@ -85,13 +85,15 @@ describe('CLI PipelineEngine (engine/pipeline-engine.ts)', () => {
     await engine.advanceAsync('demo2');
 
     const demoState = engine.load('demo');
-    expect(demoState.status).toBe('completed');
-    expect(demoState.currentStage).toBeNull();
-    expect(demoState.history).toHaveLength(14);
+    expect(demoState.status).toBe('blocked');
+    expect(demoState.currentStage).toBe(STAGE_IDS.README);
+    expect(demoState.history).toHaveLength(CANONICAL_14_STAGES.length - 1);
     expect(demoState.description).toBe('测试描述');
-    for (const sid of CANONICAL_14_STAGES) {
+    for (const sid of CANONICAL_14_STAGES.filter((stageId) => stageId !== STAGE_IDS.README && stageId !== STAGE_IDS.LEDGER)) {
       expect(demoState.stages[sid]?.status).toBe('passed');
     }
+    expect(demoState.stages[STAGE_IDS.README]?.status).toBe('gate_blocked');
+    expect(demoState.stages[STAGE_IDS.LEDGER]?.status).toBe('pending');
 
     const demoSpec = fs.readFileSync(path.join(base, 'demo', 'docs', 'product-requirements.md'), 'utf-8');
     const demo2Spec = fs.readFileSync(path.join(base, 'demo2', 'docs', 'product-requirements.md'), 'utf-8');

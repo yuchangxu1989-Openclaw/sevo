@@ -20,6 +20,12 @@ const REQUIRED_RULE_IDS = [
   'fr-traceability',
 ];
 
+const KIVO_SPEC_FIXTURE = path.resolve(
+  import.meta.dirname,
+  'fixtures',
+  'kivo-product-requirements.md',
+);
+
 const passLlm = {
   async chat(_messages: ChatMessage[]): Promise<string> {
     return '{"pass":true,"reasons":[]}';
@@ -68,7 +74,7 @@ function specArtifact(filePath: string): ArtifactRef {
 function copyKivoSpecFixture(): string {
   const dir = mkdtempSync(path.join(tmpdir(), 'sevo-kivo-spec-'));
   const target = path.join(dir, 'product-requirements.md');
-  copyFileSync('/root/.openclaw/workspace/projects/kivo/docs/product-requirements.md', target);
+  copyFileSync(KIVO_SPEC_FIXTURE, target);
   return target;
 }
 

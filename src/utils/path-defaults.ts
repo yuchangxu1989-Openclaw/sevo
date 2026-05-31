@@ -5,7 +5,7 @@ import * as path from 'node:path';
  * NFR-5.18 / NFR-5.19 / ADR-016 路径默认值守门工具。
  *
  * 这里集中处理 openclaw.json 的路径解析，让所有调用方只走 ENV > 工件根 > findUpward
- * 三步，不再各自硬编码 `/root/.openclaw/openclaw.json`。
+ * 三步，不再各自硬编码维护者机器上的 openclaw.json。
  */
 
 /** 引用宿主能力的 env 名（沿用宿主既有命名）。 */

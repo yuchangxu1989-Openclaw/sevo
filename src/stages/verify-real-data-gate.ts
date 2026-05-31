@@ -24,8 +24,7 @@ import type {
 } from './verify-real-data-types.js';
 import type { ArtifactRef } from '../types/index.js';
 
-// Default material directory for KIVO probability materials
-const DEFAULT_MATERIAL_DIR = '/root/.openclaw/workspace/projects/kivo/inbound/probability/';
+const DEFAULT_MATERIAL_DIR = path.resolve(process.cwd(), 'tests', 'fixtures', 'real-materials');
 const DEFAULT_DB_ISSUE_THRESHOLD = 0.1;
 const STALE_DATA_WINDOW_MS = 24 * 60 * 60 * 1000;
 const TEST_VALUE_PATTERN =
@@ -181,6 +180,9 @@ export class VerifyWithRealDataGate {
     ctx: StageHandlerContext,
   ): Promise<MaterialProcessResult> {
     const start = Date.now();
+    const reportPath = path.relative(ctx.projectRoot, materialPath).startsWith('..')
+      ? path.relative(process.cwd(), materialPath)
+      : path.relative(ctx.projectRoot, materialPath);
 
     try {
       // Attempt to process the material through the SEVO scan pipeline
@@ -213,7 +215,7 @@ Respond with JSON: { "processable": true/false, "summary": "brief description", 
         const isProcessable = response.includes('"processable": true') || response.includes('"processable":true');
 
         return {
-          filePath: materialPath,
+          filePath: reportPath,
           success: isProcessable,
           output: response.slice(0, 500),
           durationMs,
@@ -226,7 +228,7 @@ Respond with JSON: { "processable": true/false, "summary": "brief description", 
       const isValid = content.length > 50; // Minimum meaningful content
 
       return {
-        filePath: materialPath,
+        filePath: reportPath,
         success: isValid,
         output: `Deterministic check: ${content.length} chars, valid=${isValid}`,
         durationMs,
@@ -234,7 +236,7 @@ Respond with JSON: { "processable": true/false, "summary": "brief description", 
       };
     } catch (err) {
       return {
-        filePath: materialPath,
+        filePath: reportPath,
         success: false,
         output: '',
         error: (err as Error).message,

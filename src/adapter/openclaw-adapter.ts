@@ -99,7 +99,7 @@ export class OpenClawAdapter implements SevoHostAdapter, PublishAdapter {
     this.projectConfigPath = options.projectConfigPath;
     this.notifications = options.notifications;
     this.requirementAnalyzer = options.requirementAnalyzer;
-    // NFR-5.18 / NFR-5.19: 不再硬编码 `/root/.openclaw/workspace/scripts/publish-release.sh`。
+    // NFR-5.18 / NFR-5.19: 不再硬编码维护者 workspace 下的 publish-release.sh。
     // 顺序：options.publishScript > env `SEVO_PUBLISH_SCRIPT` > <workspaceRoot>/scripts/publish-release.sh
     // （workspaceRoot 已在 上面设为 options.workspaceRoot ?? options.projectRoot）。
     const publishScriptEnv = process.env.SEVO_PUBLISH_SCRIPT;
@@ -212,6 +212,7 @@ export class OpenClawAdapter implements SevoHostAdapter, PublishAdapter {
       `Spec: ${request.specPath}`,
       `Missing FRs: ${request.missingFrs.join(', ') || 'none'}`,
       'Update README so changed FR capabilities are clearly documented for first-time users.',
+      'Mandatory standard: projects/sevo/docs/readme-standard.md',
     ].join('\n');
 
     const response = await this.sessionsSpawnClient.spawnSession({

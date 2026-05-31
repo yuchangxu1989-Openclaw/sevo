@@ -255,4 +255,22 @@ describe('buildTriggerStagePrompt', () => {
       fs.rmSync(root, { recursive: true, force: true });
     }
   });
+  it('injects readme stage standard guidance for managed readme stages', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sevo-prompt-'));
+    try {
+      const projectRoot = path.join(root, 'projects', 'kivo');
+      fs.mkdirSync(path.join(projectRoot, 'docs'), { recursive: true });
+      fs.writeFileSync(path.join(projectRoot, 'docs', 'product-requirements.md'), '# Spec');
+
+      const prompt = buildTriggerStagePrompt('pipe-kivo-001', 'readme', {
+        workspaceRoot: root,
+        projectRoot,
+      });
+
+      expect(prompt).toContain('[SEVO Stage Standards — readme]');
+      expect(prompt).toContain('projects/sevo/docs/readme-standard.md');
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

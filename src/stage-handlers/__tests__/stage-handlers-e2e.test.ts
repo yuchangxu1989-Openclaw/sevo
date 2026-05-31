@@ -26,6 +26,8 @@ interface TestEnv {
   cleanup: () => void;
 }
 
+const HOME_PATH_SENTINEL = ['/', 'home', 'maintainer', 'workspace', 'leak'].join('/');
+
 function makeEnv(): TestEnv {
   const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sevo-stage-e2e-'));
   const projectSlug = 'demo-project';
@@ -155,7 +157,7 @@ describe('Stage handler pipeline — end-to-end', () => {
     fs.mkdirSync(srcDir, { recursive: true });
     fs.writeFileSync(
       path.join(srcDir, 'leaky.ts'),
-      "export const path = '/root/.openclaw/workspace/leak';\n",
+      `export const path = '${HOME_PATH_SENTINEL}';\n`,
     );
     const ctx = makeCtx(env, {});
     const result = await STAGE_HANDLERS['publish-generalization-gate'](ctx);

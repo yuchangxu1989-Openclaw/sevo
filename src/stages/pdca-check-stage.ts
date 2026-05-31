@@ -18,7 +18,7 @@ import type {
 } from './pdca-check-types.js';
 import { resolveOpenclawConfigPath } from '../utils/path-defaults.js';
 
-// NFR-5.18: 不再硬编码 `/root/.openclaw/openclaw.json`。
+// NFR-5.18: 不再硬编码维护者机器上的 openclaw.json。
 // configPath 缺省时通过 ENV (`OPENCLAW_CONFIG_PATH` / `OPENCLAW_CONFIG`) 或 cwd 向上 findUpward 解析。
 function defaultOpenclawConfigPath(): string | null {
   return resolveOpenclawConfigPath();

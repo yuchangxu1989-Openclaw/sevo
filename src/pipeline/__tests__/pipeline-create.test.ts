@@ -17,6 +17,7 @@ import * as path from 'node:path';
 import { createPipelineInstance, type InstanceStore } from '../pipeline-create.js';
 import { generateInstanceId, isValidInstanceId } from '../instance-id.js';
 import { initProjectDirectory } from '../directory-init.js';
+import { ALL_STAGES } from '../../constants.js';
 import type {
   PipelineInstance,
   PipelineCreateRequest,
@@ -356,7 +357,7 @@ describe('createPipelineInstance', () => {
     if (!result.ok) return;
 
     expect(result.value.routingResult.level).toBe('L2+');
-    expect(result.value.routingResult.requiredStages).toHaveLength(21);
+    expect(result.value.routingResult.requiredStages).toHaveLength(ALL_STAGES.length);
     expect(result.value.routingResult.skippedStages).toHaveLength(0);
   });
 

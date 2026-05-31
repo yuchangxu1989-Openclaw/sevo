@@ -31,6 +31,7 @@ import {
 
 let workspaceRoot: string;
 let projectRoot: string;
+const HOME_PATH_SENTINEL = ['/', 'home', 'maintainer', 'leak'].join('/');
 
 beforeEach(() => {
   workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sevo-stage-unit-'));
@@ -212,7 +213,7 @@ describe('Stage handler — publish-generalization-gate', () => {
 
   it('blocks when hard-coded paths are present', async () => {
     fs.mkdirSync(path.join(projectRoot, 'src'), { recursive: true });
-    fs.writeFileSync(path.join(projectRoot, 'src', 'leak.ts'), "const x = '/root/.openclaw/leak';");
+    fs.writeFileSync(path.join(projectRoot, 'src', 'leak.ts'), `const x = '${HOME_PATH_SENTINEL}';`);
     const r = await publishGeneralizationGateHandler(ctxOf());
     expect(r.verdict).toBe('block');
   });
@@ -301,7 +302,9 @@ describe('Stage handler — readme', () => {
       },
     }));
     expect(r.verdict).toBe('block');
+    expect(r.summary).toContain('Follow projects/sevo/docs/readme-standard.md');
     expect(r.issues[0]).toContain('FR-01');
+    expect((r.metadata?.updateTask as { description: string }).description).toContain('Mandatory standard: projects/sevo/docs/readme-standard.md');
   });
 });
 

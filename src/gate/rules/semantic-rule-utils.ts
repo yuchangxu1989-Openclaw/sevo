@@ -217,7 +217,7 @@ function loadLlmConfig(options?: SemanticRuleOptions): LLMProviderConfig {
     return explicit;
   }
 
-  // NFR-5.18: 不再硬编码 `/root/.openclaw/openclaw.json`。ENV > findUpward > 返回 explicit。
+  // NFR-5.18: 不再硬编码维护者机器上的 openclaw.json。ENV > findUpward > 返回 explicit。
   const configPath = resolveOpenclawConfigPath();
   if (!configPath || !existsSync(configPath)) {
     return explicit;

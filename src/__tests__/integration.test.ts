@@ -228,6 +228,7 @@ describe('SevoOrchestrator — integration', () => {
       sevo.advanceStage(pid, passStage('publish-generalization-gate'));
       sevo.advanceStage(pid, passStage('deploy'));
       sevo.advanceStage(pid, passStage('verify'));
+      sevo.advanceStage(pid, passStage('readme'));
       sevo.advanceStage(pid, passStage('post-release-validation'));
       sevo.advanceStage(pid, passStage('clean-install-verification'));
       sevo.advanceStage(pid, passStage('ledger'));

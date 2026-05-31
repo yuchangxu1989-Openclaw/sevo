@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { route } from '../router.js';
 import { classifyLevel } from '../level-classifier.js';
 import { DEFAULT_SDD_GRAPH } from '../stage-graph.js';
+import { ALL_STAGES, L0_REQUIRED_STAGES, L0_SKIP_REASONS } from '../../constants.js';
 import type { PipelineTask, TaskScope } from '../../types/index.js';
 
 // ── helpers ─────────────────────────────────────────────────────
@@ -187,7 +188,7 @@ describe('route', () => {
       if (!result.ok) return;
 
       expect(result.value.level).toBe('L1');
-      expect(result.value.requiredStages).toHaveLength(20);
+      expect(result.value.requiredStages).toHaveLength(ALL_STAGES.length - 1);
       expect(result.value.requiredStages).toContain('ux-interaction-design');
       expect(result.value.skippedStages).toHaveLength(1);
       expect(result.value.skippedStages[0]?.stage).toBe('architecture-design');
@@ -200,7 +201,7 @@ describe('route', () => {
       if (!result.ok) return;
 
       expect(result.value.level).toBe('L2+');
-      expect(result.value.requiredStages).toHaveLength(21);
+      expect(result.value.requiredStages).toHaveLength(ALL_STAGES.length);
       expect(result.value.requiredStages).toContain('ux-interaction-design');
       expect(result.value.requiredStages).toContain('architecture-design');
       expect(result.value.skippedStages).toHaveLength(0);
@@ -244,7 +245,11 @@ describe('route', () => {
         // required + skipped = all stages
         const total =
           result.value.requiredStages.length + result.value.skippedStages.length;
-        expect(total).toBe(21);
+        expect(total).toBe(
+          result.value.level === 'L0'
+            ? L0_REQUIRED_STAGES.size + Object.keys(L0_SKIP_REASONS).length
+            : ALL_STAGES.length,
+        );
       }
     });
   });
