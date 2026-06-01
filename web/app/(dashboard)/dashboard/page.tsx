@@ -7,28 +7,6 @@ import { DataSourceBadge } from "@/components/ui/data-source-badge";
 import { EmptyState, ErrorState, PageSkeleton, RetryAction } from "@/components/ui/page-states";
 import { PageHeader } from "@/components/ui/page-header";
 import { AlertTriangle, CheckCircle2, Clock3, GitBranch, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
-import type { StageId } from "@/types";
-
-const STAGES: Array<{ id: StageId; label: string; short: string }> = [
-  { id: "spec", label: "需求澄清", short: "Spec" },
-  { id: "spec-review-gate", label: "需求评审", short: "Gate" },
-  { id: "test-case-authoring", label: "测试设计", short: "Test" },
-  { id: "contract", label: "方案规划", short: "Plan" },
-  { id: "contract-review-gate", label: "方案评审", short: "Gate" },
-  { id: "implement", label: "执行落地", short: "Code" },
-  { id: "review", label: "质量复核", short: "Review" },
-  { id: "regression", label: "回归验证", short: "Regress" },
-  { id: "deploy", label: "部署发布", short: "Deploy" },
-  { id: "verify", label: "结果确认", short: "Verify" },
-  { id: "ledger", label: "交付账本", short: "Ledger" },
-];
-
-const MACRO_TO_STAGE: Record<"specify" | "plan" | "implement" | "review", StageId[]> = {
-  specify: ["spec", "spec-review-gate"],
-  plan: ["test-case-authoring", "contract", "contract-review-gate"],
-  implement: ["implement"],
-  review: ["review", "regression", "deploy", "verify", "ledger"],
-};
 
 function formatHealthSummary(healthScore: number, blockedFrs: number, failedFrs: number, riskItems: number) {
   if (failedFrs > 0) return `${failedFrs} 个 FR 失败待恢复，先把红灯灭掉。`;
@@ -66,14 +44,7 @@ export default function DashboardPage() {
 
   const completionRate = summary.totalFrs > 0 ? Math.round((summary.completedFrs / summary.totalFrs) * 100) : 0;
   const riskCount = summary.failedFrs + summary.blockedFrs + (todos?.total ?? 0);
-  const stageCounts = STAGES.map((stage) => {
-    const macro = Object.entries(MACRO_TO_STAGE).find(([, stages]) => stages.includes(stage.id))?.[0] ?? "review";
-    const macroTotal = summary.macroStageDistribution[macro as keyof typeof summary.macroStageDistribution] ?? 0;
-    const macroStages = MACRO_TO_STAGE[macro as keyof typeof MACRO_TO_STAGE] ?? MACRO_TO_STAGE.review;
-    const count = Math.ceil(macroTotal / Math.max(1, macroStages.length));
-    const isRisk = (stage.id === "implement" && summary.failedFrs > 0) || (stage.id.includes("gate") && (todos?.items.some((item) => item.type === "gate") ?? false));
-    return { ...stage, count, isRisk };
-  });
+  const stageCounts = summary.stageCounts;
 
   const riskItems = todos?.items ?? [];
 
@@ -139,17 +110,17 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto pb-2 md:overflow-visible">
-            <div className="grid min-w-[980px] grid-cols-11 gap-3 md:min-w-0 max-md:grid-cols-1 max-md:min-w-0">
+            <div className="grid min-w-full grid-cols-[repeat(auto-fit,minmax(96px,1fr))] gap-3 max-md:grid-cols-1 max-md:min-w-0">
               {stageCounts.map((stage, index) => (
-                <Link key={stage.id} href={`/frs?stage=${stage.id}`} className="group relative">
+                <Link key={stage.stageId} href={`/frs?stage=${stage.stageId}`} className="group relative">
                   {index < stageCounts.length - 1 && <span className="absolute left-[calc(100%-2px)] top-9 z-0 h-px w-5 bg-slate-100 max-md:left-4 max-md:top-[calc(100%-2px)] max-md:h-5 max-md:w-px" />}
-                  <div className={`relative z-10 min-h-[118px] rounded-2xl border p-3 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-xl ${stage.isRisk ? "border-amber-400/30 bg-amber-400/10 shadow-lg shadow-amber-950/20" : stage.count > 0 ? "border-blue-400/20 bg-blue-400/10 shadow-slate-200/60" : "border-slate-200 bg-white"}`}>
-                    <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ${stage.isRisk ? "bg-amber-400/20 text-amber-700" : stage.count > 0 ? "bg-blue-400/20 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
+                  <div className={`relative z-10 min-h-[118px] rounded-2xl border p-3 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-xl ${stage.hasRisk ? "border-amber-400/30 bg-amber-400/10 shadow-lg shadow-amber-950/20" : stage.count > 0 ? "border-blue-400/20 bg-blue-400/10 shadow-slate-200/60" : "border-slate-200 bg-white"}`}>
+                    <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ${stage.hasRisk ? "bg-amber-400/20 text-amber-700" : stage.count > 0 ? "bg-blue-400/20 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
                       {stage.count}
                     </div>
                     <p className="text-xs font-semibold text-slate-900">{stage.label}</p>
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-slate-600">{stage.short}</p>
-                    {stage.isRisk && <p className="mt-2 text-[10px] font-semibold text-amber-700">需处理</p>}
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-slate-600">{stage.shortLabel}</p>
+                    {stage.hasRisk && <p className="mt-2 text-[10px] font-semibold text-amber-700">需处理</p>}
                   </div>
                 </Link>
               ))}

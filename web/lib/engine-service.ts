@@ -9,6 +9,7 @@ import type {
   ClarificationThreadView,
   CommandRequest,
   CrossProjectAnalyticsView,
+  DashboardStageCount,
   DashboardSummary,
   DeliverableIndexItem,
   DeliverableIndexView,
@@ -583,6 +584,20 @@ export function getPipelineDetail(id: string): PipelineInstance | null {
 
 export function getPipelineEvents(id: string): PipelineEvent[] {
   const pi = getPipelineDetail(id) ?? undefined;
+  return readEventsForPipeline(id, pi);
+}
+
+export function getEventStreamEvents(): PipelineEvent[] {
+  const pipelineIds = [...new Set([...getPipelines().map((pipeline) => pipeline.instanceId), ...listPipelineStateIds()])];
+  return pipelineIds
+    .flatMap((id) => {
+      const filePath = pipelineEventsPath(id);
+      return filePath ? readJsonl(filePath) : [];
+    })
+    .sort((a, b) => String(a.timestamp ?? a.occurredAt ?? '').localeCompare(String(b.timestamp ?? b.occurredAt ?? '')));
+}
+
+function readEventsForPipeline(id: string, pi?: PipelineInstance): PipelineEvent[] {
   const local = pipelineEventsPath(id);
   const localEvents = local ? readJsonl(local) : [];
   const globalEvents = allEvents().filter((event) => eventMatchesPipeline(event, id, pi));
@@ -622,6 +637,7 @@ export function getDashboardSummary(): DashboardSummary {
   const failedFrs = pipelines.filter((pi) => pi.status === 'failed').length;
   const total = pipelines.length;
   const healthScore = total > 0 ? Math.round(((total - blockedFrs - failedFrs) / total) * 100) : 100;
+  const stageCounts = dashboardStageCounts(pipelines);
 
   return {
     totalFrs: total,
@@ -631,6 +647,7 @@ export function getDashboardSummary(): DashboardSummary {
     blockedFrs,
     completedFrs,
     failedFrs,
+    stageCounts,
     dataSources: {
       systemCall: { type: 'runtime', description: '读取 SEVO 流水线状态文件' },
       pipelineStages: { type: 'runtime', description: '读取 PipelineEngine state.json 阶段状态' },
@@ -644,6 +661,26 @@ export function getDashboardSummary(): DashboardSummary {
       blockedFrs: { percent: 0, direction: 'flat', current: blockedFrs, previous: blockedFrs },
     },
   };
+}
+
+function dashboardStageCounts(pipelines: PipelineInstance[]): DashboardStageCount[] {
+  const stageIds = [...new Set(pipelines.flatMap((pipeline) => pipeline.routingResult.requiredStages))];
+  const sourceStageIds = stageIds.length > 0 ? stageIds : [...new Set(pipelines.flatMap((pipeline) => pipeline.stages.map((stage) => stage.stageId)))];
+
+  return sourceStageIds.map((stageId) => {
+    const count = pipelines.filter((pipeline) => pipeline.currentStage === stageId).length;
+    const macroStage = macroStageOf(stageId, pipelines.find((pipeline) => pipeline.routingResult.requiredStages.includes(stageId)));
+    return {
+      stageId,
+      label: stageLabelOf(stageId),
+      shortLabel: stageId,
+      count,
+      macroStage,
+      hasRisk: pipelines.some((pipeline) =>
+        pipeline.stages.some((stage) => stage.stageId === stageId && (stage.status === 'failed' || stage.status === 'blocked' || stage.status === 'clarification-blocked')),
+      ),
+    };
+  });
 }
 
 export function listFrs(params: {

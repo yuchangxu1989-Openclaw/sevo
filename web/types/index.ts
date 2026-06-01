@@ -259,6 +259,7 @@ export interface DashboardSummary {
   blockedFrs: number;
   completedFrs: number;
   failedFrs: number;
+  stageCounts: DashboardStageCount[];
   dataSources: {
     systemCall: DashboardDataSourceMeta;
     pipelineStages: DashboardDataSourceMeta;
@@ -729,4 +730,13 @@ export interface SseEvent {
   occurredAt: string;
   traceId: string;
   payload: Record<string, unknown>;
+}
+
+export interface DashboardStageCount {
+  stageId: StageId;
+  label: string;
+  shortLabel: string;
+  count: number;
+  macroStage: UserMacroStage;
+  hasRisk: boolean;
 }

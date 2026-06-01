@@ -7,28 +7,22 @@
  * Event topics: project.updated, fr.updated, todo.updated, notification.created, health.changed
  */
 
-import { randomUUID } from 'crypto';
+import { getEventStreamEvents } from '@/lib/engine-service';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const encoder = new TextEncoder();
+  const events = getEventStreamEvents();
   const abortController = new AbortController();
 
   const stream = new ReadableStream({
     start(controller) {
-      // Send initial connection event
-      const connectEvent = formatSseEvent('connected', {
-        eventType: 'connected' as const,
-        targetType: 'system',
-        targetId: 'sevo',
-        occurredAt: new Date().toISOString(),
-        traceId: `trc_${randomUUID().slice(0, 12)}`,
-        payload: { message: 'SSE connection established' },
-      });
-      controller.enqueue(encoder.encode(connectEvent));
+      for (const data of events) {
+        const eventType = String(data.eventType ?? data.type ?? 'runtime.event');
+        controller.enqueue(encoder.encode(formatSseEvent(eventType, data)));
+      }
 
-      // Heartbeat every 30 seconds
       const heartbeat = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(': heartbeat\n\n'));
@@ -37,27 +31,8 @@ export async function GET() {
         }
       }, 30_000);
 
-      // Example: periodic mock event every 60s (in production, engine events drive this)
-      const mockEvents = setInterval(() => {
-        try {
-          const event = formatSseEvent('fr.updated', {
-            eventType: 'fr.updated' as const,
-            targetType: 'fr',
-            targetId: 'pi-sevo-20260420-001',
-            occurredAt: new Date().toISOString(),
-            traceId: `trc_${randomUUID().slice(0, 12)}`,
-            payload: { stage: 'contract', status: 'active' },
-          });
-          controller.enqueue(encoder.encode(event));
-        } catch {
-          clearInterval(mockEvents);
-        }
-      }, 60_000);
-
-      // Cleanup on abort signal
       abortController.signal.addEventListener('abort', () => {
         clearInterval(heartbeat);
-        clearInterval(mockEvents);
       });
     },
     cancel() {

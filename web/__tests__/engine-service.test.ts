@@ -11,6 +11,7 @@ import {
   listProjects,
   getDashboardSummary,
   getFrMatrix,
+  getEventStreamEvents,
 } from '../lib/engine-service';
 
 describe('engine-service', () => {
@@ -138,6 +139,24 @@ describe('engine-service', () => {
       expect(typeof summary.healthScore).toBe('number');
       expect(summary.healthScore).toBeGreaterThanOrEqual(0);
       expect(summary.healthScore).toBeLessThanOrEqual(100);
+      expect(Array.isArray(summary.stageCounts)).toBe(true);
+      for (const stage of summary.stageCounts) {
+        expect(stage.stageId).toBeTruthy();
+        expect(stage.label).toBeTruthy();
+        expect(stage.shortLabel).toBeTruthy();
+        expect(typeof stage.count).toBe('number');
+        expect(typeof stage.hasRisk).toBe('boolean');
+      }
+    });
+  });
+
+  describe('getEventStreamEvents', () => {
+    it('returns real event entries or an empty array', () => {
+      const events = getEventStreamEvents();
+      expect(Array.isArray(events)).toBe(true);
+      for (const event of events) {
+        expect(typeof event).toBe('object');
+      }
     });
   });
 
