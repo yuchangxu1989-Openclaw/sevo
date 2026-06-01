@@ -1,5 +1,7 @@
 # SEVO
 
+![SEVO Dashboard](docs/sevo-dashboard-screenshot.jpg)
+
 SEVO 是一个 Spec-to-Runtime Evidence Pipeline。
 
 它解决的不是“代码怎么更快生成”，而是另一件更难的事：  
