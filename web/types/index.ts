@@ -5,52 +5,13 @@
 
 // ── Stage identifiers (arc42 §5.3) ─────────────────────────────
 
-export type StageId =
-  | 'spec'
-  | 'spec-review-gate'
-  | 'test-case-authoring'
-  | 'contract'
-  | 'contract-review-gate'
-  | 'implement'
-  | 'review'
-  | 'regression'
-  | 'deploy'
-  | 'verify'
-  | 'ledger';
+import { resolveStageLabel } from '@/lib/stage-labels';
+
+// StageId is an open string: the authoritative stage queue comes from real
+// pipeline state, never a fixed Web-side enumeration (AC-45.3).
+export type StageId = string;
 
 export type UserMacroStage = 'specify' | 'plan' | 'implement' | 'review';
-
-/**
- * 11 内核细阶段 → 4 用户宏阶段的唯一映射 (arc42 §5.3 / §8.6.4)。
- * 所有 Web 页面、通知中心、FR × 阶段矩阵和统计口径必须引用此映射。
- */
-export const USER_MACRO_STAGE_MAP: Record<StageId, UserMacroStage> = {
-  'spec': 'specify',
-  'spec-review-gate': 'specify',
-  'test-case-authoring': 'plan',
-  'contract': 'plan',
-  'contract-review-gate': 'plan',
-  'implement': 'implement',
-  'review': 'review',
-  'regression': 'review',
-  'deploy': 'review',
-  'verify': 'review',
-  'ledger': 'review',
-} as const;
-
-export const STAGE_DISPLAY_LABELS: Record<StageId, string> = {
-  spec: '需求澄清',
-  'spec-review-gate': '需求评审',
-  'test-case-authoring': '测试设计',
-  contract: '方案规划',
-  'contract-review-gate': '方案评审',
-  implement: '执行落地',
-  review: '质量复核',
-  regression: '回归验证',
-  deploy: '部署发布',
-  verify: '结果确认',
-  ledger: '交付账本',
-} as const;
 
 export const USER_MACRO_STAGE_LABELS: Record<UserMacroStage, string> = {
   specify: '需求澄清',
@@ -89,7 +50,7 @@ export const LEDGER_OUTCOME_LABELS: Record<LedgerEntryView['outcome'], string> =
 } as const;
 
 export function getStageLabel(stageId: StageId): string {
-  return STAGE_DISPLAY_LABELS[stageId];
+  return resolveStageLabel(stageId);
 }
 
 export function getMacroStageLabel(stage: UserMacroStage): string {

@@ -81,7 +81,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <PageHeader
         title="总览"
-        description="先看一句话判断，再看 11 阶段堵在哪里，最后只处理最紧急的 3 个动作。"
+        description="先看一句话判断，再看流水线阶段堵在哪里，最后只处理最紧急的 3 个动作。"
         icon={<Sparkles className="h-5 w-5 text-violet-600" />}
         actions={
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-gradient-to-r from-blue-500/15 to-violet-500/15 px-4 py-2 text-xs font-semibold text-violet-700 shadow-lg shadow-slate-200/60">
@@ -130,7 +130,7 @@ export default function DashboardPage() {
             <div className="space-y-2">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <GitBranch className="h-5 w-5 text-violet-600" />
-                11 阶段流水线
+                流水线阶段
               </CardTitle>
               <p className="text-sm text-slate-500">红色代表失败，琥珀色代表门禁或动作等待。移动端可横向滑动。</p>
             </div>

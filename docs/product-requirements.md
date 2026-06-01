@@ -1,6 +1,6 @@
 # SEVO（自动化研发流水线）- 产品需求规格说明书
 
-OMP（OpenClaw ACP Agent）| 2026-05-30
+OpenClaw（pm-01 子Agent）| 2026-06-01
 
 ## 场景
 
@@ -1952,6 +1952,29 @@ spec 中出现的每个名词实体（会成为系统中的对象、状态机、
   - AC-44.4：命中通用化扫描规则时，doctor 必须产出 `Warning` 而不是静默忽略；该 Warning 不阻断 doctor 总体通过，但必须在报告中明确提示用户处理。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-44.5：每条 Warning 必须包含文件路径、命中片段或定位信息、规则类型和修复建议；缺任一字段视为报告不完整。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-44.6：doctor 报告必须输出独立 section“通用化扫描（Portability Scan）”，并展示 warning 总数和逐条结果，禁止把这类结果混在其他 section 里难以发现。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+
+### FR-45 SEVO Web 真实流水线驾驶舱
+
+- **定位**：SEVO Web 的真实运行态控制台。负责把 `sevo-pipeline` 插件和 PipelineEngine 已经落盘的运行态，按项目、流水线、阶段、事件四个层次稳定投影到 Web 驾驶舱；Web 只负责读取、展示、筛选、钻取和处理入口，不再自行生成 mock 流水线语义。
+- **输入**：`state/active-pipelines.json`、`data/pipelines/<pipelineId>/state.json`、`data/pipelines/<pipelineId>/events.jsonl`、`workspace/logs/sevo-pipeline-events.jsonl`、阶段注册表（来自插件源码/配置）、Web 查询参数。
+- **处理**：
+  1. 流水线列表页按项目维度读取 `state/active-pipelines.json`，展示所有活跃流水线的项目标识、当前阶段、整体进度、阻断状态、下一步、最近更新时间和关联 FR 信息。
+  1. 流水线详情页按 `pipelineId` 读取 `data/pipelines/<pipelineId>/state.json`，展示单条流水线的真实阶段队列、每阶段状态、requiredStages、skippedStages、阻断原因、重试记录、工件路径和当前推进决策。
+  1. 阶段定义不得在 Web 中硬编码固定 11 阶段。Web 必须从插件源码、配置或引擎导出的阶段注册表读取真实阶段定义，并允许不同流水线按各自 `requiredStages` 展示。
+  1. 事件流页面和详情侧边栏必须读取 `data/pipelines/<pipelineId>/events.jsonl` 与 `workspace/logs/sevo-pipeline-events.jsonl`，展示阶段推进、阻断、修复、复验、重试、发布、完成等事件历史，支持按项目、流水线、事件类型和时间筛选。
+  1. `engine-service.ts` 及其等价数据层不得继续以内存 `MOCK_*` 常量作为生产数据源。凡是 Project、Pipeline、Stage、Gate、Todo、Notification、Review、Analytics、Search 等驾驶舱核心对象，都必须由真实状态文件或其只读投影生成。
+  1. Web 数据层要对缺文件、空状态、版本漂移、日志暂缺做显式空态或错误态提示，但不得用 demo 数据、seed 数据或占位流水线冒充真实结果。
+- **输出**：真实流水线列表、流水线详情、事件时间线、动态阶段定义、只读运行态投影 API。
+- **执行阶段**：Web 驾驶舱展示层与运行态投影层。
+- **验收标准**：
+  - AC-45.1：`/projects`、`/dashboard` 或等价的流水线总览入口，必须基于 `state/active-pipelines.json` 展示所有活跃流水线；至少包含 `projectSlug`、`pipelineId`、`currentStage`、`status`、`updatedAt` 和阶段进度。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-45.2：流水线详情页必须以 `data/pipelines/<pipelineId>/state.json` 作为唯一真相源，展示真实阶段队列、每阶段状态、`requiredStages`、`skippedStages`、阻断原因、重试次数和工件引用；仅靠前端推导或 mock 补齐视为不通过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-45.3：Web 展示阶段定义时，必须从插件源码、配置或引擎导出的阶段注册表动态读取，禁止在 `types`、`page`、`service`、`reader` 等任一 Web 文件里硬编码固定 11 阶段词表。真实流水线新增或裁剪阶段后，Web 无需手工改常量即可展示。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-45.4：事件流必须消费 `data/pipelines/<pipelineId>/events.jsonl` 和 `workspace/logs/sevo-pipeline-events.jsonl` 中至少一类真实事件源；列表中至少可见阶段推进、阻断、修复、复验、发布和完成事件，且支持按 `pipelineId` 回看完整时序。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-45.5：生产态 Web 数据层禁止使用 `MOCK_*`、demo pipeline、seed pipeline 或固定假通知作为 Project、Pipeline、Stage、Gate、Todo、Notification、Review、Analytics、Search 的主数据源。代码中若保留 mock，仅允许用于测试或 Storybook，并与生产路径物理隔离。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-45.6：当真实状态文件不存在、为空、损坏或版本不兼容时，Web 必须明确展示空态/错误态和缺失原因；不得偷偷回退到 mock 数据，让用户误以为流水线正在运行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-45.7：Web 驾驶舱中的进度百分比、完成率、阶段分布和风险提示，必须来自真实流水线状态或其只读投影；禁止用前端平均拆分、固定分母或 mock 计数伪造完成度。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-45.8：Web 的搜索、通知、待办、质量视图、统计分析若展示流水线对象，必须能够追溯回真实 `pipelineId` 和真实状态文件来源。无法追溯的数据对象视为伪对象，不得出现在生产驾驶舱。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-43 readme-update 阶段
 
