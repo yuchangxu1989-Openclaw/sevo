@@ -2106,3 +2106,9 @@ OpenClaw（pm-01 子Agent）2026-05-30
 - AC2:独立仓库同步验证必须确认对应独立 GitHub 仓库已收到同一轮变更；验证未通过时，endgame 判定不通过。
 - AC3:未同步、同步失败、同步状态不可确认，均视为发布闭环失败；流水线不得宣布完成。
 - AC4:endgame 的失败原因必须明确指出缺失的项目名、目标独立仓库和建议动作，便于下一轮修复任务直接接手。
+
+### NFR-LLM-TIMEOUT：LLM 判定调用超时上限
+
+sevo-pipeline 中所有 LLM 判定调用（包括 trigger 分类、阶段门禁 LLM 判定、write-intent 检测等）的 AbortController 超时上限为 360 秒（360000ms）。超时按 fallback 策略处理（shouldTrigger=false，放行）。
+
+原因：LLM 请求通过中转服务转发（penguin proxy），在多任务并发时可能因排队阻塞导致响应延迟远超常规 2-15 秒；之前 3-15 秒超时在实际运行中持续触发 AbortError，导致分类器形同虚设。360 秒为用户于 2026-06-02 确认的上限。
