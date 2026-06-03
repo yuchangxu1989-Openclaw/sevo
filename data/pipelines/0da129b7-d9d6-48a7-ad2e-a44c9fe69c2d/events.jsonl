@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-03T06:20:01.131Z","pipelineId":"0da129b7-d9d6-48a7-ad2e-a44c9fe69c2d","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-fr-46-autodispatchstage-board-mpxofqib","level":"L1"}}
+{"timestamp":"2026-06-03T06:20:01.131Z","pipelineId":"0da129b7-d9d6-48a7-ad2e-a44c9fe69c2d","stage":"spec","eventType":"stage_activated","payload":{}}

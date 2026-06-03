@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as mod from '../index.js';
 
@@ -89,10 +92,23 @@ describe('sevo FR-37 audit reminder helpers', () => {
     expect(mod.consumeFr37AuditRemindersForTests()).toHaveLength(0);
   });
 
-  it('injects a sevo:fix completion through the real hook into the next main prompt', async () => {
+  it('auto-dispatches review for a sevo:fix completion through the real hook', async () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sevo-fr37-audit-'));
+    fs.mkdirSync(path.join(tempRoot, 'scripts'), { recursive: true });
+    fs.mkdirSync(path.join(tempRoot, 'logs'), { recursive: true });
+    const capturePath = path.join(tempRoot, 'logs', 'enqueue-capture.json');
+    fs.writeFileSync(
+      path.join(tempRoot, 'scripts', 'local-subagent-board.js'),
+      `const fs = require('fs');\nfs.writeFileSync(${JSON.stringify(capturePath)}, process.argv[3]);\n`,
+      'utf8',
+    );
+
     const handlers = new Map<string, Function>();
     mod.default.register({
-      config: {},
+      config: {
+        workspaceRoot: tempRoot,
+        eventsPath: path.join(tempRoot, 'logs', 'sevo-pipeline-events.jsonl'),
+      },
       logger: { info: () => {}, warn: () => {}, error: () => {} },
       on: (name: string, handler: Function) => {
         if (!handlers.has(name)) handlers.set(name, handler);
@@ -103,10 +119,18 @@ describe('sevo FR-37 audit reminder helpers', () => {
       label: 'sevo:fix kivo 修复问题',
       status: 'succeeded',
       sessionId: 'hook-fix-1',
+      agentId: 'codex',
+      output: 'changed projects/kivo/web/app/wiki/page.tsx; tests passed',
     });
 
-    const promptResult = await handlers.get('before_prompt_build')?.({}, { sessionKey: 'agent:main:test' });
-    expect(promptResult?.prependContext).toContain('[SEVO-FR37] 开发任务完成，请立即派发审计：');
-    expect(promptResult?.prependContext).toContain('- 被审计任务：sevo:fix kivo 修复问题');
+    const payload = JSON.parse(fs.readFileSync(capturePath, 'utf8'));
+    expect(payload.agentId).toBe('audit-01');
+    expect(payload.title).toBe('sevo:review sevo:fix kivo 修复问题 [hook-fix-1]');
+    expect(payload.prompt).toContain('[SEVO-FR37 Auto-Audit]');
+    expect(payload.prompt).toContain('Completed task label: sevo:fix kivo 修复问题');
+    expect(payload.prompt).toContain('changed projects/kivo/web/app/wiki/page.tsx');
+
+    const events = fs.readFileSync(path.join(tempRoot, 'logs', 'sevo-pipeline-events.jsonl'), 'utf8');
+    expect(events).toContain('sevo_fr37_audit_dispatched');
   });
 });

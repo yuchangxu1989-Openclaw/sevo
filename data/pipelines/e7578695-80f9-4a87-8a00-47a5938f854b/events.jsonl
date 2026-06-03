@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-03T06:06:36.219Z","pipelineId":"e7578695-80f9-4a87-8a00-47a5938f854b","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-fr-46-board-advance-mpxnyhhp","level":"L1"}}
+{"timestamp":"2026-06-03T06:06:36.219Z","pipelineId":"e7578695-80f9-4a87-8a00-47a5938f854b","stage":"spec","eventType":"stage_activated","payload":{}}

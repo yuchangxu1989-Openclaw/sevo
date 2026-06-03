@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-03T05:09:53.881Z","pipelineId":"9f96846a-9ad1-4bdf-81ef-23c9d49f0ae8","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-sevo-mpxlxet8","level":"L1"}}
+{"timestamp":"2026-06-03T05:09:53.881Z","pipelineId":"9f96846a-9ad1-4bdf-81ef-23c9d49f0ae8","stage":"spec","eventType":"stage_activated","payload":{}}

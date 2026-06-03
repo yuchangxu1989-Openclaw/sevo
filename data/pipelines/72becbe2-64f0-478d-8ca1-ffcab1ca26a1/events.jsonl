@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-03T05:04:00.420Z","pipelineId":"72becbe2-64f0-478d-8ca1-ffcab1ca26a1","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-watchdog-acp-stale-ms-mpxlpbg6","level":"L1"}}
+{"timestamp":"2026-06-03T05:04:00.420Z","pipelineId":"72becbe2-64f0-478d-8ca1-ffcab1ca26a1","stage":"spec","eventType":"stage_activated","payload":{}}
