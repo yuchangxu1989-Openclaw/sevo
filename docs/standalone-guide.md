@@ -28,7 +28,7 @@ SEVO 现在有两层东西：
 ## 安装
 
 ```bash
-npm install sevo
+npm install sevo-pipeline
 ```
 
 ### 当前版本的一个关键注意点
@@ -41,7 +41,7 @@ npm install sevo
 
 这意味着：
 
-- `npm install sevo` 这一步是对的
+- `npm install sevo-pipeline` 这一步是对的
 - 但**如果发布包保持当前 `package.json` 结构不变**，你不能直接把它当成“包根就是 SEVO 核心 API”来用
 - 下面的代码示例都以 `src/index.ts` 里真实存在的导出为准
 

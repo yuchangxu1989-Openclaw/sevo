@@ -83,4 +83,3 @@
 - 所有 SEVO 受管项目文档以飞书为唯一真相源，本地 md 是 git 备份
 - 标准文档包括：`product-requirements.md`、`architecture.md`、`interaction-design.md`
 - 统一操作顺序：先用 `lark-cli docs +update` 更新飞书，再 fetch 到本地备份；禁止先改本地再推飞书
-

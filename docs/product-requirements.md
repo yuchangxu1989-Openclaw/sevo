@@ -17,7 +17,7 @@ SEVO 还承担一个更高的终局任务：把“代码能生成”升级成“
 - 用 Agent 推进产品、技能、自动化系统的研发。
 - 关心交付速度，也关心返工成本和线上事故。
 - 需要看到每一轮改动的目标、边界、验收标准和交付证据。
-- 上手路径：`npm install -g sevo && npx sevo init && sevo project create my-app`，5 分钟内看到第一条 pipeline 的 Spec 阶段产出。
+- 上手路径：`npm install -g sevo-pipeline && npx sevo init && sevo project create my-app`，5 分钟内看到第一条 pipeline 的 Spec 阶段产出。
 
 ### Agent 原生开发者
 
@@ -38,14 +38,14 @@ SEVO 还承担一个更高的终局任务：把“代码能生成”升级成“
 - 负责配置和管理 OpenClaw 环境中的 Agent 池、模型、通知渠道等基础设施。
 - 需要 SEVO 的流程能力与具体 Agent/模型/通知实现解耦，便于按需替换执行器、审计器、发布渠道。
 - 需要通过配置而非改代码来适配不同的 Agent 池规模和模型组合。
-- 上手路径：`npm install sevo`，`npx sevo init` 自动发现 OpenClaw 环境配置，核心阶段语义开箱可用。
+- 上手路径：`npm install -g sevo-pipeline`，`npx sevo init` 自动发现 OpenClaw 环境配置，核心阶段语义开箱可用。
 
 ## 用户故事旅程
 
 ### Stage 1：安装并进入第一条流水线
 
 - 触发条件：用户第一次接触 SEVO，希望在 OpenClaw 中把一个项目纳入受控研发流程。
-- 核心动作：安装 `sevo`，执行 `npx sevo init`，让系统自动检测环境、注册插件、发现 Agent、完成角色分配。
+- 核心动作：安装 `sevo-pipeline`，执行 `npx sevo init`，让系统自动检测环境、注册插件、发现 Agent、完成角色分配。
 - 阶段产出：一个可用的 SEVO 运行环境，以及明确的下一步入口。
 - 转换条件：环境初始化完成，用户可以创建 Project 并提交第一条 FR。
 
@@ -134,7 +134,7 @@ SEVO 的路由机制本质上是“流水线引导 + 主 Agent 握手”的双�
 
 ### 用户体验流
 
-1. 用户安装 `sevo` 并执行 `npx sevo init`；AI 自动完成环境检测、插件注册、角色发现和默认配置生成；用户看到一份初始化报告，包含环境检查结果、已发现的项目、已识别的 Agent 角色、缺失配置和下一条可复制命令。成功时报告末尾显示 `Ready: create a project or run sevo status`；失败时列出阻断项、修复建议和可重试命令。关联 FR-14。
+1. 用户安装 `sevo-pipeline` 并执行 `npx sevo init`；AI 自动完成环境检测、插件注册、角色发现和默认配置生成；用户看到一份初始化报告，包含环境检查结果、已发现的项目、已识别的 Agent 角色、缺失配置和下一条可复制命令。成功时报告末尾显示 `Ready: create a project or run sevo status`；失败时列出阻断项、修复建议和可重试命令。关联 FR-14。
 1. 用户创建 Project 并添加第一条 FR；AI 创建 FR 流程实例、初始化目录结构、给出任务级别和阶段队列；用户看到 Project 编号、FR 编号、当前进入的 Stage、预计要经过的门禁列表，以及“当前不需要人工盯盘”的提示。关联 FR-12、FR-13、FR-27。
 1. 用户查看当前 pipeline 状态；AI 明确告诉用户现在走到哪个阶段、卡在哪里、下一步是什么；用户在 `sevo status` 中看到按 Project 分组的状态摘要，例如：`sevo / FR-37 / Review / blocked: audit finding F-12 / next: fix assigned`。通过项显示证据路径，阻断项显示责任阶段、失败原因、正在执行的修复任务和最近更新时间。关联 FR-13、FR-14。
 1. 用户推进 spec、contract、implement、review 等研发动作；AI 自动按阶段注入 PM、UX、架构、审计等专业标准，并在门禁失败时生成修复任务；用户看到每个 Stage 的门禁结论、关键 Finding、修复任务和重试次数。`sevo:doctor` 跑完后输出结构化报告：Errors、Warnings、受影响项目、失败门禁、建议修复动作；Errors 大于 0 时报告明确提示“禁止继续推进或重启 Gateway”。关联 FR-01、FR-02、FR-03、FR-04、FR-05、FR-06、FR-06a、FR-06f。
@@ -735,9 +735,9 @@ SEVO 的路由机制本质上是“流水线引导 + 主 Agent 握手”的双�
 ### FR-14 Package Distribution & CLI（包分发、初始化与命令行界面）
 
 - **定位**：SEVO 的安装入口和用户交互界面。负责 npm 包分发、CLI 入口、初始化命令、插件自动注册、环境健康检查，以及 Project 管理、FR 管理、Pipeline 状态查询和手动干预的全部命令行操作。
-- **包名**：`sevo`（统一 npm 包名）。
+- **包名**：`sevo-pipeline`（统一 npm 包名，CLI 命令名为 `sevo`）。
 - **包结构**：单包双入口——`dist/` 提供库 API（PipelineEngine、GateEngine、LedgerEngine、Adapter 等），`plugin/` 提供 OpenClaw 插件入口（register + hooks），`bin/` 提供 CLI 入口。
-- **输入**：用户执行 `npm install -g sevo` 和 CLI 命令。
+- **输入**：用户执行 `npm install -g sevo-pipeline` 和 CLI 命令。
 - **处理**：
   1. npm 包包含 SEVO 核心库 + CLI 入口 + 内置 OpenClaw 插件。
   1. `sevo init` 执行环境检测：检测 OpenClaw 环境配置 → 生成默认配置 → 自动注册插件到 `openclaw.json` → 扫描 `projects/*/sevo.json` 发现受管项目 → 动态发现 Agent 并按命名规则 + runtime type 自动分类角色 → 单 Agent 环境自动启用降级模式 → 执行 doctor 检查 → 输出角色分配表和下一步指引。
@@ -755,7 +755,7 @@ SEVO 的路由机制本质上是“流水线引导 + 主 Agent 握手”的双�
   1. `sevo ledger [<project>]` 查看交付账本。
 - **输出**：可用的 SEVO 运行环境 + 配置文件 + 插件注册 + CLI 交互能力。
 - **验收标准**：
-  - AC-14.1：陌生用户执行 `npm install -g sevo` + `npx sevo init` 后，5 分钟内能创建第一个 Project 并启动第一条 pipeline。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-14.1：陌生用户执行 `npm install -g sevo-pipeline` + `npx sevo init` 后，5 分钟内能创建第一个 Project 并启动第一条 pipeline。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.2：`sevo init` 自动检测 OpenClaw 环境配置，不需要用户手动指定。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.3：在 OpenClaw 环境中，`sevo init` 自动注册 SEVO 插件，用户不需要手动编辑 `openclaw.json`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.4：`sevo init` 生成的默认配置足以跑通完整流水线（L0 级别），不需要额外配置。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -977,7 +977,7 @@ SEVO 的路由机制本质上是“流水线引导 + 主 Agent 握手”的双�
   - `lint-score`：执行 lint 检查，输出违规数量和严重级别分布。
   - `spec-ac-coverage`：从 Spec Package 提取 AC 列表，扫描实现代码和测试，输出 AC 覆盖矩阵。
   - `dependency-audit`：检查依赖安全漏洞（调用 `npm audit` 或等效工具）。
-  - 内置评估器随 `sevo` npm 包分发，`sevo init` 时自动复制到项目 `evaluators/` 目录。
+  - 内置评估器随 `sevo-pipeline` npm 包分发，`sevo init` 时自动复制到项目 `evaluators/` 目录。
 - **验收标准**：
   - AC-23.1：项目配置中可声明每个门禁阶段挂载的评估器列表，PipelineEngine 在门禁评估时按列表顺序执行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-23.2：评估器通过 stdin 接收标准化 JSON 输入，通过 stdout 输出标准化 JSON 结果，退出码区分正常执行和评估器自身错误。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。

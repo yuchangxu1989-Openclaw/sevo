@@ -21,14 +21,14 @@
 
 SEVO（Spec-Execute-Verify-Operate）是面向 vibe coding 用户的 Agent 研发流水线。它将需求定义、方案约束、实现执行、独立审计、回归验证、部署发布、清洁环境验收和交付留痕收拢到同一条可追溯流水线上。
 
-SEVO 以 npm 包（`sevo`）分发，`npx sevo init` 一条命令完成环境初始化。核心流程通用化设计，可在任意宿主环境运行；宿主特有能力通过 Adapter 接入增强，但核心流程不因缺少某个宿主而断裂。
+SEVO 以 npm 包（`sevo-pipeline`）分发，`npx sevo init` 一条命令完成环境初始化。核心流程通用化设计，可在任意宿主环境运行；宿主特有能力通过 Adapter 接入增强，但核心流程不因缺少某个宿主而断裂。
 
 ### 1.2 架构目标
 
 | ID | 目标 | 优先级 | 驱动力 |
 |----|------|--------|--------|
 | AG-1 | 通用化核心流程 | 最高 | 核心阶段语义、状态机、门禁逻辑、工件交接协议不绑定任何单一宿主实现。换宿主只换 Adapter，核心不动。 |
-| AG-2 | 单包开箱即用 | 最高 | 陌生用户 `npm install -g sevo && npx sevo init` 后 5 分钟内跑通第一条 pipeline。零配置即可启动 L0 级流水线。 |
+| AG-2 | 单包开箱即用 | 最高 | 陌生用户 `npm install -g sevo-pipeline && npx sevo init` 后 5 分钟内跑通第一条 pipeline。零配置即可启动 L0 级流水线。 |
 | AG-3 | 渐进式披露 | 高 | 四级配置分层（L0 安装即用 → L1 按需配置 → L2 自定义阶段 → L3 编程控制），用户按需解锁，不被复杂度淹没。 |
 | AG-4 | 角色知识内置 | 高 | PM/UX/架构师/审计的专业标准嵌入流水线阶段（Stage-Bound Design），单 Agent 也能产出专业质量工件。 |
 | AG-5 | 工件驱动的可追溯性 | 高 | 每个阶段的输入/输出都是结构化工件，全链路可追溯到 Ledger。没有 Ledger Entry 的交付不算闭环。 |
@@ -82,7 +82,7 @@ SEVO 以 npm 包（`sevo`）分发，`npx sevo init` 一条命令完成环境初
 
 | ID | 约束 | 来源 |
 |----|------|------|
-| TC-1 | npm 包分发，包名 `sevo`，TypeScript 编写，编译为 ESM | spec §2.5, FR-14 |
+| TC-1 | npm 包分发，包名 `sevo-pipeline`，TypeScript 编写，编译为 ESM | spec §2.5, FR-14 |
 | TC-2 | 单包双入口：`dist/` 提供库 API，`plugin/` 提供 OpenClaw 插件入口，`bin/` 提供 CLI | 插件分发架构方案 §2.1 |
 | TC-3 | 零运行时依赖（npm dependencies 为空），OpenClaw SDK 通过 `register(api)` 回调注入 | 插件分发架构方案 §2.2 |
 | TC-4 | OpenClaw hook 系统限制：hook 不能发起工具调用，只能注入 prompt 引导主会话调度 | 插件分发架构方案 §5 |
@@ -817,7 +817,7 @@ StageRunner          ClarificationCoordinator    宿主 Adapter       用户/上
 
 ### 7.1 npm 包结构
 
-SEVO 以单个 npm 包 `sevo` 分发，包含三个入口：
+SEVO 以单个 npm 包 `sevo-pipeline` 分发，包含三个入口：
 
 ```
 sevo/                             # npm 包根目录
