@@ -699,12 +699,14 @@ SEVO 的路由机制本质上是“流水线引导 + 主 Agent 握手”的双�
   - AC-4.59：路由结果包含任务级别、必经阶段、可跳过阶段及跳过理由。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.60：已有 Project 目录的内容不被覆盖，只补全缺失的子目录。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.61：pipeline 创建完成后，PipelineEngine 自动接管并通过 OpenClaw Adapter 触发第一个阶段的执行，用户不需要手动触发。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-4.62：判定“已有 active pipeline 管理该变更”时，候选 pipeline 必须同时满足状态为 active 且 `projectSlug` 与当前请求的 Project 标识完全相等；不同 Project 的 active pipeline 即使 label、taskId、title 或描述相同，也不得用于拒绝、复用或声明当前 Project 的变更已被管理。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-4.63：managedChange claim 只接受结构化字段精确匹配：请求中的 `label`、`taskId` 或 `title` 与 active pipeline 已记录的 managedChange 同名字段完全相等时，才可判定同一变更已被管理；substring、宽泛文本包含、正则近似匹配或跨字段拼接匹配不得作为去重依据。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-13 PipelineEngine（流程编排引擎）
 
 - **交付状态**：已交付（v1.12.1）。
 - **定位**：SEVO 的核心运行时引擎。负责 pipeline 实例创建后的全生命周期推进——通过状态机驱动阶段流转，借助 OpenClaw Adapter 触发阶段执行，监听阶段完成事件，评估门禁条件，决定推进或阻断。PipelineEngine 定义的是编排语义（何时推进、何时阻断、何时重试），具体的任务派发方式由 OpenClaw Adapter 实现。
-- **编排模型**：PipelineEngine 通过 OpenClaw Adapter 程序化派发阶段任务，并在收到任务 completion 信号后程序化推进下一阶段（completion 回路契约见 FR-46）。推进不依赖主会话照着 prompt 注入手动派单——即使主会话不响应任何注入文本，流水线也必须照常推进。`before_prompt_build` hook 的 prompt 注入降级为**可观测通知**（让用户/主会话知道流水线进展）与 **fallback 通道**（程序化派发不可用时的兜底），不是推进的必要条件。`subagent_ended` hook 及 FR-46 定义的等价 completion 来源负责监听任务完成、更新 pipeline 状态并触发下一阶段。
+- **编排模型**：PipelineEngine 通过 OpenClaw Adapter 程序化派发阶段任务，并在收到任务 completion 信号后程序化推进下一阶段（completion 回路契约见 FR-46）。推进不依赖主会话照着 prompt 注入手动派单——即使主会话不响应任何注入文本，流水线也必须照常推进。`before_prompt_build` hook 的 prompt 注入降级为**可观测通知**（让用户/主会话知道流水线进展）与**fallback 通道**（程序化派发不可用时的兜底），不是推进的必要条件。`subagent_ended` hook 及 FR-46 定义的等价 completion 来源负责监听任务完成、更新 pipeline 状态并触发下一阶段。
 - **角色知识内置**：PipelineEngine 在派发阶段任务时，自动注入该阶段应遵循的专业标准（§6.6）。Specify 阶段注入 PM 标准的 prompt 模板和质量门禁，Review 阶段注入审计标准，Contract 阶段注入架构设计原则。单 Agent 用户也能产出专业质量的工件，多 Agent 环境有专职角色则效果更好。
 - **输入**：FR-12 创建的 FR 流程实例（含路由结果、阶段队列）。
 - **处理**：
@@ -731,6 +733,7 @@ SEVO 的路由机制本质上是“流水线引导 + 主 Agent 握手”的双�
   - AC-13.9：多个 pipeline 竞争同一角色的 Agent 时，按优先级排队，不阻塞其他不竞争的阶段。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-13.10：显式执行 `sevo:create <project-slug>` 或被 aco-dispatch-guard 自动路由到创建入口后，PipelineEngine 必须直接进入 Specify 阶段并自动派发第一条 Specify 任务，不允许停留在 created 状态等待人工二次触发。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-13.11：通过显式 CLI 创建和通过 aco-dispatch-guard 路由创建的 pipeline，复用同一套状态机和自动推进逻辑；两种入口的阶段队列、门禁评估和恢复行为保持一致。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-13.12：LLM-trigger auto-create 与 deterministic auto-create 必须进入同一 active pipeline 生命周期：创建后 60 秒内可在 active pipeline 状态中查询到对应 `pipelineId` 与 `projectSlug`，managedChange 记录包含本次请求的精确 `label`、`taskId` 或 `title` 字段，且 Stage Queue 已排入首个 active stage；缺少 active pipeline 注册、缺少 managedChange 记录或未排入首个 active stage 均判定为未完成创建。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-14 Package Distribution & CLI（包分发、初始化与命令行界面）
 
@@ -2157,3 +2160,4 @@ OpenClaw（pm-01 子Agent）2026-05-30
 sevo-pipeline 中所有 LLM 判定调用（包括 trigger 分类、阶段门禁 LLM 判定、write-intent 检测等）的 AbortController 超时上限为 360 秒（360000ms）。超时按 fallback 策略处理（shouldTrigger=false，放行）。
 
 原因：LLM 请求通过中转服务转发（penguin proxy），在多任务并发时可能因排队阻塞导致响应延迟远超常规 2-15 秒；之前 3-15 秒超时在实际运行中持续触发 AbortError，导致分类器形同虚设。360 秒为用户于 2026-06-02 确认的上限。
+

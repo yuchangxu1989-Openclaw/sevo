@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-03T19:50:51.844Z","pipelineId":"de790c60-d8a3-460f-97d5-7450e1d43857","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-sevo-e2e-test-mpyhekl9","level":"L2+"}}
+{"timestamp":"2026-06-03T19:50:51.844Z","pipelineId":"de790c60-d8a3-460f-97d5-7450e1d43857","stage":"spec","eventType":"stage_activated","payload":{}}

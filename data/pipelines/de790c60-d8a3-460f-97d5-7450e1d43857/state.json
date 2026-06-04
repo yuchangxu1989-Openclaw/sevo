@@ -1,0 +1,160 @@
+{
+  "pipelineId": "de790c60-d8a3-460f-97d5-7450e1d43857",
+  "taskId": "task-sevo-e2e-test-mpyhekl9",
+  "level": "L2+",
+  "requiredStages": [
+    "spec",
+    "spec-review-gate",
+    "test-case-authoring",
+    "ux-acceptance-authoring",
+    "commercial-acceptance-authoring",
+    "ux-interaction-design",
+    "architecture-design",
+    "contract",
+    "contract-review-gate",
+    "implement",
+    "review",
+    "smoke-test",
+    "ux-acceptance",
+    "pm-commercial-review",
+    "regression",
+    "publish-generalization-gate",
+    "readme-update",
+    "deploy",
+    "verify",
+    "publish-generalization-gate",
+    "post-release-validation",
+    "clean-install-verification",
+    "ledger"
+  ],
+  "skippedStages": [],
+  "stages": {
+    "spec": {
+      "stageId": "spec",
+      "status": "active",
+      "artifacts": [],
+      "startedAt": "2026-06-03T19:50:51.844Z"
+    },
+    "spec-review-gate": {
+      "stageId": "spec-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "test-case-authoring": {
+      "stageId": "test-case-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance-authoring": {
+      "stageId": "ux-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "commercial-acceptance-authoring": {
+      "stageId": "commercial-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-interaction-design": {
+      "stageId": "ux-interaction-design",
+      "status": "pending",
+      "artifacts": []
+    },
+    "architecture-design": {
+      "stageId": "architecture-design",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract": {
+      "stageId": "contract",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract-review-gate": {
+      "stageId": "contract-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "implement": {
+      "stageId": "implement",
+      "status": "pending",
+      "artifacts": []
+    },
+    "review": {
+      "stageId": "review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "smoke-test": {
+      "stageId": "smoke-test",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance": {
+      "stageId": "ux-acceptance",
+      "status": "pending",
+      "artifacts": []
+    },
+    "pm-commercial-review": {
+      "stageId": "pm-commercial-review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "regression": {
+      "stageId": "regression",
+      "status": "pending",
+      "artifacts": []
+    },
+    "publish-generalization-gate": {
+      "stageId": "publish-generalization-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "deploy": {
+      "stageId": "deploy",
+      "status": "pending",
+      "artifacts": []
+    },
+    "verify": {
+      "stageId": "verify",
+      "status": "pending",
+      "artifacts": []
+    },
+    "readme": {
+      "stageId": "readme",
+      "status": "pending",
+      "artifacts": []
+    },
+    "post-release-validation": {
+      "stageId": "post-release-validation",
+      "status": "pending",
+      "artifacts": []
+    },
+    "clean-install-verification": {
+      "stageId": "clean-install-verification",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ledger": {
+      "stageId": "ledger",
+      "status": "pending",
+      "artifacts": []
+    },
+    "readme-update": {
+      "status": "pending"
+    }
+  },
+  "currentStage": "spec",
+  "createdAt": "2026-06-03T19:50:51.843Z",
+  "updatedAt": "2026-06-03T19:50:51.844Z",
+  "fr19EndgameChain": [
+    "implement",
+    "review",
+    "smoke-test",
+    "regression",
+    "deploy",
+    "verify",
+    "readme-update",
+    "publish-generalization-gate"
+  ]
+}
