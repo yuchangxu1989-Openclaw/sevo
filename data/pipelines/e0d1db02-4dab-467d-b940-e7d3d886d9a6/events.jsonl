@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-04T20:04:08.273Z","pipelineId":"e0d1db02-4dab-467d-b940-e7d3d886d9a6","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-claw-design-mpzxbeka","level":"L1"}}
+{"timestamp":"2026-06-04T20:04:08.273Z","pipelineId":"e0d1db02-4dab-467d-b940-e7d3d886d9a6","stage":"spec","eventType":"stage_activated","payload":{}}
