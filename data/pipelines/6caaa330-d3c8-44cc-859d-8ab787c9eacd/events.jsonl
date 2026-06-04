@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-04T04:14:52.918Z","pipelineId":"6caaa330-d3c8-44cc-859d-8ab787c9eacd","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-claw-design-mpyzeodm","level":"L1"}}
+{"timestamp":"2026-06-04T04:14:52.919Z","pipelineId":"6caaa330-d3c8-44cc-859d-8ab787c9eacd","stage":"spec","eventType":"stage_activated","payload":{}}
