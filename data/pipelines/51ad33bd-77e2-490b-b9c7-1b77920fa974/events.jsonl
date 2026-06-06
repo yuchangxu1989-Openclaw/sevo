@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-06T16:35:05.944Z","pipelineId":"51ad33bd-77e2-490b-b9c7-1b77920fa974","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-sevo-mq2kq8r3","level":"L1"}}
+{"timestamp":"2026-06-06T16:35:05.944Z","pipelineId":"51ad33bd-77e2-490b-b9c7-1b77920fa974","stage":"spec","eventType":"stage_activated","payload":{}}

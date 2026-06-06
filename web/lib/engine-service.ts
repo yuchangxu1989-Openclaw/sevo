@@ -2,13 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveStageLabel } from '@/lib/stage-labels';
 import type {
-  AgentEfficiencyDatum,
-  AnalyticsTimeRange,
   ArtifactRef,
-  ClarificationResponseEntry,
-  ClarificationThreadView,
-  CommandRequest,
-  CrossProjectAnalyticsView,
+  CockpitBlocker,
+  CockpitFrCoverage,
+  CockpitLifecycleStatus,
+  CockpitPipelineDetail,
+  CockpitPipelineSummary,
+  CockpitProjectDetail,
+  CockpitProjectSummary,
+  CockpitTimelineStage,
   DashboardStageCount,
   DashboardSummary,
   DeliverableIndexItem,
@@ -20,21 +22,15 @@ import type {
   FrMatrixView,
   FrQualityView,
   FrSummaryView,
-  GateDecisionHistory,
-  GateDecisionStatus,
-  GateDecisionView,
   GateRuleConfigView,
   LedgerActionType,
   LedgerEntryView,
   LedgerEvidenceLink,
   LedgerView,
   MacroStageDistribution,
-  NotificationPreference,
-  NotificationRecord,
   PipelineInstance,
   PipelineInstanceStatus,
   PrincipleView,
-  ProjectAnalyticsDatum,
   ProjectConfigView,
   RevalidationResultView,
   ReviewIssueView,
@@ -42,7 +38,6 @@ import type {
   RoutingResult,
   SettingsView,
   StageConfigView,
-  StageFailureDatum,
   StageId,
   StageRecord,
   StageSnapshot,
@@ -91,6 +86,10 @@ interface PipelineStateFile {
   projectSlug?: string;
   createdAt?: string;
   updatedAt?: string;
+  lastAdvancedAt?: string;
+  pausedStage?: string;
+  pausedReason?: string;
+  pausedAt?: string;
 }
 
 interface RuntimeArtifact {
@@ -145,11 +144,7 @@ const GLOBAL_EVENT_LOGS = [
 
 const PROJECT_PROGRESS_NAMES = ['sevo-progress.json'];
 
-const REQUEST_ID_CACHE = new Map<string, number>();
-const REQUEST_ID_TTL_MS = 5 * 60 * 1000;
 const VERSION_MAP = new Map<string, number>();
-const PREFERENCES: NotificationPreference[] = [];
-let preferenceSeq = 0;
 
 const DELIVERABLE_TYPE_MAP: Record<string, DeliverableKind> = {
   md: 'document',
@@ -384,21 +379,6 @@ function getVersion(instanceId: string): number {
   return VERSION_MAP.get(instanceId)!;
 }
 
-function checkAndRecordRequestId(requestId: string): boolean {
-  const now = Date.now();
-  for (const [id, ts] of REQUEST_ID_CACHE) {
-    if (now - ts > REQUEST_ID_TTL_MS) REQUEST_ID_CACHE.delete(id);
-  }
-  if (REQUEST_ID_CACHE.has(requestId)) return false;
-  REQUEST_ID_CACHE.set(requestId, now);
-  return true;
-}
-
-function preflightCommand(cmd: CommandRequest): string | null {
-  if (!checkAndRecordRequestId(cmd.requestId)) return 'DUPLICATE_REQUEST';
-  return null;
-}
-
 function macroStageOf(stageId: string, pipeline?: PipelineInstance): UserMacroStage {
   if (stageId === 'implement') return 'implement';
   const stages = pipeline?.routingResult.requiredStages ?? pipeline?.stages.map((stage) => stage.stageId) ?? [];
@@ -503,12 +483,6 @@ function eventMatchesPipeline(event: PipelineEvent, id: string, pi?: PipelineIns
   return event.pipelineId === id || event.id === id || (!!pi && event.projectSlug === pi.projectSlug);
 }
 
-function commandUnavailable(target: string, cmd: CommandRequest): { success: boolean; error?: string } {
-  const preErr = preflightCommand(cmd);
-  if (preErr) return { success: false, error: preErr };
-  return { success: false, error: `${target} command is not wired to the SEVO runtime yet` };
-}
-
 function waitDuration(since: string): string {
   const ms = Math.max(0, Date.now() - new Date(since).getTime());
   const hours = Math.floor(ms / (1000 * 60 * 60));
@@ -526,22 +500,6 @@ function urgencyFrom(since: string): TodoUrgency {
 
 function stageStatus(pi: PipelineInstance, stageId: string): StageStatus {
   return pi.stages.find((stage) => stage.stageId === stageId)?.status ?? 'pending';
-}
-
-function cycleHours(pi: PipelineInstance): number {
-  const start = pi.createdAt;
-  const end = pi.updatedAt;
-  return Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60)));
-}
-
-function qualityBand(pi: PipelineInstance): ProjectAnalyticsDatum['qualityDistribution'] extends infer T
-  ? T extends Record<infer K, number>
-    ? K
-    : never
-  : never {
-  if (pi.status === 'failed' || pi.stages.some((stage) => stage.status === 'failed')) return 'red';
-  if (pi.stages.some((stage) => stage.status === 'blocked' || stage.status === 'clarification-blocked')) return 'yellow';
-  return 'green';
 }
 
 function inferDeliverableType(filePath: string): DeliverableKind {
@@ -743,106 +701,6 @@ export function getFrArtifacts(frId: string): ArtifactRef[] | null {
   return pi ? pi.stages.flatMap(artifactsForStage) : null;
 }
 
-export function listNotifications(params: {
-  severity?: string;
-  read?: string;
-  page: number;
-  pageSize: number;
-}): { items: NotificationRecord[]; total: number } {
-  const pipelinesByProject = new Map(getPipelines().map((pipeline) => [pipeline.projectSlug, pipeline]));
-  let items: NotificationRecord[] = allEvents().map((event, index) => {
-    const pipeline = event.pipelineId ? getPipelineDetail(event.pipelineId) : event.projectSlug ? pipelinesByProject.get(event.projectSlug) : undefined;
-    const severity = event.severity === 'critical' || event.type?.includes('failed') ? 'critical' : event.severity === 'warning' ? 'warning' : 'info';
-    return {
-      notificationId: `${event.timestamp ?? event.occurredAt ?? index}-${event.type ?? event.eventType ?? 'event'}`,
-      pipelineId: event.pipelineId ?? pipeline?.instanceId ?? event.projectSlug ?? 'runtime',
-      stageId: event.stageId ?? event.stage ?? pipeline?.currentStage ?? 'runtime',
-      severity,
-      channel: 'web',
-      title: String(event.type ?? event.eventType ?? 'SEVO runtime event'),
-      message: String(event.message ?? event.reason ?? event.type ?? event.eventType ?? 'SEVO runtime event'),
-      read: false,
-      createdAt: String(event.timestamp ?? event.occurredAt ?? new Date().toISOString()),
-    };
-  });
-  if (params.severity) items = items.filter((item) => item.severity === params.severity);
-  if (params.read !== undefined) items = items.filter((item) => String(item.read) === params.read);
-  const total = items.length;
-  const start = (params.page - 1) * params.pageSize;
-  return { items: items.slice(start, start + params.pageSize), total };
-}
-
-export function pauseFr(frId: string, cmd: CommandRequest): { success: boolean; error?: string } {
-  return getPipelineDetail(frId) ? commandUnavailable('pause', cmd) : { success: false, error: 'FR not found' };
-}
-
-export function resumeFr(frId: string, cmd: CommandRequest): { success: boolean; error?: string } {
-  return getPipelineDetail(frId) ? commandUnavailable('resume', cmd) : { success: false, error: 'FR not found' };
-}
-
-export function cancelFr(frId: string, cmd: CommandRequest): { success: boolean; error?: string } {
-  return getPipelineDetail(frId) ? commandUnavailable('cancel', cmd) : { success: false, error: 'FR not found' };
-}
-
-export function retryFr(frId: string, cmd: CommandRequest): { success: boolean; error?: string } {
-  return getPipelineDetail(frId) ? commandUnavailable('retry', cmd) : { success: false, error: 'FR not found' };
-}
-
-export function abandonFr(frId: string, cmd: CommandRequest): { success: boolean; error?: string } {
-  return getPipelineDetail(frId) ? commandUnavailable('abandon', cmd) : { success: false, error: 'FR not found' };
-}
-
-export function getNotificationPreferences(userId?: string): NotificationPreference[] {
-  return userId ? PREFERENCES.filter((pref) => pref.userId === userId) : PREFERENCES.slice();
-}
-
-export function createNotificationPreference(data: {
-  userId: string;
-  channels: NotificationPreference['channels'];
-  severityFilter: NotificationPreference['severityFilter'];
-  quietHours?: NotificationPreference['quietHours'];
-  enabled?: boolean;
-}): NotificationPreference {
-  const now = new Date().toISOString();
-  const pref: NotificationPreference = {
-    preferenceId: `pref-${String(++preferenceSeq).padStart(3, '0')}`,
-    userId: data.userId,
-    channels: data.channels,
-    severityFilter: data.severityFilter,
-    quietHours: data.quietHours,
-    enabled: data.enabled ?? true,
-    createdAt: now,
-    updatedAt: now,
-  };
-  PREFERENCES.push(pref);
-  return pref;
-}
-
-export function updateNotificationPreference(
-  preferenceId: string,
-  patch: Partial<Pick<NotificationPreference, 'channels' | 'severityFilter' | 'quietHours' | 'enabled'>>,
-): NotificationPreference | null {
-  const pref = PREFERENCES.find((item) => item.preferenceId === preferenceId);
-  if (!pref) return null;
-  if (patch.channels !== undefined) pref.channels = patch.channels;
-  if (patch.severityFilter !== undefined) pref.severityFilter = patch.severityFilter;
-  if (patch.quietHours !== undefined) pref.quietHours = patch.quietHours;
-  if (patch.enabled !== undefined) pref.enabled = patch.enabled;
-  pref.updatedAt = new Date().toISOString();
-  return pref;
-}
-
-export function deleteNotificationPreference(preferenceId: string): boolean {
-  const index = PREFERENCES.findIndex((pref) => pref.preferenceId === preferenceId);
-  if (index === -1) return false;
-  PREFERENCES.splice(index, 1);
-  return true;
-}
-
-export function markNotificationRead(notificationId: string): NotificationRecord | null {
-  return listNotifications({ page: 1, pageSize: Number.MAX_SAFE_INTEGER }).items.find((item) => item.notificationId === notificationId) ?? null;
-}
-
 export function listTodos(): TodoItemView[] {
   return getPipelines()
     .filter((pi) => pi.status === 'failed' || pi.stages.some((stage) => stage.status === 'blocked' || stage.status === 'clarification-blocked' || stage.status === 'failed'))
@@ -864,68 +722,6 @@ export function listTodos(): TodoItemView[] {
         createdAt,
       };
     });
-}
-
-export function getClarification(clarificationId: string): ClarificationThreadView | null {
-  const event = allEvents().find((item) => item.id === clarificationId || item.clarificationId === clarificationId);
-  if (!event) return null;
-  const pi = event.pipelineId ? getPipelineDetail(event.pipelineId) : null;
-  return {
-    clarificationId,
-    frId: pi?.instanceId ?? String(event.pipelineId ?? 'runtime'),
-    frCode: pi?.instanceId ?? String(event.pipelineId ?? 'runtime'),
-    stageId: event.stageId ?? event.stage ?? pi?.currentStage ?? 'runtime',
-    question: String(event.message ?? event.reason ?? 'Clarification requested'),
-    blockingLevel: 'blocking',
-    context: JSON.stringify(event, null, 2),
-    responses: [],
-    resolutionStatus: 'open',
-    createdAt: String(event.timestamp ?? event.occurredAt ?? new Date().toISOString()),
-  };
-}
-
-export function replyClarification(
-  clarificationId: string,
-  cmd: CommandRequest,
-  _content: string,
-): { success: boolean; error?: string } {
-  return getClarification(clarificationId) ? commandUnavailable('clarification reply', cmd) : { success: false, error: 'Clarification not found' };
-}
-
-export function getGate(gateId: string): GateDecisionView | null {
-  const [pipelineId, stageId] = gateId.includes('::') ? gateId.split('::') : [undefined, undefined];
-  const pi = pipelineId ? getPipelineDetail(pipelineId) : getPipelines().find((pipeline) => pipeline.stages.some((stage) => `gate-${pipeline.instanceId}-${stage.stageId}` === gateId));
-  const stage = stageId ? pi?.stages.find((item) => item.stageId === stageId) : pi?.stages.find((item) => item.stageId.includes('gate'));
-  if (!pi || !stage) return null;
-  return {
-    gateId,
-    gateName: stageLabelOf(stage.stageId),
-    gateType: stage.stageId,
-    stageId: stage.stageId,
-    frId: pi.instanceId,
-    frCode: pi.instanceId,
-    status: stage.status === 'passed' ? 'approved' : stage.status === 'failed' ? 'rejected' : 'pending',
-    reviewBundles: [],
-    blockers: stage.blockers.map((item) => ({ item, owner: 'runtime' })),
-    decisionHistory: [],
-    createdAt: stage.startedAt ?? pi.createdAt,
-  };
-}
-
-function gateCommand(gateId: string, cmd: CommandRequest): { success: boolean; error?: string } {
-  return getGate(gateId) ? commandUnavailable('gate', cmd) : { success: false, error: 'Gate not found' };
-}
-
-export function approveGate(gateId: string, cmd: CommandRequest, _reason?: string): { success: boolean; error?: string } {
-  return gateCommand(gateId, cmd);
-}
-
-export function rejectGate(gateId: string, cmd: CommandRequest, _reason?: string): { success: boolean; error?: string } {
-  return gateCommand(gateId, cmd);
-}
-
-export function requestGateReview(gateId: string, cmd: CommandRequest, _reason?: string): { success: boolean; error?: string } {
-  return gateCommand(gateId, cmd);
 }
 
 export function getFrQuality(frId: string): FrQualityView | null {
@@ -977,73 +773,6 @@ export function getDeliverableIndex(): DeliverableIndexView {
     ),
   );
   return { items: items.sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
-}
-
-export function getCrossProjectAnalytics(timeRange: AnalyticsTimeRange = '30d'): CrossProjectAnalyticsView {
-  const pipelines = getPipelines();
-  const projects = getProjects();
-  const activeProjects = new Set(pipelines.map((pi) => pi.projectSlug)).size;
-  const inProgressFrs = pipelines.filter((pi) => pi.status === 'active' || pi.status === 'paused').length;
-  const averageDeliveryHours = Math.round(pipelines.reduce((sum, pi) => sum + cycleHours(pi), 0) / Math.max(1, pipelines.length));
-  const gateStages = new Set(pipelines.flatMap((pi) => pi.stages.map((stage) => stage.stageId).filter((id) => id.includes('gate'))));
-  const totalGateChecks = pipelines.reduce((sum, pi) => sum + pi.stages.filter((stage) => gateStages.has(stage.stageId)).length, 0);
-  const firstPassGateChecks = pipelines.reduce((sum, pi) => sum + pi.stages.filter((stage) => gateStages.has(stage.stageId) && stage.status === 'passed' && stage.attempt <= 1).length, 0);
-  const projectStats: ProjectAnalyticsDatum[] = projects.map((project) => {
-    const projectPipelines = pipelines.filter((pi) => pi.projectSlug === project.projectSlug);
-    const totalFrs = projectPipelines.length;
-    const completedFrs = projectPipelines.filter((pi) => pi.status === 'completed').length;
-    const qualityDistribution = projectPipelines.reduce(
-      (acc, pi) => {
-        acc[qualityBand(pi)] += 1;
-        return acc;
-      },
-      { green: 0, yellow: 0, red: 0 },
-    );
-    return {
-      projectId: project.projectSlug,
-      projectName: project.projectName,
-      totalFrs,
-      completedFrs,
-      completionRate: totalFrs > 0 ? Math.round((completedFrs / totalFrs) * 100) : 0,
-      averageCycleHours: totalFrs > 0 ? Math.round(projectPipelines.reduce((sum, pi) => sum + cycleHours(pi), 0) / totalFrs) : 0,
-      qualityDistribution,
-    };
-  });
-  const allStageIds = [...new Set(pipelines.flatMap((pi) => pi.stages.map((stage) => stage.stageId)))];
-  const stageFailureHeatmap: StageFailureDatum[] = allStageIds.map((stageId) => ({
-    stageId,
-    failures: pipelines.filter((pi) => pi.stages.some((stage) => stage.stageId === stageId && stage.status === 'failed')).length,
-    blocked: pipelines.filter((pi) => pi.stages.some((stage) => stage.stageId === stageId && (stage.status === 'blocked' || stage.status === 'clarification-blocked'))).length,
-    retries: pipelines.reduce((sum, pi) => sum + pi.stages.filter((stage) => stage.stageId === stageId && stage.attempt > 1).length, 0),
-  }));
-  const agentBucket = new Map<string, { totalHours: number; count: number; activeStages: number }>();
-  for (const pi of pipelines) {
-    for (const stage of pi.stages) {
-      if (!stage.executorId || !stage.startedAt) continue;
-      const end = stage.completedAt ?? pi.updatedAt;
-      const current = agentBucket.get(stage.executorId) ?? { totalHours: 0, count: 0, activeStages: 0 };
-      current.totalHours += Math.max(1, Math.round((new Date(end).getTime() - new Date(stage.startedAt).getTime()) / (1000 * 60 * 60)));
-      current.count += stage.completedAt ? 1 : 0;
-      current.activeStages += !stage.completedAt && stage.status === 'active' ? 1 : 0;
-      agentBucket.set(stage.executorId, current);
-    }
-  }
-  const agentEfficiency: AgentEfficiencyDatum[] = [...agentBucket.entries()].map(([agentId, stats]) => ({
-    agentId,
-    averageHours: Math.round(stats.totalHours / Math.max(1, stats.count + stats.activeStages)),
-    completedStages: stats.count,
-    activeStages: stats.activeStages,
-  }));
-  return {
-    timeRange,
-    activeProjects,
-    inProgressFrs,
-    averageDeliveryHours,
-    gateFirstPassRate: totalGateChecks > 0 ? Math.round((firstPassGateChecks / totalGateChecks) * 100) : 0,
-    projectStats,
-    stageFailureHeatmap,
-    agentEfficiency,
-  };
 }
 
 export function getLedgerView(): LedgerView {
@@ -1165,6 +894,223 @@ export function getReviewTracking(): ReviewTrackingView {
       revalidationsPassed: 0,
       revalidationsFailed: 0,
     },
+  };
+}
+
+// ── Cockpit projections (FR-45a) ───────────────────────────────────
+//
+// Read-only projection over the real pipeline runtime. The cockpit only needs
+// project view + pipeline view; everything here derives from real state files
+// (state/active-pipelines.json, data/pipelines/<id>/state.json,
+// logs/sevo-pipeline-events.jsonl). No mock, seed or front-end invented data.
+
+const STAGE_STATUS_PHRASES: Record<StageStatus, (label: string) => string> = {
+  pending: (label) => `等待${label}`,
+  active: (label) => `正在${label}`,
+  blocked: (label) => `${label}受阻`,
+  'clarification-blocked': (label) => `${label}等待澄清`,
+  passed: (label) => `${label}已完成`,
+  failed: (label) => `${label}失败`,
+  skipped: (label) => `${label}已跳过`,
+};
+
+function stageStatusPhrase(stageId: string, status: StageStatus): string {
+  const label = stageLabelOf(stageId);
+  return (STAGE_STATUS_PHRASES[status] ?? ((l: string) => l))(label);
+}
+
+// Human-readable phrase for the pipeline's current stage (AC-45a.6).
+function currentStagePhrase(pi: PipelineInstance): string {
+  const stage = pi.stages.find((s) => s.stageId === pi.currentStage);
+  const status: StageStatus = stage?.status ?? 'pending';
+  if (pi.status === 'completed') return '流水线已完成';
+  return stageStatusPhrase(pi.currentStage, status === 'pending' ? 'active' : status);
+}
+
+// Map real runtime status into the FR-45a lifecycle vocabulary (AC-45a.3).
+// active-registry membership = live; state-only on disk = archived; paused or
+// failure signals map to stale/failed accordingly.
+function cockpitLifecycleStatus(pi: PipelineInstance, isRegistered: boolean): CockpitLifecycleStatus {
+  if (pi.status === 'failed' || pi.stages.some((s) => s.status === 'failed')) return 'failed';
+  if (pi.status === 'completed') return 'completed';
+  if (!isRegistered) return 'archived';
+  if (pi.status === 'paused' || pi.stages.some((s) => s.status === 'blocked' || s.status === 'clarification-blocked')) {
+    return 'stale';
+  }
+  return 'active';
+}
+
+function lastAdvancedOf(pi: PipelineInstance, active?: ActivePipelineRecord, state?: PipelineStateFile | null): string | null {
+  return active?.lastAdvancedAt ?? state?.lastAdvancedAt ?? pi.updatedAt ?? null;
+}
+
+function cockpitPipelineSummary(
+  pi: PipelineInstance,
+  isRegistered: boolean,
+  active?: ActivePipelineRecord,
+  state?: PipelineStateFile | null,
+): CockpitPipelineSummary {
+  return {
+    pipelineId: pi.instanceId,
+    projectSlug: pi.projectSlug,
+    title: pipelineTitle(pi),
+    status: cockpitLifecycleStatus(pi, isRegistered),
+    currentStagePhrase: currentStagePhrase(pi),
+    currentStageId: pi.currentStage,
+    createdAt: pi.createdAt,
+    lastAdvancedAt: lastAdvancedOf(pi, active, state),
+  };
+}
+
+// Build all cockpit pipeline summaries once, tracking registry membership so
+// archived (state-only) pipelines are distinguishable from live ones.
+function allCockpitPipelines(): CockpitPipelineSummary[] {
+  const active = activeRegistry();
+  const registeredIds = new Set(Object.keys(active));
+  const ids = [...new Set([...registeredIds, ...listPipelineStateIds()])];
+  return ids
+    .map((id) => {
+      const state = readPipelineState(id);
+      const pi = toPipelineInstance(id, state, active[id]);
+      return cockpitPipelineSummary(pi, registeredIds.has(id), active[id], state);
+    })
+    .sort((a, b) => String(b.lastAdvancedAt ?? '').localeCompare(String(a.lastAdvancedAt ?? '')));
+}
+
+function maxTime(values: Array<string | null | undefined>): string | null {
+  const real = values.filter((v): v is string => typeof v === 'string' && v.length > 0);
+  if (real.length === 0) return null;
+  return real.reduce((acc, cur) => (cur.localeCompare(acc) > 0 ? cur : acc));
+}
+
+export function getCockpitProjects(): CockpitProjectSummary[] {
+  const pipelines = allCockpitPipelines();
+  return getProjects()
+    .map((project) => {
+      const own = pipelines.filter((p) => p.projectSlug === project.projectSlug);
+      const activeCount = own.filter((p) => p.status === 'active' || p.status === 'stale').length;
+      return {
+        projectSlug: project.projectSlug,
+        projectName: project.projectName,
+        activePipelineCount: activeCount,
+        pipelineCount: own.length,
+        lastAdvancedAt: maxTime(own.map((p) => p.lastAdvancedAt)),
+      };
+    })
+    // Only surface projects that have at least one real pipeline. A registered
+    // .sevo directory with no runtime pipeline would otherwise show 0/null,
+    // which is placeholder data, not real state.
+    .filter((project) => project.pipelineCount > 0);
+}
+
+// FR coverage for a project (AC-45a.2). Aggregates real frTracking/targetFRs
+// across the project's live pipelines; null when no coverage data exists.
+function frCoverageForProject(projectSlug: string): CockpitFrCoverage | null {
+  const active = activeRegistry();
+  const totals = new Set<string>();
+  const completed = new Set<string>();
+  let hasData = false;
+  for (const record of Object.values(active)) {
+    if (record.projectSlug !== projectSlug) continue;
+    const tracking = record.frTracking;
+    for (const fr of tracking?.total ?? []) {
+      totals.add(fr);
+      hasData = true;
+    }
+    for (const fr of tracking?.completed ?? []) {
+      completed.add(fr);
+      hasData = true;
+    }
+    for (const fr of record.targetFRs ?? []) {
+      totals.add(fr);
+      hasData = true;
+    }
+  }
+  if (!hasData || totals.size === 0) return null;
+  const completedInScope = [...completed].filter((fr) => totals.has(fr)).length;
+  return {
+    total: totals.size,
+    completed: completedInScope,
+    remaining: Math.max(0, totals.size - completedInScope),
+  };
+}
+
+export function getCockpitProjectDetail(projectSlug: string): CockpitProjectDetail | null {
+  const project = getProjects().find((p) => p.projectSlug === projectSlug);
+  if (!project) return null;
+  const pipelines = allCockpitPipelines().filter((p) => p.projectSlug === projectSlug);
+  return {
+    projectSlug: project.projectSlug,
+    projectName: project.projectName,
+    frCoverage: frCoverageForProject(projectSlug),
+    pipelines,
+  };
+}
+
+export function getCockpitPipelines(): CockpitPipelineSummary[] {
+  return allCockpitPipelines();
+}
+
+// Derive the current blocker from real state (AC-45a.5). Uses pausedReason /
+// pausedStage and blocked stages; returns blocked=false ("当前无阻塞") otherwise.
+function cockpitBlocker(pi: PipelineInstance, state: PipelineStateFile | null): CockpitBlocker {
+  const pausedReason = state?.pausedReason;
+  const pausedStage = state?.pausedStage;
+  if (pausedReason) {
+    const stageId = pausedStage ?? pi.currentStage;
+    return {
+      blocked: true,
+      stageId,
+      stagePhrase: stageLabelOf(stageId),
+      reason: pausedReason,
+    };
+  }
+  const blockedStage = pi.stages.find(
+    (s) => s.status === 'blocked' || s.status === 'clarification-blocked' || s.status === 'failed',
+  );
+  if (blockedStage) {
+    const reasonFromBlockers = blockedStage.blockers.find(Boolean) ?? null;
+    return {
+      blocked: true,
+      stageId: blockedStage.stageId,
+      stagePhrase: stageLabelOf(blockedStage.stageId),
+      reason: reasonFromBlockers ?? stageStatusPhrase(blockedStage.stageId, blockedStage.status),
+    };
+  }
+  return { blocked: false, stageId: null, stagePhrase: null, reason: null };
+}
+
+function cockpitTimeline(pi: PipelineInstance): CockpitTimelineStage[] {
+  return pi.stages.map((stage) => ({
+    stageId: stage.stageId,
+    label: stageLabelOf(stage.stageId),
+    status: stage.status,
+    statusPhrase: stageStatusPhrase(stage.stageId, stage.status),
+    startedAt: stage.startedAt ?? null,
+    completedAt: stage.completedAt ?? null,
+    artifacts: artifactsForStage(stage),
+    skipReason: stage.skipReason,
+  }));
+}
+
+export function getCockpitPipelineDetail(id: string): CockpitPipelineDetail | null {
+  const active = activeRegistry();
+  const state = readPipelineState(id);
+  if (!state && !active[id]) return null;
+  const pi = toPipelineInstance(id, state, active[id]);
+  const isRegistered = Object.prototype.hasOwnProperty.call(active, id);
+  return {
+    pipelineId: pi.instanceId,
+    projectSlug: pi.projectSlug,
+    projectName: projectNameOf(pi.projectSlug),
+    title: pipelineTitle(pi),
+    status: cockpitLifecycleStatus(pi, isRegistered),
+    currentStagePhrase: currentStagePhrase(pi),
+    currentStageId: pi.currentStage,
+    createdAt: pi.createdAt,
+    lastAdvancedAt: lastAdvancedOf(pi, active[id], state),
+    timeline: cockpitTimeline(pi),
+    blocker: cockpitBlocker(pi, state),
   };
 }
 

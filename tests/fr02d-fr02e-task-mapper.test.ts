@@ -1,6 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { buildTaskPrompt, getStageMapping } from '../task-mapper.js';
-import { queueActiveStagesForFr19, QUICKSTART_STAGES, TIER2_STAGES, CANONICAL_14_STAGES } from '../index.js';
+import { queueActiveStagesForFr19, QUICKSTART_STAGES, TIER2_STAGES, CANONICAL_14_STAGES, insertDesignStages, areDesignStagesSatisfied, assertImplementPromptReferencesDesign } from '../index.js';
 
 describe('FR-02d / FR-02e task mapper integration', () => {
   const state = {
@@ -27,6 +30,19 @@ describe('FR-02d / FR-02e task mapper integration', () => {
       },
     },
   };
+
+  // AC-4.8n: the Implement gate now verifies design artifacts on disk, so set up
+  // a real readable, non-empty architecture artifact for the positive cases.
+  let tmpDir: string;
+  let archArtifactAbs: string;
+  beforeAll(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sevo-design-gate-'));
+    archArtifactAbs = path.join(tmpDir, 'architecture.md');
+    fs.writeFileSync(archArtifactAbs, '# Architecture Design\n\nNon-empty content.\n', 'utf8');
+  });
+  afterAll(() => {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* best-effort */ }
+  });
 
   it('maps ux-interaction-design to UX role and correct timeout', () => {
     const mapping = getStageMapping('ux-interaction-design');
@@ -117,7 +133,10 @@ describe('FR-02d / FR-02e task mapper integration', () => {
       requiredStages: ['architecture-design', 'implement'],
       stages: {
         implement: { status: 'active' },
-        'architecture-design': { status: 'passed' },
+        'architecture-design': {
+          status: 'passed',
+          artifacts: [{ path: archArtifactAbs }],
+        },
       },
     };
 
@@ -127,11 +146,113 @@ describe('FR-02d / FR-02e task mapper integration', () => {
     expect(activeStages).toEqual(['implement']);
   });
 
-  it('keeps new design stages in quickstart and tier2 stage lists', () => {
+  it('AC-4.8n: blocks implement when a passed design stage has empty/missing artifacts', () => {
+    // UX stage status=passed and pmReviewStatus=passed but artifacts=[] →
+    // the design document is not on disk, so Implement must be blocked.
+    const blockedState = {
+      requiredStages: ['ux-interaction-design', 'implement'],
+      stages: {
+        implement: { status: 'active' },
+        'ux-interaction-design': {
+          status: 'passed',
+          metadata: { pmReviewStatus: 'passed' },
+          artifacts: [],
+        },
+      },
+    };
+
+    const gate = areDesignStagesSatisfied(blockedState);
+    expect(gate.satisfied).toBe(false);
+    expect(gate.blockers).toContain('ux-interaction-design(artifact-missing)');
+
+    const activeStages = queueActiveStagesForFr19('pipe-ux-empty-artifact', blockedState);
+    expect(blockedState.stages.implement.status).toBe('blocked');
+    expect(blockedState.stages.implement.blockReason).toContain('ux-interaction-design(artifact-missing)');
+    expect(activeStages).toEqual([]);
+  });
+
+  it('AC-4.8n: blocks implement when a passed design artifact path points at a non-existent file', () => {
+    const blockedState = {
+      requiredStages: ['architecture-design', 'implement'],
+      stages: {
+        implement: { status: 'active' },
+        'architecture-design': {
+          status: 'passed',
+          artifacts: [{ path: path.join(tmpDir, 'does-not-exist.md') }],
+        },
+      },
+    };
+
+    const gate = areDesignStagesSatisfied(blockedState);
+    expect(gate.satisfied).toBe(false);
+    expect(gate.blockers).toContain('architecture-design(artifact-unreadable)');
+
+    queueActiveStagesForFr19('pipe-arch-unreadable', blockedState);
+    expect(blockedState.stages.implement.status).toBe('blocked');
+  });
+
+  it('AC-4.8n: allows implement when a passed design artifact exists and is non-empty', () => {
+    const okState = {
+      requiredStages: ['architecture-design', 'implement'],
+      stages: {
+        implement: { status: 'active' },
+        'architecture-design': {
+          status: 'passed',
+          artifacts: [{ path: archArtifactAbs }],
+        },
+      },
+    };
+
+    const gate = areDesignStagesSatisfied(okState);
+    expect(gate.satisfied).toBe(true);
+    expect(gate.blockers).toEqual([]);
+  });
+
+  it('AC-4.20g: implement prompt reference assertion passes when design references are present', () => {
+    const taskPrompt = [
+      'Implement project "demo".',
+      'Reference (ux-interaction-design): projects/demo/docs/ux/interaction-design.md',
+      'Reference (architecture-design): projects/demo/docs/architecture/architecture.md',
+    ].join('\n');
+    const result = assertImplementPromptReferencesDesign(taskPrompt, {
+      requiredStages: ['ux-interaction-design', 'architecture-design', 'implement'],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.missing).toEqual([]);
+  });
+
+  it('AC-4.20g: implement prompt reference assertion fails when a required design reference is missing', () => {
+    // requiredStages includes ux-interaction-design, but the prompt omits the
+    // "Reference (ux-interaction-design):" line → dispatch must be flagged.
+    const taskPrompt = [
+      'Implement project "demo".',
+      'Reference (architecture-design): projects/demo/docs/architecture/architecture.md',
+    ].join('\n');
+    const result = assertImplementPromptReferencesDesign(taskPrompt, {
+      requiredStages: ['ux-interaction-design', 'architecture-design', 'implement'],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.missing).toContain('ux-interaction-design');
+  });
+
+  it('keeps design stages out of the lightweight base and inserts them dynamically via designRouting', () => {
+    // FR-D05/D06: the lightweight base no longer hardcodes design stages.
+    // They are inserted on demand based on the design routing decision.
     expect(QUICKSTART_STAGES).toContain('ux-interaction-design');
     expect(QUICKSTART_STAGES).toContain('architecture-design');
-    expect(TIER2_STAGES).toContain('ux-interaction-design');
-    expect(TIER2_STAGES).toContain('architecture-design');
+    expect(TIER2_STAGES).not.toContain('ux-interaction-design');
+    expect(TIER2_STAGES).not.toContain('architecture-design');
+
+    // When routing requires them, insertDesignStages places them before implement.
+    const withDesign = insertDesignStages(
+      [...TIER2_STAGES],
+      { needsUxDesign: true, needsArchitectureDesign: true },
+      'lightweight',
+    );
+    expect(withDesign).toContain('ux-interaction-design');
+    expect(withDesign).toContain('architecture-design');
+    expect(withDesign.indexOf('ux-interaction-design')).toBeLessThan(withDesign.indexOf('implement'));
+    expect(withDesign.indexOf('architecture-design')).toBeLessThan(withDesign.indexOf('implement'));
   });
 
   it('keeps new design stages in canonical stage sequence', () => {

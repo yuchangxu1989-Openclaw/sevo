@@ -44,7 +44,7 @@ export default function LoginPageContent() {
       });
 
       if (res.ok) {
-        router.push("/dashboard");
+        router.push("/projects");
         router.refresh();
       } else if (res.status === 500) {
         const data = await res.json();

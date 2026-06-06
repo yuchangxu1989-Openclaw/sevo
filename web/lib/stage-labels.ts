@@ -34,6 +34,7 @@ const STAGE_DISPLAY_LABELS: Record<string, string> = {
   'post-release-validation': '发布后验证',
   'clean-install-verification': '清洁安装验证',
   ledger: '交付账本',
+  'spec-gap': '需求规格缺口',
 };
 
 /** Resolve a display label, falling back to the raw stageId for unknown stages. */

@@ -168,66 +168,6 @@ export interface PipelineInstance {
   updatedAt: string;
 }
 
-// ── Notification ────────────────────────────────────────────────
-
-export type NotificationChannel = 'web' | 'im';
-export type NotificationSeverity = 'info' | 'warning' | 'critical';
-
-export interface NotificationRecord {
-  notificationId: string;
-  pipelineId: string;
-  stageId: StageId;
-  severity: NotificationSeverity;
-  channel: NotificationChannel;
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-}
-
-export interface QuietHours {
-  start: string;   // HH:mm
-  end: string;     // HH:mm
-  timezone: string; // IANA timezone
-}
-
-export interface NotificationPreference {
-  preferenceId: string;
-  userId: string;
-  channels: NotificationChannel[];
-  severityFilter: NotificationSeverity[];
-  quietHours?: QuietHours;
-  enabled: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ── API request/response types ──────────────────────────────────
-
-/** Unified error envelope (arc42 §8.1.1). */
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: Record<string, unknown>;
-  traceId?: string;
-  retryable?: boolean;
-}
-
-/** Command request base — all write endpoints require these fields. */
-export interface CommandRequest {
-  actorId: string;
-  requestId: string;
-  expectedVersion?: number;
-}
-
-/** Paginated list response wrapper. */
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
 // ── Dashboard ───────────────────────────────────────────────────
 
 export type DashboardDataSourceType = 'runtime' | 'derived';
@@ -432,6 +372,106 @@ export interface FrMatrixView {
   frs: FrMatrixRow[];
 }
 
+// ── Cockpit (FR-45a) ────────────────────────────────────────────
+//
+// Read-only projection over real pipeline runtime state. The cockpit only
+// shows project view and pipeline view.
+
+// Lifecycle status the user sees. Limited to the real lifecycle vocabulary
+// from FR-45a (active / stale / archived / completed / failed); never a
+// front-end invented status (AC-45a.3).
+export type CockpitLifecycleStatus =
+  | 'active'
+  | 'stale'
+  | 'archived'
+  | 'completed'
+  | 'failed';
+
+export const COCKPIT_LIFECYCLE_LABELS: Record<CockpitLifecycleStatus, string> = {
+  active: '进行中',
+  stale: '停滞中',
+  archived: '已归档',
+  completed: '已完成',
+  failed: '已失败',
+} as const;
+
+export function getCockpitLifecycleLabel(status: CockpitLifecycleStatus): string {
+  return COCKPIT_LIFECYCLE_LABELS[status];
+}
+
+// Project list row (AC-45a.1): name, active pipeline count, last advanced time.
+export interface CockpitProjectSummary {
+  projectSlug: string;
+  projectName: string;
+  activePipelineCount: number;
+  pipelineCount: number;
+  lastAdvancedAt: string | null;
+}
+
+// FR coverage for a project (AC-45a.2). Derived from real targetFRs /
+// frTracking on the project's pipelines; null when no coverage data exists.
+export interface CockpitFrCoverage {
+  total: number;
+  completed: number;
+  remaining: number;
+}
+
+// Pipeline list/summary row (AC-45a.2, AC-45a.3).
+export interface CockpitPipelineSummary {
+  pipelineId: string;
+  projectSlug: string;
+  title: string;
+  status: CockpitLifecycleStatus;
+  // Human-readable current stage phrase, e.g. "正在写需求" (AC-45a.6).
+  currentStagePhrase: string;
+  // Raw stage id kept for traceability only (AC-45a.6, AC-45a.8).
+  currentStageId: string;
+  createdAt: string;
+  lastAdvancedAt: string | null;
+}
+
+export interface CockpitProjectDetail {
+  projectSlug: string;
+  projectName: string;
+  frCoverage: CockpitFrCoverage | null;
+  pipelines: CockpitPipelineSummary[];
+}
+
+// A single stage on the pipeline timeline (AC-45a.4). Missing time fields are
+// surfaced as null real empty-state, never fabricated (AC-45a.4).
+export interface CockpitTimelineStage {
+  stageId: string;
+  label: string;
+  status: StageStatus;
+  statusPhrase: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  artifacts: ArtifactRef[];
+  skipReason?: string;
+}
+
+// Current blocker on a pipeline (AC-45a.5). blocked=false means "当前无阻塞".
+export interface CockpitBlocker {
+  blocked: boolean;
+  stageId: string | null;
+  stagePhrase: string | null;
+  reason: string | null;
+}
+
+export interface CockpitPipelineDetail {
+  pipelineId: string;
+  projectSlug: string;
+  projectName: string;
+  title: string;
+  status: CockpitLifecycleStatus;
+  currentStagePhrase: string;
+  currentStageId: string;
+  createdAt: string;
+  lastAdvancedAt: string | null;
+  timeline: CockpitTimelineStage[];
+  blocker: CockpitBlocker;
+}
+
 // ── Deliverables ───────────────────────────────────────────────
 
 export type DeliverableKind = 'document' | 'code' | 'report' | 'artifact';
@@ -455,50 +495,6 @@ export interface DeliverableIndexItem {
 export interface DeliverableIndexView {
   items: DeliverableIndexItem[];
 }
-
-// ── Cross-project analytics ────────────────────────────────────
-
-export type AnalyticsTimeRange = '7d' | '30d' | '90d' | 'all';
-
-export interface StageFailureDatum {
-  stageId: StageId;
-  failures: number;
-  blocked: number;
-  retries: number;
-}
-
-export interface AgentEfficiencyDatum {
-  agentId: string;
-  averageHours: number;
-  completedStages: number;
-  activeStages: number;
-}
-
-export interface ProjectAnalyticsDatum {
-  projectId: string;
-  projectName: string;
-  totalFrs: number;
-  completedFrs: number;
-  completionRate: number;
-  averageCycleHours: number;
-  qualityDistribution: {
-    green: number;
-    yellow: number;
-    red: number;
-  };
-}
-
-export interface CrossProjectAnalyticsView {
-  timeRange: AnalyticsTimeRange;
-  activeProjects: number;
-  inProgressFrs: number;
-  averageDeliveryHours: number;
-  gateFirstPassRate: number;
-  projectStats: ProjectAnalyticsDatum[];
-  stageFailureHeatmap: StageFailureDatum[];
-  agentEfficiency: AgentEfficiencyDatum[];
-}
-
 // ── Projects ──────────────────────────────────────────────────
 
 export interface ProjectSummaryView {
@@ -712,24 +708,6 @@ export const PRINCIPLE_CATEGORY_LABELS: Record<PrincipleView['category'], string
 
 export function getPrincipleCategoryLabel(category: PrincipleView['category']): string {
   return PRINCIPLE_CATEGORY_LABELS[category];
-}
-
-// ── SSE event types ─────────────────────────────────────────────
-
-export type SseEventType =
-  | 'project.updated'
-  | 'fr.updated'
-  | 'todo.updated'
-  | 'notification.created'
-  | 'health.changed';
-
-export interface SseEvent {
-  eventType: SseEventType;
-  targetType: string;
-  targetId: string;
-  occurredAt: string;
-  traceId: string;
-  payload: Record<string, unknown>;
 }
 
 export interface DashboardStageCount {
