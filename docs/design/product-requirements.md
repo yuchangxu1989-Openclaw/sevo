@@ -634,7 +634,7 @@ Implement 阶段的开发任务成功完成后,completion event 到达主会话�
 - AC3:当审计提醒被注入时,提醒内容必须至少包含四项信息:此刻立即派发独立审计;不得先回复用户收尾;审计必须对照 spec/AC 验收;被审计任务标题。验收验证:审计时检查注入文本,四项信息缺任一项即判定为 `fail`;记录结构化结果 `{ acId, status, evidence, reason }`,`evidence` 必须包含完整提醒文本。
 - AC4:当 completion event 属于非 Implement 阶段、失败 completion、审计任务自身 completion 或非主会话 session 时,系统不得注入开发完成审计提醒。验收验证:审计时分别模拟四类排除边界,主会话 prompt 中不得出现该审计提醒;记录结构化结果 `{ acId, status, evidence, reason }`,`evidence` 必须包含各边界样本输入和未注入结果。
 - AC5:该能力必须具备可观测验收路径:至少包含 vitest 自动化测试和 completion 事件模拟。测试必须覆盖触发条件、注入目标、提醒内容和排除边界。验收验证:审计时运行对应 vitest 用例并查看 completion 事件模拟输出;记录结构化结果 `{ acId, status, evidence, reason }`,`evidence` 必须包含测试命令输出和至少一个模拟事件样本。
-- AC-37-5:implement 阶段 completion 审计提醒注入必须在 implement 阶段任务 completion event 成功到达主会话时触发。触发条件为 label 匹配 `sevo:fix` 或 `sevo:implement` 前缀,或任务阶段标识为 implement,且 completion 状态为 succeeded。注入目标仅限主会话 prompt,即 session 标识以 `agent:main:` 开头的会话。提醒内容必须至少包含任务标题、“此刻立即派发独立审计”、“不得先回复用户收尾”、“对照 spec/AC 验收”。非 implement 阶段、失败 completion、审计任务自身 completion、非主会话 session 不触发;同一 completion 不得重复注入。验收验证:审计时通过 vitest 模拟 completion event,断言提醒文本出现在主会话注入输出中,且各排除边界样本没有注入;记录结构化结果 `{ acId, status, evidence, reason }`,`evidence` 必须包含模拟事件输入、主会话注入输出、排除边界输出和 vitest 命令结果。为什么这样做:主会话收到开发 completion 后容易“commit+回复”就结束,遗忘审计步骤。即时提醒把“你应该记住的规则”变成“此刻你必须做的事”,将 L6 执行纪律问题降级为 L2 确定性触发。
+
 
 ---
 
@@ -2041,3 +2041,4 @@ SEVO 审计阶段审查 ACO 及其他 L2 插件的注入文本时，必须逐条
 - AC2:Why 必须用人话写清「用户当初为什么定这条规则」，回答规则背后的真实意图；只写技术后果描述（如「不这样做会报错」「会导致流程中断」）或用内部术语堆砌而读不懂的，判定为 FAIL；验收证据必须包含 Why 原文、判定结论和判定理由。
 - AC3:Why 质量判定必须用 LLM 语义理解，禁止通过关键词命中或正则匹配判定是否含 Why、Why 是否人话、Why 是否还原意图；验收证据必须包含判定调用的语义判断输出或审计事件中的 semantic 字段。
 - AC4:审计判定 FAIL 后必须触发 review-fix loop，由开发 Agent 重写对应规则的 Why，重写后重新进入审计，直到全部规则的 Why 通过；验收证据必须包含修复任务记录、重审记录和最终通过状态之一。
+
