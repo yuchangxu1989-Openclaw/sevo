@@ -83,3 +83,13 @@
 - 所有 SEVO 受管项目文档以飞书为唯一真相源，本地 md 是 git 备份
 - 标准文档包括：`product-requirements.md`、`architecture.md`、`interaction-design.md`
 - 统一操作顺序：先用 `lark-cli docs +update` 更新飞书，再 fetch 到本地备份；禁止先改本地再推飞书
+
+## 设计原则
+
+### 规则类 FR 必须含 Why
+
+规则类 FR 指定义 Agent 行为约束的功能需求。每一条规则类 FR 都必须写清三件事：做什么、怎么判断、为什么创建这条规则。缺少 Why 的规则类 FR 不通过 spec review。
+
+Why 要用一句话说清：如果没有这条规则会发生什么坏事，或这条规则保护什么价值。
+
+LLM 只有理解规则意图，才会在边界场景里做出符合原意的判断。只写动作和判断标准，会让规则变成教条，Agent 容易机械匹配或绕开规则。

@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-06T01:25:19.510Z","pipelineId":"db94bad3-5b03-48b4-9ca4-404e40f2bef5","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-aco-mq1o8b8o","level":"L1"}}
+{"timestamp":"2026-06-06T01:25:19.510Z","pipelineId":"db94bad3-5b03-48b4-9ca4-404e40f2bef5","stage":"spec","eventType":"stage_activated","payload":{}}
