@@ -59,7 +59,7 @@ SEVO 还承担一个更高的终局任务：把“代码能生成”升级成“
 ### Stage 3：沿阶段推进并通过门禁
 
 - 触发条件：FR 流程实例已建立。
-- 核心动作：系统按复杂度路由到 Spec、Contract、Implement、Review、Regression、Deploy、Verify、Ledger 等阶段；涉及 Web/UI 的任务自动接入 UX Interaction Design，涉及复杂前后端协作的任务自动接入 Architecture Design。
+- 核心动作：系统按单一阶段队列推进 Spec、Spec Review Gate、Plan（架构评估 + UX 设计）、Plan Review Gate、Implement、Implement Review Gate，并继续进入 Regression、Deploy、Verify、Ledger 等后续阶段；涉及 Web/UI 的任务自动接入 UX Interaction Design，涉及复杂前后端协作的任务自动接入 Architecture Design。
 - 阶段产出：每一阶段的结构化工件、门禁结论、修复任务和推进记录。
 - 转换条件：当前阶段通过门禁则进入下一阶段；不通过则进入修复循环。
 
@@ -87,7 +87,7 @@ SEVO 还承担一个更高的终局任务：把“代码能生成”升级成“
 ## 需求
 
 - 所有受管项目的研发动作都要默认进入 SEVO，覆盖 spec、架构、UX、开发、测试、审计、发布全链路，路径只能辅助识别项目归属，不能决定是否纳管。
-- 流水线要能按任务复杂度自动裁剪，但门禁不能被偷掉；该补 spec 的先补 spec，该做审计的必须有独立审计，该做发布前验证的必须真做。
+- 流水线只有一条完整路径，不按任务类型分级；该补 spec 的先补 spec，该做审计的必须有独立审计，该做发布前验证的必须真做。主链节点永远不可跳过，辅助节点只有在输入不适用、项目配置明确声明且留下证据时才可标记为 skipped。
 - 单 Agent 用户也要能开箱即用，多 Agent 环境则要自动利用角色分工，把 PM、UX、架构、审计等专业标准注入到对应阶段。
 - 每一轮研发都要形成完整证据链，能回答这条 FR 现在走到哪、为什么卡住、通过依据是什么、有没有真实交付结果。
 - 发布完成不算结束，必须继续验证：陌生用户能不能装、能不能跑、能不能看到真实数据、能不能在 5 分钟内感受到核心价值。
@@ -144,10 +144,22 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 
 所有分类、路由和准入校验必须基于 LLM 语义理解。FR/AC 中只要涉及判定规则，就必须用自然语言详细写清楚语义规则，禁止依赖关键词匹配或正则表达式充当理解能力。Why：Agent 本身就在 LLM 上运行，LLM 始终可用；关键词和正则看不懂意图、上下文和边界，会把看起来相似但语义不同的任务误判，也会漏掉换了说法但意图相同的任务。
 
+#### 原则 7：注入文本三要素
+
+每段插件层注入到主会话 prompt 的规则或引导文本，必须同时包含三个要素：目标（遵循这条规则要达成什么）、做什么（具体行动指令）、Why（不做会怎样、用户当初为什么定这条规则）。缺任一要素，注入文本质量不达标，审计应判定为 FAIL 并触发修复。Why：只有操作指令、没有目标和理由的提示，模型看完后缺乏执行动力，容易无视。2026-06-07 已验证 badcase：SEVO 路由提示只有“做什么”，主会话连续 4 次裸 spawn，未按 SEVO 引导进入流水线；补齐三要素后遵循率显著提升。
+
+#### 原则 8：无差别覆盖一切研发活动
+
+不允许“受管项目”这个概念。SEVO 流水线对一切研发活动都有效，包括需求探讨、需求澄清、spec 讨论、架构设计、编码、测试、审计、发布，不限于“产生文件变更”的环节。代码中的路径列表仅用于自动触发检测，不限制流水线的适用范围。Why：用户已多次纠偏，2026-06-07 明确要求加入 spec，原话：“不允许受管项目这个概念，SEVO流水线对一切研发活动都有效”“是一切研发活动，不是文件变更！主动探讨需求澄清需求也是SEVO的职责！”。“受管项目”概念和“仅文件变更”的限定都会误导主会话认为某些研发活动可以不走流水线，导致需求探讨阶段未接入 SEVO、spec 质量失控。
+
+#### 原则 9：阶段审计不可跳过（Stage Audit Mandatory）
+
+任何研发活动进入 SEVO 后，阶段队列固定执行：specify（PM 出 spec）→ spec-review-gate（mandatory, never skip）→ plan（SA 架构评估 + UX 设计，可并行）→ plan-review-gate（mandatory, never skip；架构审计 + UX 审计）→ implement（Dev 开发）→ implement-review-gate（mandatory, never skip；开发审计）→ 后续 endgame。每个产出阶段（specify/plan/implement）后面都必须跟独立审计门禁；审计通过才能进入下一阶段。没有任何阶段可以被跳过，包括 plan 阶段。SA 评估结论可以是“无需架构变更，pass-no-change”，但 SA 必须评估，阶段不能跳。Why：主会话或 PM 没有资格判断“不需要架构”或“不需要审计”。每个专业判断必须由对应专业角色做出。跳过审计就是跳过质量门禁，会让低质量产出直接流入下游。
+
 ### 用户体验流
 
 1. 用户安装 `sevo-pipeline` 并执行 `npx sevo init`；AI 自动完成环境检测、插件注册、角色发现和默认配置生成；用户看到一份初始化报告，包含环境检查结果、已发现的项目、已识别的 Agent 角色、缺失配置和下一条可复制命令。成功时报告末尾显示 `Ready: create a project or run sevo status`；失败时列出阻断项、修复建议和可重试命令。关联 FR-14。
-1. 用户创建 Project 并添加第一条 FR；AI 创建 FR 流程实例、初始化目录结构、给出任务级别和阶段队列；用户看到 Project 编号、FR 编号、当前进入的 Stage、预计要经过的门禁列表，以及“当前不需要人工盯盘”的提示。关联 FR-12、FR-13、FR-27。
+1. 用户创建 Project 并添加第一条 FR；AI 创建 FR 流程实例、初始化目录结构、给出单一阶段队列；用户看到 Project 编号、FR 编号、当前进入的 Stage、预计要经过的门禁列表，以及“当前不需要人工盯盘”的提示。关联 FR-12、FR-13、FR-27。
 1. 用户查看当前 pipeline 状态；AI 明确告诉用户现在走到哪个阶段、卡在哪里、下一步是什么；用户在 `sevo status` 中看到按 Project 分组的状态摘要，例如：`sevo / FR-37 / Review / blocked: audit finding F-12 / next: fix assigned`。通过项显示证据路径，阻断项显示责任阶段、失败原因、正在执行的修复任务和最近更新时间。关联 FR-13、FR-14。
 1. 用户推进 spec、contract、implement、review 等研发动作；AI 自动按阶段注入 PM、UX、架构、审计等专业标准，并在门禁失败时生成修复任务；用户看到每个 Stage 的门禁结论、关键 Finding、修复任务和重试次数。`sevo:doctor` 跑完后输出结构化报告：Errors、Warnings、受影响项目、失败门禁、建议修复动作；Errors 大于 0 时报告明确提示“禁止继续推进或重启 Gateway”。关联 FR-01、FR-02、FR-03、FR-04、FR-05、FR-06、FR-06a、FR-06f。
 1. 用户进入发布链；AI 自动串起 README 同步、版本管理、发布执行、真实数据验证、清洁环境验证和终局差距扫描；用户看到 npm、GitHub、ClawHub、独立仓库同步、真实数据验证、清洁环境验收的逐项结果。失败时报告显示失败平台、失败命令摘要、可复验入口和已创建的修复任务。关联 FR-08、FR-17、FR-19、FR-28、FR-29、FR-36。
@@ -192,8 +204,8 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - 体验维度（有 Web/UI 时）：spec 描述的交互是否合理、用户体验流是否完整、是否符合小白用户预期。纯后端/CLI 项目可省略。
   - 质量维度：规格完整性、阶段隔离、概念架构完整度、边界清晰度、验收标准质量。
 - **输出**：规格评审包（Spec Review Bundle），顶部引用 Pre-Gate 结论，包含各维度结论、问题清单、修复要求、通过条件和是否允许进入 Contract 的门禁结果。
-- **执行阶段**：Spec Review Gate。先执行 FR-02-pre Mandatory Spec Sections Pre-Gate；Pre-Gate 通过后，再并行执行产品维度、技术维度、体验维度（可选）、质量维度评审。禁止规格作者自审。
-- **门禁判定**：Pre-Gate 通过 + 各维度共同放行。Pre-Gate 任一项不通过直接返工 FR-01；Pre-Gate 通过后任一维度结论为有条件通过或不通过时阻断，直到修复并复审通过。纯后端/CLI 项目可按项目配置省略体验维度。
+- **执行阶段**：Spec Review Gate（mandatory, never skip）。先执行 FR-02-pre Mandatory Spec Sections Pre-Gate；Pre-Gate 通过后，再并行执行产品维度、技术维度、体验维度（可选）、质量维度评审。禁止规格作者自审。任何入口、增量 FR 或从中途阶段重入，只要涉及本轮 spec 覆盖确认，都必须经过本门禁；spec 阶段可标记 ready，但 spec-review-gate 不可跳过。
+- **门禁判定**：Pre-Gate 通过 + 各维度共同放行。Pre-Gate 任一项不通过直接返工 FR-01；Pre-Gate 通过后任一维度结论为有条件通过或不通过时阻断，直到修复并复审通过。纯后端/CLI 项目可按项目配置省略体验维度，但不得省略 Spec Review Gate 本身。
 - **验收标准**：
   - AC-4.5：Spec 进入 Contract 前必须先经过独立评审，默认禁止规格作者自审。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.5a：Spec Review Gate 至少覆盖产品、技术、质量三个维度；涉及 Web/UI 的任务必须增加体验维度。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -296,10 +308,10 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 ### FR-03 Contract
 
 - **输入**：已通过 Spec Review Gate 的需求规格包。
-- **处理**：把需求翻译为可执行的架构方案、实现边界、阶段门禁、工作包拆分和交付顺序。
-- **输出**：契约包（Contract Package），包含架构方案、实现边界、工作包拆分（含 Task 级细粒度分解）和交付顺序。
-- **执行阶段**：Contract。
-- **审查阶段**：Contract Review Gate（四方会审）。
+- **处理**：把需求翻译为可执行的架构方案、实现边界、阶段门禁、工作包拆分和交付顺序。plan/contract 阶段必须由 SA 做架构评估；评估结论可以是 pass-no-change，但阶段本身不允许跳过。
+- **输出**：契约包（Contract Package），包含架构方案、实现边界、工作包拆分（含 Task 级细粒度分解）和交付顺序；若无需架构变更，输出 pass-no-change 评估记录及证据。
+- **执行阶段**：Contract / Plan。
+- **审查阶段**：Contract Review Gate / Plan Review Gate（mandatory, never skip）。
 - **验收标准**：
   - AC-4.9：每个高优先级 FR 都能在契约中找到对应实现承接点。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.10：工作包拆分后可分派、可验收、可追责。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -310,9 +322,9 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 ### FR-04 Contract Review Gate
 
 - **输入**：契约包（Contract Package）、关键架构决策、评审规则、UX 交互设计文档（如有 FR-02d 产出）、架构详设文档（如有 FR-02e 产出）。
-- **处理**：由产品视角、开发视角、质量视角、体验视角四方并行会审，检查需求承接完整度、实现可行性、决策严谨性、交互合理性、扩展边界和交付波次，并形成是否允许进入 Implement 的门禁结论。体验视角需核对契约与 UX 交互设计文档的一致性；开发视角需核对契约与架构详设文档的一致性。纯后端/CLI 项目可按项目配置省略 UX 视角，此时退化为三方会审。
+- **处理**：作为 plan-review-gate（mandatory, never skip）执行，由产品视角、开发视角、质量视角、体验视角四方并行会审，检查需求承接完整度、实现可行性、决策严谨性、交互合理性、扩展边界和交付波次，并形成是否允许进入 Implement 的门禁结论。体验视角需核对契约与 UX 交互设计文档的一致性；开发视角需核对契约与架构详设文档的一致性。纯后端/CLI 项目可按项目配置省略 UX 视角，此时退化为三方会审，但 plan-review-gate 本身不可省略。
 - **输出**：会审包（Contract Review Bundle），包含四方评审结论、阻断问题、修复要求、复审范围和是否允许进入 Implement 的门禁结果。
-- **执行阶段**：Contract Review Gate，四方并行评审——产品维度（需求承接完整度）、开发维度（实现可行性）、质量维度（决策严谨性与质量规范）、体验维度（交互合理性、用户流程完整性、可用性）。
+- **执行阶段**：Contract Review Gate / plan-review-gate（mandatory, never skip），四方并行评审——产品维度（需求承接完整度）、开发维度（实现可行性）、质量维度（决策严谨性与质量规范）、体验维度（交互合理性、用户流程完整性、可用性）。
 - **门禁判定**：四方共同放行。任一方结论为有条件通过或不通过时阻断，谁的问题未过审由谁继续复审，四方全部通过后方可进入 Implement。
 - **验收标准**：
   - AC-4.13：进入 Implement 前必须完成四方并行会审，缺任一评审视角都不能放行。纯后端/CLI 项目可配置省略体验视角，此时退化为三方会审。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -327,7 +339,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 - **处理**：按工作包逐 Task 执行实现，遵循 TDD 循环（先写覆盖目标行为的失败测试 → 实现至测试通过 → 重构），限制改动边界，记录证据，形成可审计的变更集。编码 prompt 必须引用 UX 交互设计文档和架构详设文档的路径（如有），确保实现与设计一致。任何涉及代码修改的任务，在开始编码前必须先确认当前 spec 状态：本轮任务是否需要新增、修改或删除 FR/AC；需要时先回到 Spec 阶段完成规格同步，再允许进入编码。
 - **输出**：实现包（Implementation Bundle），包含代码变更、执行记录、测试结果和偏差说明。
 - **执行阶段**：Implement。
-- **审查阶段**：Review（独立审查）。
+- **审查阶段**：Review / implement-review-gate（mandatory, never skip，独立审查）。
 - **验收标准**：
   - AC-4.17：每个工作包都有明确输入、输出、允许改动范围和验收项。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.18：实现过程产出证据，不允许只交代码不交说明。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -338,7 +350,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - AC-4.20f：编码 Agent 只能实现 spec 中明确定义的 FR 和 AC。觉得某功能有价值，必须先提需求变更请求，经 Specify 阶段评审写入 spec 后才能实现。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.20g：当存在 FR-02d 产出的 UX 交互设计文档时，编码 prompt 必须引用该文档路径，实现必须符合 UX 设计方案中定义的页面布局、导航结构和操作流程。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.20h：当存在 FR-02e 产出的架构详设文档时，编码 prompt 必须引用该文档路径，实现必须符合架构设计中定义的 API 接口、数据模型和模块职责划分。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-4.20i：Implement 阶段 L2 prompt 注入必须包含「先 spec 后代码」提醒，要求编码 Agent 在写代码前明确记录 spec 状态确认结果：无需改 spec / 已完成 spec 修改 / 阻断等待 spec 修改。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-4.20i：Implement 阶段插件 prompt 注入必须包含「先 spec 后代码」提醒，要求编码 Agent 在写代码前明确记录 spec 状态确认结果：无需改 spec / 已完成 spec 修改 / 阻断等待 spec 修改。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.20j：未完成 spec 状态确认时，Implement 阶段不得开始编码；任务涉及新增或变更产品语义、用户可见行为、API/CLI 契约、发布方式或门禁规则时，必须先完成对应 FR/AC 更新并通过 Spec Review Gate。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-05a Systematic Debugging
@@ -356,7 +368,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 ### FR-06 Review
 
 - **输入**：实现包。审计时参考 FR-02a 产出的测试用例文档（仅做参考，不代表全部审计项）、UX 交互设计文档（如有 FR-02d 产出）、架构详设文档（如有 FR-02e 产出）。
-- **处理**：由独立审查阶段三方并行评审，审查代码质量、需求一致性、架构符合度、边界遵守情况和高风险点。
+- **处理**：作为 implement-review-gate（mandatory, never skip）由独立审查阶段三方并行评审，审查代码质量、需求一致性、架构符合度、边界遵守情况和高风险点。实现者不得自审，Review 通过前不得进入后续 Smoke、Regression、Deploy 或 endgame。
 - **输出**：评审包（Review Bundle），包含各维度结论、问题清单、修复要求和通过条件。
 - **执行阶段**：Review，三方独立评审：
   - PM/产品维度：功能完整性、需求一致性确认。
@@ -383,11 +395,11 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 - AC-4.24n4：当存在 FR-02e 产出的架构详设文档时，SA/架构维度必须逐项核对 API 接口实现与设计文档的一致性（路径、方法、请求/响应结构），不一致则判定为不通过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-4.24n5：无架构详设文档的任务，SA/架构维度自动跳过，不阻断 Review 流程。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-4.24n6：Implementation Bundle 中每个 execution 的 allowedScope 必须精确到 AC 级别（如 AC-4.1、AC-4.2），不允许只声明 FR ID（如 FR-01）。仅声明 FR ID 的覆盖判定为 partial，产出 blocker finding。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-- AC-4.24n7：ImplementationReviewGate 在执行覆盖检查时，必须自动触发 L2 语义扫描（l2-ac-semantic-scanner），逐条验证 spec AC 是否有对应实现代码且逻辑正确。禁止仅依赖 allowedScope 自我声明作为覆盖证据。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+- AC-4.24n7：ImplementationReviewGate 在执行覆盖检查时，必须自动触发 AC 语义扫描（ac-semantic-scanner），逐条验证 spec AC 是否有对应实现代码且逻辑正确。禁止仅依赖 allowedScope 自我声明作为覆盖证据。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-4.24n8：Review 结果必须包含 AC 覆盖矩阵，每条 AC 的覆盖判定包含三层检查：类型定义（接口/类型声明存在）、逻辑代码（业务逻辑实现存在且语义匹配 AC 描述）、测试（对应测试用例存在且覆盖核心路径）。三层全部通过才判定为 covered，缺任何一层判定为 partial。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-- AC-4.24n9：Pipeline 在 Review 阶段通过后、进入 Verify 阶段前，自动触发 Tiered Scan（L1→L2→L3 级联扫描）。扫描由 PipelineEngine 自动编排，无需编排者手动触发。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-- AC-4.24n10：Tiered Scan 任一必需层未产出明确 pass 结论时，pipeline 阻断，不允许进入 Verify 阶段。阻断条件至少包括：L2 扫描结果中 spec-code 覆盖率低于 100%、L1/L2/L3 任一层执行失败、扫描报告缺失或扫描流程异常中断。阻断时产出未覆盖 AC 清单或失败原因和修复建议，触发 Review Fix Loop（FR-06a）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-- AC-4.24n11：当 L2 语义扫描因 LLM 不可用、超时或重试耗尽，导致全部 AC 最终状态为 `needs-review` 且 `coveredCount = 0` 时，Tiered Scan 结论必须为 `needs-review`/`failed`，不得判定为 pass，更不得放行进入 Verify。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+- AC-4.24n9：Pipeline 在 Review 阶段通过后、进入 Verify 阶段前，自动触发 Cascaded Scan（基础检查→语义覆盖检查→运行态检查）。扫描由 PipelineEngine 自动编排，无需编排者手动触发。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+- AC-4.24n10：Cascaded Scan 任一必需检查未产出明确 pass 结论时，pipeline 阻断，不允许进入 Verify 阶段。阻断条件至少包括：AC 语义扫描结果中 spec-code 覆盖率低于 100%、基础检查/语义覆盖检查/运行态检查任一项执行失败、扫描报告缺失或扫描流程异常中断。阻断时产出未覆盖 AC 清单或失败原因和修复建议，触发 Review Fix Loop（FR-06a）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+- AC-4.24n11：当 AC 语义扫描因 LLM 不可用、超时或重试耗尽，导致全部 AC 最终状态为 `needs-review` 且 `coveredCount = 0` 时，Cascaded Scan 结论必须为 `needs-review`/`failed`，不得判定为 pass，更不得放行进入 Verify。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-4.24n12：Review 阶段必须检查实现中是否存在硬编码的宿主环境信息，包括但不限于绝对路径（如 `/root/.openclaw/`、`/home/<user>/`）、特定 agent ID 池、特定 provider/model 名称、特定端口号、特定用户 ID 或 token。发现任一硬编码宿主信息时，Review 结论必须为不通过（blocker），并要求改为可配置项或从 `openclaw.json` 动态读取。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-4.24n13：Review 阶段必须检查用户可见位置是否暴露宿主环境细节。用户可见位置包括 UI 文案、README/文档、错误提示、日志输出和其他直接面向用户的反馈；若出现绝对路径、内部 agent/provider 标识、内部端口、用户 ID、token 等宿主细节泄露，Review 结论必须为不通过（blocker），直到完成脱敏、泛化或配置化处理。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
@@ -596,9 +608,9 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - AC-4.36：验证失败会阻断 Ledger 的通过结论。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.36a：Verify 阶段采用默认拒绝策略（deny by default）——没有显式验证证据的 AC 默认判定为未通过。子 Agent 正常返回但未提供验证证据时，该 AC 的验证状态为 failed，不允许因缺少失败信号而默认通过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.36b：Verify 阶段的验证目标（VerifyTarget）自动从 spec AC 列表派生，每条 AC 生成对应的验证目标。编排者无需手动定义 targets，系统根据 AC 描述自动生成验证步骤和预期结果。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-4.36c：每条 AC 的验证必须包含实际运行证据——API 调用结果、浏览器截图、数据库查询结果、CLI 输出等可观测产出。tsc 编译通过、npm test 通过不算单条 AC 的验证证据，只能作为 L1 基础检查的一部分。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-4.36c：每条 AC 的验证必须包含实际运行证据——API 调用结果、浏览器截图、数据库查询结果、CLI 输出等可观测产出。tsc 编译通过、npm test 通过不算单条 AC 的验证证据，只能作为基础检查的一部分。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.36d：验证步骤必须使用真实数据或真实环境产生的数据。禁止使用 mock 数据、seed 数据或硬编码的预期值通过验证。验证环境可以是隔离的，但数据必须通过实际功能流程产生。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-4.36e：Tiered Scan、编译、测试或其他预检查报告只能作为 Verify 的前置筛查和补充证据，不能替代单条 AC 的运行时验证。若所有 VerifyTarget 都未产出 pass 级运行时证据，则 Verify 总结论必须为 failed。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-4.36e：Cascaded Scan、编译、测试或其他预检查报告只能作为 Verify 的前置筛查和补充证据，不能替代单条 AC 的运行时验证。若所有 VerifyTarget 都未产出 pass 级运行时证据，则 Verify 总结论必须为 failed。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-10 Ledger
 
@@ -705,7 +717,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   1. 校验目标 FR 已被创建并归属到该 Project。
   1. 检查同一 Project 是否已有 active 的 FR 流程实例，有则拒绝创建。
   1. 生成实例 ID（格式见 §3.5）。
-  1. 执行路由判定（§3.2），确定任务级别和必经阶段。
+  1. 执行路由判定（§3.2），确定项目归属、入口阶段和完整阶段队列。
   1. 检查 Project 目录结构，按 §3.6 规范初始化或补全。
   1. 创建 FR 流程实例记录，状态设为 created，并使该 FR 自动进入 Specify 阶段的流程准备态。
   1. 向 PipelineEngine（FR-13）发送 pipeline-created 事件，PipelineEngine 接管后续生命周期推进。
@@ -715,7 +727,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - AC-4.56：每个 FR 流程实例有全局唯一 ID，格式符合 `fr-<project-slug>-<yyyyMMdd>-<seq>` 规范。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.57：同一 Project 已有 active 实例时，创建请求被拒绝并返回明确错误信息。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.58：创建完成后，Project 目录结构符合 §3.6 规范，缺失目录已补全。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-4.59：路由结果包含任务级别、必经阶段、可跳过阶段及跳过理由。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-4.59：路由结果包含项目归属、入口阶段、单一完整阶段队列、主链 mandatory 标记和辅助节点不适用判定理由；路由结果不得包含研发活动等级，也不得声明主链跳过项。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.60：已有 Project 目录的内容不被覆盖，只补全缺失的子目录。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.61：pipeline 创建完成后，PipelineEngine 自动接管并通过 OpenClaw Adapter 触发第一个阶段的执行，用户不需要手动触发。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.62：判定“已有 active pipeline 管理该变更”时，候选 pipeline 必须同时满足状态为 active 且 `projectSlug` 与当前请求的 Project 标识完全相等；不同 Project 的 active pipeline 即使 label、taskId、title 或描述相同，也不得用于拒绝、复用或声明当前 Project 的变更已被管理。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -769,7 +781,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   1. `sevo:create <project-slug> [--from <stage>]` 为 Project 创建 pipeline；不指定 `--from` 时默认从 `specify` 开始。
   1. `sevo fr add <project> <description>` 向 Project 添加 FR，自动触发 pipeline 创建。
   1. `sevo fr list <project>` 列出 Project 下所有 FR 及其 pipeline 状态。
-  1. `sevo fr advance <project> --fr <fr-id>` 为已有项目中新增的 FR 触发增量实现子流程（implement → review → regression → publish），跳过 spec/contract 阶段。
+  1. `sevo fr advance <project> --fr <fr-id>` 为已有项目中新增的 FR 触发增量流程；spec 阶段确认目标 FR 已就绪，plan/contract 阶段由 SA 评估后，再进入 implement → review → regression → publish。
   1. `sevo status [<instance-id>]` 查看 pipeline 当前状态。
   1. `sevo pause <instance-id>` 暂停 pipeline。
   1. `sevo resume <instance-id>` 恢复 pipeline。
@@ -780,7 +792,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - AC-14.1：陌生用户执行 `npm install -g sevo-pipeline` + `npx sevo init` 后，5 分钟内能创建第一个 Project 并启动第一条 pipeline。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.2：`sevo init` 自动检测 OpenClaw 环境配置，不需要用户手动指定。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.3：在 OpenClaw 环境中，`sevo init` 自动注册 SEVO 插件，用户不需要手动编辑 `openclaw.json`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-14.4：`sevo init` 生成的默认配置足以跑通完整流水线（L0 级别），不需要额外配置。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-14.4：`sevo init` 生成的默认配置足以跑通完整流水线，不需要额外配置。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.5：`sevo doctor` 能检测并报告所有配置问题，每个问题附带修复建议。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.6：`sevo --help` 输出所有可用命令，每个命令有一句话说明。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.6a：`sevo:create --help` 展示 `--from <stage>` 参数；`--from` 支持 `specify`、`plan`、`implement`、`audit`、`deploy` 五个起始节点，不指定时默认 `specify`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -800,20 +812,35 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - AC-14.20：`sevo-pipeline` 主包仅承载 CLI、引擎、流水线编排能力，禁止打包 Web 静态资源（`web/`、`web/.next/`、`web/components/` 等子目录）。Web 驾驶舱体验由独立 npm 包 `sevo-web` 提供，发版节奏与主包解耦。`npm pack --dry-run` 输出中不得出现 Web 子目录。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-14.21：`sevo-web` 包通过 `package.json.peerDependencies` 显式声明 `sevo-pipeline` 的兼容版本范围；`sevo-web` 启动时校验已安装的 `sevo-pipeline` 引擎契约版本，不在兼容范围内时拒绝启动并输出含「升级/降级 sevo-pipeline 至 X.Y.Z」的可操作错误信息。`sevo-pipeline` 的 `sevo init` 在检测到项目声明 Web 入口时，必须主动提示安装 `sevo-web` 并附完整命令，禁止默认无声忽略。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
+### FR-14a Pipeline Discipline Prompt Injection（流水线纪律提示注入）
+
+- **定位**：SEVO 插件的每轮提示注入机制。SEVO 自身负责把流水线纪律以引导式准入提醒注入主会话，不依赖 ACO dispatch-guard 代劳。
+- **触发条件**：OpenClaw 主会话每次构建 prompt 时无条件触发；不以当前请求是否命中 tracked project、受管项目列表是否存在、是否已有 active pipeline 为前提。
+- **处理**：SEVO 插件通过 `before_prompt_build` 向主会话注入流水线纪律提醒，内容覆盖 Spec-First、`sevo:` 前缀入口检查、开发→审计闭环、主 Agent 配合 SEVO 引导四类规则。注入文本必须使用引导、准入校验、路由、握手等非对抗措辞。每条规则写清三要素：目标、主会话当轮要做什么、为什么要这么做。Why：流水线纪律如果只放在 ACO dispatch-guard，SEVO 的核心研发闭环会依赖外部插件的历史遗留规则；当 ACO 未启用、规则被压缩或受管项目列表为空时，Spec-First 和审计闭环会丢失，研发任务会重新回到不可追溯的口头约束。
+- **ACO 职责边界**：ACO 只保留一条 fallback 提醒：研发类变更应交给 SEVO 流水线引导；完整规则由 SEVO 维护和注入。
+- **输出**：主会话每轮可见的 SEVO 流水线纪律提示和可审计的注入记录。
+- **执行阶段**：OpenClaw prompt 构建阶段，贯穿所有 SEVO 相关入口和未显式纳管的研发请求。
+- **验收标准**：
+  - AC-14a.1：每次主会话 prompt 构建时，SEVO 插件都注入流水线纪律提醒；注入不以 tracked project 存在、受管项目列表非空、当前请求已识别 projectSlug 或已有 active pipeline 为前提。验收验证：在受管项目列表为空和存在受管项目两种环境分别触发 prompt 构建，注入记录中均出现同一组 SEVO 流水线纪律提示；任一环境缺失即判定为 fail。
+  - AC-14a.2：注入内容必须覆盖四类规则：Spec-First 先确认 FR/AC 覆盖；`sevo:` 前缀入口检查与路由提醒；开发完成后必须进入独立审计并形成修复→复验闭环；主 Agent 接受 SEVO 的引导式握手，不用改 label、换措辞或任务拆分脱离流水线引导。验收验证：读取一次实际注入文本，四类规则缺任一类即判定为 fail。
+  - AC-14a.3：每类注入规则必须包含三要素：目标、主会话当轮要做什么、Why。验收验证：抽取注入文本中的四类规则，逐条检查是否能对应到目标、动作和原因；缺少任一要素即判定为 fail。
+  - AC-14a.4：注入措辞必须是引导式、准入校验式、路由式或握手式；不得使用对抗、脱离流程、惩罚、控制主 Agent 这类表达。验收验证：对实际注入文本做人工审查或 LLM 审查，发现对抗性措辞即判定为 fail。
+  - AC-14a.5：ACO dispatch-guard 中与 SEVO 流水线纪律重复的完整规则必须压缩为 fallback 一句话，语义为“研发类变更交由 SEVO 流水线引导”；ACO 不再维护 Spec-First、入口检查、开发→审计闭环和握手规则的完整文本。验收验证：读取 ACO 注入文本，只允许存在 fallback 提醒；若 ACO 仍保存完整 SEVO 纪律规则，即判定为 fail。
+
 ### FR-15 Progressive Disclosure（渐进式披露配置）
 
-- **定位**：SEVO 的配置与定制分层模型。该能力服务已有第三方用户，待核心链路修通后激活。激活前，默认只开放 L0 安装即用能力，避免高级配置分散主链路交付焦点。
+- **定位**：SEVO 的配置与定制能力。该能力服务已有第三方用户，待核心链路修通后激活。激活前，默认只开放安装即用能力，避免高级配置分散主链路交付焦点。
 - **触发条件**：受管项目已能稳定完成创建、推进、审计、发布、验证和 Ledger 留痕后，由用户显式开启高级配置能力。
 - **处理**：
 
-**L0 安装即用**（由 FR-14 保证）：
+**安装即用**（由 FR-14 保证）：
 
 - `sevo init` 后零配置可用。默认阶段定义、默认门禁规则、默认路由策略、角色专业标准全部内置。
 - 用户只需要 `sevo project create <name>` + `sevo fr add <project> <description>` 就能启动 pipeline。
 - 单 Agent 环境自动降级：所有角色池填入同一个 agentId，流水线所有阶段由同一个 Agent 执行，质量保证降级但功能完整。
 - 对未经编排的开发任务的默认处理策略为 `guide`（注入流程引导），不阻断执行。
 
-**L1 按需配置**：
+**按需配置**：
 
 - 用户可以在配置中调整：
   - 默认路由级别阈值（多少行算 Level 1、多少行算 Level 2+）。
@@ -821,7 +848,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - 发布目标（npm / GitHub / ClawHub）。
   - 合规模式（`guide` 注入流程引导 / `auto-route` 自动为未编排的开发任务创建 pipeline 并路由进 SEVO 流程 / `off` 关闭）。
 
-**L2 自定义阶段**：
+**自定义辅助阶段**：
 
 - 用户可以添加自定义阶段（如 Security Audit、Performance Test）。
 - 用户可以修改阶段顺序（在约束范围内）。
@@ -835,13 +862,13 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 - **输出**：渐进式配置能力说明、可选配置项、编程控制接口说明。
 - **执行阶段**：安装初始化与流水线配置阶段。
 - **验收标准**：
-  - AC-15.1：L0 级别下，用户不需要编辑任何配置文件就能跑通完整 pipeline。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-15.2：L1 级别的配置项有完整的文档说明和默认值，修改任一配置不会破坏 pipeline 运行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-15.3：L2 级别的自定义阶段可以插入到标准阶段序列中，且不破坏工件链和门禁逻辑。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-15.1：安装即用模式下，用户不需要编辑任何配置文件就能跑通完整 pipeline。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-15.2：按需配置项有完整的文档说明和默认值，修改任一配置不会破坏 pipeline 运行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-15.3：自定义辅助阶段可以插入到标准阶段序列中，且不破坏工件链和门禁逻辑。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-15.4：L3 级别的 API 覆盖 pipeline 创建、阶段查询、门禁覆写、工件读取等核心操作。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-15.5：每个级别的能力是累加的——L1 包含 L0 的全部能力，L2 包含 L1 的全部能力，以此类推。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-15.6：用户从 L0 升级到 L1 不需要重新初始化，只需编辑配置文件。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-15.7：Agent 自主行动按操作风险分三级——L0 级操作（文件读写、构建、测试、代码生成）无需确认直接执行；L1 级操作（配置变更、依赖安装、分支创建）执行后通知用户；L2 级操作（发布、删除、外部通信、生产环境变更）必须获得用户确认后才能执行。分级规则在 `sevo.config.json` 的 `actionLevels` 字段中可自定义，默认值覆盖常见操作类型。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-15.5：配置能力是累加的——按需配置包含安装即用的全部能力，自定义辅助阶段包含按需配置的全部能力。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-15.6：用户从安装即用切换到按需配置不需要重新初始化，只需编辑配置文件。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-15.7：Agent 自主行动按操作风险分为普通操作、需通知操作、需确认操作三类——普通操作（文件读写、构建、测试、代码生成）无需确认直接执行；需通知操作（配置变更、依赖安装、分支创建）执行后通知用户；需确认操作（发布、删除、外部通信、生产环境变更）必须获得用户确认后才能执行。规则在 `sevo.config.json` 的 `actionPolicies` 字段中可自定义，默认值覆盖常见操作类型。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-17 Post-Release Validation Gate（发布后验证门禁）
 
@@ -857,7 +884,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - AC-17.2：差距扫描逐条对照 spec FR，输出结构化 gap analysis report，包含 totalFrs、coveredCount、codeOnlyCount、missingCount、gaps 和逐条 entries。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-17.3：发现差距（gaps > 0）时，自动生成修复任务列表（fixTasks），每条包含 frId 和 description。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-17.4：差距为零（gaps === 0）时 canComplete 为 true，流水线可进入 Ledger 阶段；差距不为零时 canComplete 为 false，流水线阻塞。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-17.5：L1/L2+ 流水线包含 post-release-validation 阶段；L0 微小改动跳过此阶段。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-17.5：流水线包含 post-release-validation 阶段。仅当项目无发布目标、未产生发布制品、未触达任何可安装/可访问交付物，且 review 报告记录三项证据同时成立时，post-release-validation 才可标记为 skipped；任何代码、配置、文档或发布相关研发活动均不得跳过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-17.6（引擎与调度层职责边界）：SEVO 引擎是状态机 + 触发器，不是执行者。引擎的职责限于：感知「现在到了哪个节点」、在需要行动的节点向调度层（主 Agent）推送提醒、接收「差距已清零」的确认后放行进入下一阶段。引擎不做差距判定——差距分析由调度层派子 Agent 执行，结果回报给调度层，调度层确认后通知引擎。引擎不做任务拆解——修复任务的定义和派发由调度层负责。循环终止条件：调度层通知引擎「差距 = 0」，引擎放行。
   - AC-17.7：差距扫描维度扩展为两大类——技术可用性（项目结构完整性、安装验证、编译验证、测试验证、服务存活、运行态健康、依赖安全）和产品可感知性（README 质量、npm 元数据、GitHub 元数据、官网可达）。每个维度产出 PASS/FAIL/SKIP 状态和失败原因。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-17.8：产品可感知性扫描中的 README 质量评估必须调用 LLM API 进行语义级评估（tagline→痛点→优势→快速体验→场景→文档链接），产出 0-100 评分和改进建议。禁止降级为结构检查、关键词匹配或正则表达式。LLM 不可用时该检查项标记为 SKIP（原因：「LLM 不可用」），不标记为 PASS。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -951,7 +978,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - AC-19.1：Review 阶段（FR-06）所有子阶段通过后，Pipeline 自动进入终局交付链，不需要用户手动触发或主会话 prompt 驱动。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-19.1a：任何入口路径（`sevo:create`、`sevo:implement`、`sevo:fix`、`sevo:from`）一旦创建或重入流水线，PipelineEngine 都必须自动收敛到统一终局阶段链 `implement → review → smoke → regression → deploy → verify → readme → publish`。前置阶段可因已完成而跳过，但后续阶段不得因入口不同而缺失。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-19.1b：终局交付链的推进是程序化硬门禁，不允许出现“当前阶段完成后等待人工继续”“审计通过后停住”“修复完成后停在 implement/review”这类断点。只要流水线未被明确阻断或完成，就必须继续自动推进。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-19.1c：Tier-1、quickstart 或其他成本裁剪模式若跳过某些阶段，必须在 pipeline state 中逐项记录 `skipped` 状态、跳过原因、补回时机和责任阶段；被跳过的终局阶段必须在流水线进入最终完成前补回验证，未补回时不得标记 completed。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-19.1c：不存在按成本或等级裁掉阶段的模式。若辅助节点因输入不适用被标记为 `skipped`，必须在 pipeline state 中逐项记录跳过原因、证据、判定人/判定器和复核入口；主链节点不得标记为 `skipped`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-19.2：终局交付链中，README 同步阶段检测 README 是否包含本次新增 FR 的描述。缺失时自动生成 README 更新任务；README 已包含时跳过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-19.3：版本 bump 级别根据变更类型自动判定（patch/minor/major），执行 bump 并更新 package.json。判定规则可通过项目配置覆盖。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-19.4：发布阶段调用 PublishAdapter 执行发布。PublishAdapter 是接口，当前实现调用 publish-release.sh。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -1048,24 +1075,24 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 ### FR-24 Evaluation-Implementation Workspace Isolation（评估-实现工作区隔离）
 
 - **定位**：跨阶段机制。物理隔离编码 Agent 的可编辑范围与评估器代码，确保「谁写代码，谁就不能碰评分标准」的原则在 OS 层面强制执行，而非仅依赖 prompt 约束。
-- **核心原则**：编码 Agent 的可写范围限制在 `src/` 和 `tests/`，`evaluators/` 目录对编码 Agent 只读。隔离优先用 L0 层（OS 文件权限）实现，L4 层（ACP harness 约束）做冗余兜底。
+- **核心原则**：编码 Agent 的可写范围限制在 `src/` 和 `tests/`，`evaluators/` 目录对编码 Agent 只读。隔离优先用 平台层（OS 文件权限）实现，ACP harness 层约束做冗余兜底。
 - **输入**：项目目录结构、Agent 角色注册表（FR-22）、OpenClaw 环境能力。
 - **处理**：
   1. Pipeline Create（FR-12）初始化项目目录时，自动创建 `evaluators/` 目录并设置文件权限。
-  1. L0 层隔离（OS 文件权限）：`evaluators/` 目录的 owner 设为非编码 Agent 的执行用户（如 root 或专用 evaluator 用户），编码 Agent 的执行用户只有 read + execute 权限，无 write 权限。具体实现取决于 OpenClaw 环境是否支持多用户隔离。
+  1. 平台层隔离（OS 文件权限）：`evaluators/` 目录的 owner 设为非编码 Agent 的执行用户（如 root 或专用 evaluator 用户），编码 Agent 的执行用户只有 read + execute 权限，无 write 权限。具体实现取决于 OpenClaw 环境是否支持多用户隔离。
   1. L4 层隔离（ACP harness 约束）：在编码 Agent 的 session 配置中注入文件写入白名单（`allowedWritePaths: ["src/**", "tests/**"]`），禁止写入 `evaluators/`、`docs/` 等目录。ACP harness 在工具调用层拒绝越界写入。
   1. L6 层冗余（prompt 注入）：Implement 阶段的执行原则注入（§6.6）中增加「禁止修改 evaluators/ 目录」的显式约束。
-  1. 隔离状态在 pipeline 创建时校验，校验失败时记录警告但不阻断（OpenClaw 环境可能不支持 L0 层隔离）。
-- **输出**：隔离状态报告（Isolation Status），包含 L0/L4/L6 各层的生效状态。
+  1. 隔离状态在 pipeline 创建时校验，校验失败时记录警告但不阻断（OpenClaw 环境可能不支持 平台层隔离）。
+- **输出**：隔离状态报告（Isolation Status），包含 平台层、ACP harness 层、prompt 层各层的生效状态。
 - **执行阶段**：Pipeline Create（FR-12）的目录初始化步骤 + Implement（FR-05）的执行环境准备。
 - **标准目录结构扩展**：
 - **验收标准**：
   - AC-24.1：Pipeline Create 初始化项目目录时，自动创建 `evaluators/` 目录。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-24.2：OpenClaw 环境支持多用户隔离时，`evaluators/` 目录的文件权限设置为编码 Agent 执行用户只读（L0 层）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-24.2：OpenClaw 环境支持多用户隔离时，`evaluators/` 目录的文件权限设置为编码 Agent 执行用户只读（平台层）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-24.3：编码 Agent 的 session 配置中注入文件写入白名单，禁止写入 `evaluators/` 目录（L4 层）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-24.4：Implement 阶段的执行原则注入中包含「禁止修改 evaluators/ 目录」的显式约束（L6 层）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-24.5：编码 Agent 尝试写入 `evaluators/` 目录时，至少有一层隔离机制拒绝该写入并记录审计事件。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-24.6：OpenClaw 环境不支持 L0 层隔离时，系统记录警告并依赖 L4 + L6 层兜底，不阻断 pipeline 执行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-24.6：OpenClaw 环境不支持 平台层隔离时，系统记录警告并依赖 L4 + L6 层兜底，不阻断 pipeline 执行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-24.7：隔离状态报告纳入 Pipeline Create 的产出工件，记录各层生效状态，可追溯。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-24.8：评估器的编写和修改只能由非 Coder 角色（Auditor、Architect、Product）执行，角色校验复用 FR-22 的角色-任务匹配机制。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
@@ -1116,11 +1143,11 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 
 ### FR-27 Flexible Stage Entry（任意阶段切入）
 
-- **定位**：生命周期操作。允许用户从流水线的任意阶段开始执行，而非强制从 spec 开始。这是 SEVO 开箱即用的核心能力——已有代码的项目可以直接从 implement、review、deploy 等阶段切入。
-- **与 FR-12 的关系**：FR-27 复用 FR-12 的实例创建逻辑（Pipeline Create），在创建实例时额外将起始阶段之前的阶段标记为 skipped。FR-27 不是平行实现，而是 FR-12 创建流程的扩展入口。
+- **定位**：生命周期操作。允许用户从流水线的已具备准入条件阶段开始执行，而非强制从 spec 开始。这是 SEVO 开箱即用的核心能力——已有代码的项目可以从 implement、review、deploy 等阶段切入，但 plan/contract 阶段仍必须先由 SA 完成评估。
+- **与 FR-12 的关系**：FR-27 复用 FR-12 的实例创建逻辑（Pipeline Create），在创建实例时识别用户指定的目标阶段，并对前置阶段逐项执行准入校验。FR-27 不是平行实现，而是 FR-12 创建流程的扩展入口。
 - **触发条件**：用户通过 `sevo:create <project-slug> --from <stage>` 指定起始节点，或主会话调度时在 label 中包含 `from:<stage>` 标记。
 - **输入**：Project 标识、目标起始阶段、任务描述。
-- **合法阶段标识**：`specify`、`plan`、`implement`、`audit`、`deploy`。Gate 阶段（`spec-review-gate`、`contract-review-gate`、`publish-generalization-gate`）及辅助阶段（`test-case-authoring`、`smoke-test`、`ux-acceptance`、`e2e-verification`、`regression`、`ledger`）不允许作为切入点。
+- **合法阶段标识**：`specify`、`plan`、`implement`、`audit`、`deploy`。Gate 阶段（`spec-review-gate`、`contract-review-gate`、`publish-generalization-gate`）及辅助阶段（`test-case-authoring`、`smoke-test`、`ux-acceptance`、`e2e-verification`、`regression`、`ledger`）不允许作为切入点。指定 `implement`、`audit` 或 `deploy` 时，系统仍先执行 plan/contract 的 SA 评估；评估 pass-no-change 后才进入目标阶段。
 - **处理**：
   1. 解析命令或 label：识别 `sevo:create <project> --from <stage>` 格式，或从任务 label 中提取 `from:<stage>` 标记。
   1. 未指定 `--from` 时，默认起始节点为 `specify`。
@@ -1130,26 +1157,25 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   1. 若该 Project 已有 active pipeline（FR-12 AC-4.57），拒绝创建并返回错误提示。
   1. 在真正进入目标阶段前，先执行 spec 完整性检查：判断当前重入问题是否已有对应 FR/AC 覆盖，相关边界与验收是否完整。
   1. 若 spec 完整性检查未通过，则暂停流水线并先回到 Spec 阶段补齐；补齐并通过 Spec Review Gate 后，再恢复到用户指定阶段继续推进。
-  1. 调用 FR-12 的实例创建逻辑，将起始阶段之前的所有阶段标记为 skipped（附跳过理由："用户指定从  开始"）。
-  1. 校验 Tier 路由兼容性：若用户指定的阶段不在该任务 Tier 的阶段集合中，返回错误。
-  1. 直接进入目标阶段，注入该阶段对应的 prompt 模板和质量门禁。
+  1. 调用 FR-12 的实例创建逻辑，对目标阶段之前的阶段逐项处理：specify 已覆盖时标记为 ready；spec-review-gate 仍必须执行；plan/contract 始终进入 SA 评估，结论为 pass-no-change 或 needs-update；plan-review-gate、implement-review-gate 仍必须执行。辅助节点如确实不适用，必须记录严格的不适用判定证据。
+  1. 校验入口阶段合法性：若用户指定的阶段不在单一完整阶段注册表中，返回错误。
+  1. 在 spec ready 且 plan/contract SA 评估通过后进入目标阶段，注入该阶段对应的 prompt 模板和质量门禁。
   1. 从目标阶段开始，后续阶段按统一终局阶段链正常推进，不因中途切入而裁掉后续终局阶段。
-- **输出**：FR 流程实例（含跳过阶段记录、起始阶段标识）。
+- **输出**：FR 流程实例（含前置阶段准入记录、plan/contract SA 评估记录、起始阶段标识）。
 - **执行阶段**：Pipeline Create 的扩展入口（复用 FR-12 实例创建逻辑）。
 - **验收标准**：
   - AC-27.1：`sevo:create <project> --from <stage>` 命令被正确解析，合法阶段标识为 `specify`、`plan`、`implement`、`audit`、`deploy`；不指定 `--from` 时默认 `specify`。Gate 阶段（`spec-review-gate`、`contract-review-gate`、`publish-generalization-gate`）作为切入点时返回明确错误。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-27.1a：`sevo:from` 任意阶段入口在进入目标阶段前，必须先执行 spec 完整性检查；检查内容包括当前问题是否已有 FR/AC 覆盖、相关边界是否完整、用户可见行为是否已在 spec 中定义。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-27.1b：spec 完整性检查结论为“未覆盖”或“不完整”时，流水线状态设为 paused-spec-gap，自动回到 Spec 阶段补 spec；spec 补齐并通过 Spec Review Gate 后，自动恢复到原用户指定阶段继续推进。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-27.2：起始阶段之前的阶段在 Stage Record 中标记为 skipped，包含跳过理由。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-27.2：起始阶段之前的阶段在 Stage Record 中保留明确状态；specify 可在已覆盖时标记为 ready，spec-review-gate 必须执行，plan/contract 必须记录 SA 评估结论（pass-no-change 或 needs-update），plan-review-gate 与 implement-review-gate 不得省略；辅助节点若不适用，必须记录严格的不适用判定证据。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-27.3：从目标阶段开始，后续阶段推进逻辑与从头创建的流水线完全一致（复用 FR-12 推进机制）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-27.4a：Project 目录不存在时，只允许从 `specify` 切入（等价于默认 `sevo:create`）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-27.4b：跳过 `specify` 阶段时，必须存在 spec 文件（`product-requirements.md`），否则拒绝。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-27.4c：跳过 `plan` 阶段时，建议存在架构文件（非强制，仅警告）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-27.5：陌生用户通过 `sevo:create myproject --from implement` 可以直接对已有代码启动 implement→audit→deploy 流程，无需先走 specify。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-27.4b：指定非 `specify` 起始阶段时，必须存在 spec 文件（`product-requirements.md`），否则拒绝。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-27.5：陌生用户通过 `sevo:create myproject --from implement` 可以对已有代码启动流程；系统先确认 spec ready，并完成 plan/contract SA 评估，再进入 implement→audit→deploy。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-27.6：主会话调度修复类任务时，可通过 label 中包含 `from:<stage>` 标记告知 SEVO 插件从哪个阶段切入。SEVO 插件解析 label 中的 `from:` 前缀，提取阶段标识后自动创建对应的流程实例。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-27.7：`sevo:create <project> --from specify` 等价于不带 `--from` 的 `sevo:create <project>`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-27.8：已有 active pipeline 的 Project 拒绝重复创建（引用 FR-12 AC-4.57）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-27.9：用户指定的阶段不在该任务 Tier 的阶段集合中时，返回明确错误提示。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-27.9：用户指定的阶段不在单一完整阶段注册表中时，返回明确错误提示。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-28 Clean-Install Verification Gate（发版前干净环境端到端验证）
 
@@ -1160,12 +1186,12 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 - **输入**：已发布的 npm 包名+版本、spec 中的 FR 列表、项目声明的运行态组件清单。
 - **处理**：
   1. 创建隔离验证目录（`/tmp/stranger-verify-<instance-id>/`），确保不继承当前 workspace 的任何文件、环境变量或配置。
-  1. L1 机械层验证：
+  1. 机械层验证：
   - `npm install -g <包名>@<版本>` 安装成功。
   - CLI 入口存在且 `--help` 正常输出。
   - `init` 命令执行成功，生成的配置文件完整且合法。
   - 错误提示可理解、可操作（非 stack trace）。
-  1. L2 运行层验证：
+  1. 运行层验证：
   - init 后所有声称的运行态组件（hook、cron job、数据库文件、服务进程）都存在。
   - 每个运行态组件可被触发（hook 能响应事件、cron 脚本能手动执行、DB 能查询、服务能响应请求）。
   - 配置文件中引用的路径和依赖在隔离环境中都可解析。
@@ -1179,24 +1205,24 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 - **阻断条件**：任何一层存在 fail 项时，canComplete 为 false，流水线阻塞，不进入 Ledger。
 - **执行阶段**：clean-install-verification（位于 post-release-validation 之后、ledger 之前）。
 - **验收标准**：
-  - AC-28.1：FR-17 通过后，流水线自动进入 clean-install-verification 阶段，无需人工触发。L0 微小改动（Tier 路由判定为 L0）跳过此阶段。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-28.1：FR-17 通过后，流水线自动进入 clean-install-verification 阶段，无需人工触发。仅当项目没有安装入口、没有发布制品、没有外部用户可运行路径，且 review 报告记录三项证据同时成立时，clean-install-verification 才可标记为 skipped。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-28.2：验证在隔离目录中执行，该目录不包含当前 workspace 的任何文件、不继承项目特有的环境变量。验证结束后目录被清理。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-28.3：L1 机械层——`npm install -g`、CLI `--help`、`init` 命令三项全部通过才算 L1 pass。任一失败即整体 fail，附带具体错误输出。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-28.4：L2 运行层——init 后项目声明的每个运行态组件（在 spec 或项目配置中注册）都存在且可触发。组件清单从项目的 `sevo.config.json` 或 spec 的 FR 描述中提取。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-28.3：机械层——`npm install -g`、CLI `--help`、`init` 命令三项全部通过才算机械层 pass。任一失败即整体 fail，附带具体错误输出。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-28.4：运行层——init 后项目声明的每个运行态组件（在 spec 或项目配置中注册）都存在且可触发。组件清单从项目的 `sevo.config.json` 或 spec 的 FR 描述中提取。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-28.5：L3 价值层——spec 中每个标记为核心功能的 FR，至少有一条端到端数据流验证通过（输入→处理→有意义产出）。「有意义」的判定标准：产出非空、非默认模板、非错误信息。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-28.6：验证报告包含 `{ l1: {pass, checks[]}, l2: {pass, checks[]}, l3: {pass, checks[]}, overall: pass|fail, failedChecks[] }` 结构。报告写入项目的 `docs/clean-install-report.json`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-28.7：验证失败时，自动生成修复任务列表（fixTasks），每条包含失败层级、检查项标识和修复建议。调度层负责派发修复任务，修复完成后重新发版并再次触发 FR-28 验证。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-28.8：已有脚本 `scripts/npm-stranger-verify.sh` 作为 L1 层的默认实现。L2/L3 层验证逻辑由项目在 `sevo.config.json` 中声明验证步骤（`cleanInstallChecks.l2[]` 和 `cleanInstallChecks.l3[]`），SEVO 引擎按声明顺序执行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-28.8：已有脚本 `scripts/npm-stranger-verify.sh` 作为机械层默认实现。运行层和有意义产出层验证逻辑由项目在 `sevo.config.json` 中声明验证步骤（`cleanInstallChecks.runtime[]` 和 `cleanInstallChecks.meaningful[]`），SEVO 引擎按声明顺序执行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-28.9：单 Agent 用户也能走完 clean-install-verification。验证逻辑内置于 SEVO CLI（`sevo verify --clean-install`），不依赖专职验证 Agent。多 Agent 环境下由调度层派非开发 Agent 执行验证（禁止开发者自验）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-28.10（引擎与调度层职责边界）：SEVO 引擎在 post-release-validation 通过后自动触发 clean-install-verification 阶段，向调度层推送验证提醒。验证执行由调度层负责（派 Agent 或直接调用 `sevo verify --clean-install`）。验证结果回报给引擎，引擎根据 overall pass/fail 决定放行或阻塞。
 
-### FR-29 Tiered Endgame Gap Scan（分层终局差距扫描）
+### FR-29 Cascaded Endgame Gap Scan（级联终局差距扫描）
 
-- **定位**：终局差距扫描的分层升级。当前差距扫描仅做文件级覆盖检查（L1），无法发现「代码存在但 AC 未覆盖」和「功能存在但运行态无意义产出」两类深层缺口。本 FR 将终局差距扫描升级为三层体系（L1 文件级 → L2 AC 级 → L3 运行态），逐层加深验证粒度，确保发版产物从「代码存在」到「功能可用且有意义」全链路闭合。
+- **定位**：终局差距扫描的级联升级。当前差距扫描仅做文件级覆盖检查，无法发现「代码存在但 AC 未覆盖」和「功能存在但运行态无意义产出」两类深层缺口。本 FR 将终局差距扫描升级为三段体系（文件级 → AC 级 → 运行态），逐层加深验证粒度，确保发版产物从「代码存在」到「功能可用且有意义」全链路闭合。
 - **与 FR-17 的关系**：FR-17 定义 Post-Release Validation Gate 的整体框架，FR-29 细化其中「差距扫描」环节的分层执行标准和触发时机。FR-17 是门禁容器，FR-29 是门禁内部的扫描引擎规格。
 - **与 FR-28 的关系**：FR-28 在隔离干净环境中做端到端验证（陌生用户视角），FR-29 在当前开发环境中做 spec→代码→运行态的逐层对照（开发者视角）。FR-28 验证「装上能用」，FR-29 验证「每条需求都有实现且实现有效」。两者互补，不替代。
 
-#### L1 文件级扫描（快速覆盖检查）
+#### 文件级扫描（快速覆盖检查）
 
 - **目标**：确认每个 FR 有对应代码文件、编译通过、测试全绿。
 - **触发时机**：每次 implement 阶段完成后自动触发。
@@ -1205,9 +1231,9 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   - 每个 FR 至少有一个对应的源码文件（通过项目的 FR→文件映射表或目录约定判定）。
   - `tsc`（或项目对应的编译命令）零错误通过。
   - 项目测试套件全绿（`npm test` 或等效命令退出码为 0）。
-- **产出**：L1 扫描报告（`docs/gap-scan-l1.json`），包含每个 FR 的 covered/uncovered 状态和编译/测试结果。
+- **产出**：文件级扫描报告（`docs/gap-scan-l1.json`），包含每个 FR 的 covered/uncovered 状态和编译/测试结果。
 
-#### L2 AC 级深度扫描（三阶段语义流水线）
+#### AC 级深度扫描（三阶段语义流水线）
 
 - **目标**：逐条 AC 对照代码逻辑，确认每条 AC 都有实现代码和对应测试。采用三阶段流水线架构，在保证语义准确性的同时将 token 消耗降低 95% 以上（相比逐条 AC 独立调用 LLM）。
 - **触发时机**：endgame 阶段发版前强制执行；支持独立 cron 定期扫描（不依赖 pipeline endgame 触发）。
@@ -1244,32 +1270,32 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 
 #### 流水线集成
 
-- L1 在 review 阶段自动触发（扩展现有 ImplementationReviewGate）。
-- L2 在 endgame 阶段发版前触发（新增 ACCoverageGate）。
+- 文件级扫描在 review 阶段自动触发（扩展现有 ImplementationReviewGate）。
+- AC 级扫描在 endgame 阶段发版前触发（新增 ACCoverageGate）。
 - L3 在 post-release 阶段触发（npm publish 后），或在涉及用户可感知功能的 implement 阶段完成后触发（与 FR-28 Clean-Install Gate 协同，FR-29 L3 先于 FR-28 执行）。
 - 任何一层不通过 = 阻断当前阶段，必须修复后复验。
 - 三层扫描结果汇总写入 `docs/gap-scan-summary.json`，供 Ledger 阶段归档。
 
 #### 验收标准
 
-- AC-29.1（L1 自动触发）：implement 阶段完成后，流水线自动触发 L1 扫描，无需人工干预。扫描在 10 分钟内完成。扫描结果写入 `docs/gap-scan-l1.json`。
-- AC-29.2（L1 阻断逻辑）：L1 扫描发现任一 FR 无对应代码文件、编译失败或测试失败时，阶段状态为 blocked，流水线不进入下一阶段。阻断信息包含具体失败 FR 编号和失败原因。
-- AC-29.3（L1 产出格式）：L1 报告为结构化 JSON，包含 `{ frId, status: "covered"|"uncovered", compilePassed: boolean, testsPassed: boolean, evidence: { files: string[] } }` 数组。
-- AC-29.4（L2 Phase 1 代码地图生成）：L2 扫描的 Phase 1 遍历所有配置的 scanDirs，对每个匹配文件提取相对路径、导出符号列表和文件头注释。Phase 1 不调用 LLM（零 token 消耗）。验证方式：mock 文件系统执行 Phase 1，确认产出包含所有目标文件且无 LLM 调用记录。
-- AC-29.5（L2 扫描范围可配置）：L2 扫描通过 `scanDirs` 参数接受目录列表（相对于项目根目录），默认值为 `['.']`（整个项目）。支持 `extensions`（文件扩展名白名单）和 `ignoreDirs`（忽略目录黑名单）配置。验证方式：配置 `scanDirs: ['src/', 'scripts/']` 后执行扫描，确认只有这两个目录下的文件出现在代码地图中。
-- AC-29.6（L2 Phase 2 批量初筛）：Phase 2 将 AC 列表与代码地图合并为 prompt，按 batchSize 分批发送给 LLM。每批一次 LLM 调用，对每条 AC 返回三分类结果（covered/suspect/uncovered）及候选文件路径。禁止使用关键词匹配、正则表达式或文件名推断作为分类依据。验证方式：50 条 AC + batchSize=150 时，Phase 2 LLM 调用次数 = 1；batchSize=25 时调用次数 = 2。
-- AC-29.7（L2 Phase 3 精确验证）：Phase 3 仅对 Phase 2 判定为 suspect 或 uncovered 的 AC 执行。读取候选文件实际源码，发送给 LLM 做精确语义验证。Phase 2 判定为 covered 的 AC 不进入 Phase 3（跳过验证）。验证方式：Phase 2 返回 40 covered + 10 suspect 时，Phase 3 仅处理 10 条。
-- AC-29.8（L2 Token 效率）：三阶段流水线的总 LLM token 消耗相比逐条 AC 独立调用降低 95% 以上。验证方式：对同一项目分别执行三阶段流水线和逐条调用（或计算理论值），对比总 token 数，流水线 ≤ 逐条的 5%。
-- AC-29.9（L2 触发时机与独立扫描）：endgame 阶段发版前，流水线自动触发 L2 扫描。L2 扫描在 L1 通过的前提下执行（L1 未通过则 L2 不触发）。支持独立触发：通过 CLI 命令（`sevo scan --level 2`）或 cron 定时任务直接执行 L2 扫描，不依赖 pipeline endgame 阶段。验证方式：(a) endgame 阶段 L1 通过后 L2 自动触发；(b) 手动执行 `sevo scan --level 2` 成功产出报告。
-- AC-29.10（L2 阻断逻辑）：L2 扫描发现任一 AC 最终状态为 uncovered（Phase 3 确认无实现代码）时，阶段状态为 blocked，流水线不进入下一阶段。needs-review 状态不自动阻断，但写入报告供人工确认。验证方式：构造一条无实现的 AC，执行 L2 扫描后确认阶段状态为 blocked。
-- AC-29.11（L2 产出格式）：L2 报告为结构化 JSON，包含 `{ frId, acId, status: "covered"|"uncovered"|"needs-review", confidence: number, evidence: { file: string, lineRange: [number, number], testFile?: string } }` 数组。扫描日志为独立 JSON 文件，记录每次 LLM 调用的 prompt 摘要和完整响应，确保映射过程可追溯。验证方式：执行 L2 扫描后，报告文件和日志文件均存在且 JSON schema 校验通过。
-- AC-29.12（L2 语义约束）：L2 全流程（Phase 2 初筛 + Phase 3 验证）的 LLM prompt 明确禁止关键词匹配、正则表达式和文件名推断。System prompt 中包含该约束声明。验证方式：检查 L2 扫描器的 system prompt 常量，确认包含禁止关键词匹配/正则/文件名推断的明确指令。
+- AC-29.1（文件级扫描自动触发）：implement 阶段完成后，流水线自动触发 文件级扫描，无需人工干预。扫描在 10 分钟内完成。扫描结果写入 `docs/gap-scan-l1.json`。
+- AC-29.2（文件级扫描阻断逻辑）：文件级扫描发现任一 FR 无对应代码文件、编译失败或测试失败时，阶段状态为 blocked，流水线不进入下一阶段。阻断信息包含具体失败 FR 编号和失败原因。
+- AC-29.3（文件级扫描产出格式）：文件级扫描报告为结构化 JSON，包含 `{ frId, status: "covered"|"uncovered", compilePassed: boolean, testsPassed: boolean, evidence: { files: string[] } }` 数组。
+- AC-29.4（AC 级扫描 Phase 1 代码地图生成）：AC 级扫描的 Phase 1 遍历所有配置的 scanDirs，对每个匹配文件提取相对路径、导出符号列表和文件头注释。Phase 1 不调用 LLM（零 token 消耗）。验证方式：mock 文件系统执行 Phase 1，确认产出包含所有目标文件且无 LLM 调用记录。
+- AC-29.5（AC 级扫描范围可配置）：AC 级扫描通过 `scanDirs` 参数接受目录列表（相对于项目根目录），默认值为 `['.']`（整个项目）。支持 `extensions`（文件扩展名白名单）和 `ignoreDirs`（忽略目录黑名单）配置。验证方式：配置 `scanDirs: ['src/', 'scripts/']` 后执行扫描，确认只有这两个目录下的文件出现在代码地图中。
+- AC-29.6（AC 级扫描 Phase 2 批量初筛）：Phase 2 将 AC 列表与代码地图合并为 prompt，按 batchSize 分批发送给 LLM。每批一次 LLM 调用，对每条 AC 返回三分类结果（covered/suspect/uncovered）及候选文件路径。禁止使用关键词匹配、正则表达式或文件名推断作为分类依据。验证方式：50 条 AC + batchSize=150 时，Phase 2 LLM 调用次数 = 1；batchSize=25 时调用次数 = 2。
+- AC-29.7（AC 级扫描 Phase 3 精确验证）：Phase 3 仅对 Phase 2 判定为 suspect 或 uncovered 的 AC 执行。读取候选文件实际源码，发送给 LLM 做精确语义验证。Phase 2 判定为 covered 的 AC 不进入 Phase 3（跳过验证）。验证方式：Phase 2 返回 40 covered + 10 suspect 时，Phase 3 仅处理 10 条。
+- AC-29.8（AC 级扫描 Token 效率）：三阶段流水线的总 LLM token 消耗相比逐条 AC 独立调用降低 95% 以上。验证方式：对同一项目分别执行三阶段流水线和逐条调用（或计算理论值），对比总 token 数，流水线 ≤ 逐条的 5%。
+- AC-29.9（AC 级扫描触发时机与独立扫描）：endgame 阶段发版前，流水线自动触发 AC 级扫描。AC 级扫描在文件级扫描通过的前提下执行（文件级扫描未通过则 AC 级扫描不触发）。支持独立触发：通过 CLI 命令（`sevo scan --kind ac`）或 cron 定时任务直接执行 AC 级扫描，不依赖 pipeline endgame 阶段。验证方式：(a) endgame 阶段文件级扫描通过后 AC 级扫描自动触发；(b) 手动执行 `sevo scan --kind ac` 成功产出报告。
+- AC-29.10（AC 级扫描阻断逻辑）：AC 级扫描发现任一 AC 最终状态为 uncovered（Phase 3 确认无实现代码）时，阶段状态为 blocked，流水线不进入下一阶段。needs-review 状态不自动阻断，但写入报告供人工确认。验证方式：构造一条无实现的 AC，执行 AC 级扫描后确认阶段状态为 blocked。
+- AC-29.11（AC 级扫描产出格式）：AC 级扫描报告为结构化 JSON，包含 `{ frId, acId, status: "covered"|"uncovered"|"needs-review", confidence: number, evidence: { file: string, lineRange: [number, number], testFile?: string } }` 数组。扫描日志为独立 JSON 文件，记录每次 LLM 调用的 prompt 摘要和完整响应，确保映射过程可追溯。验证方式：执行 AC 级扫描后，报告文件和日志文件均存在且 JSON schema 校验通过。
+- AC-29.12（AC 级扫描语义约束）：AC 级扫描全流程（Phase 2 初筛 + Phase 3 验证）的 LLM prompt 明确禁止关键词匹配、正则表达式和文件名推断。System prompt 中包含该约束声明。验证方式：检查 AC 级扫描器的 system prompt 常量，确认包含禁止关键词匹配/正则/文件名推断的明确指令。
 - AC-29.13（L3 运行态验证）：L3 扫描在真实环境中执行功能，验证产出「有意义」而非仅「命令能跑」。判定标准：产出非空、非默认模板、非错误信息、非占位符，由 LLM 对实际输出做语义评估并给出判定理由。
 - AC-29.14（L3 触发时机）：以下任一条件满足时，流水线自动触发 L3 扫描：(a) npm publish 成功后；(b) 任何涉及「用户可感知功能」的 implement 阶段完成后。L3 在 FR-28 Clean-Install Verification 之前执行（L3 验证当前环境，FR-28 验证干净环境）。
 - AC-29.15（L3 阻断逻辑）：L3 扫描发现任一功能域状态为 dead（退出码非 0、响应异常、产出为空或无意义）时，阶段状态为 blocked，不进入 FR-28 验证。阻断信息包含功能域标识、验证命令、实际输出和失败判定理由。
 - AC-29.16（L3 产出格式）：L3 报告为结构化 JSON，包含 `{ domain: string, status: "alive"|"dead", verifyCommand: string, actualOutput: string (truncated to 1KB), judgment: string, evidence: { exitCode?: number, httpStatus?: number, sideEffect?: string } }` 数组。
 - AC-29.17（三层汇总）：三层扫描完成后，自动生成汇总报告 `docs/gap-scan-summary.json`，包含 `{ l1: { pass: boolean, total: number, covered: number }, l2: { pass: boolean, total: number, covered: number, needsReview: number }, l3: { pass: boolean, total: number, alive: number }, overall: "pass"|"fail", timestamp: string }`。汇总报告供 Ledger 阶段归档。
-- AC-29.18（单 Agent 兼容）：单 Agent 环境下，三层扫描均可由同一 Agent 执行（通过 `sevo scan --level 1|2|3|all` 命令触发）。多 Agent 环境下，L2/L3 由非开发 Agent 执行（禁止开发者自验）。
+- AC-29.18（单 Agent 兼容）：单 Agent 环境下，级联扫描均可由同一 Agent 执行（通过 `sevo scan --kind file|ac|runtime|all` 命令触发）。多 Agent 环境下，AC 级扫描和运行态扫描由非开发 Agent 执行（禁止开发者自验）。
 - AC-29.19（用户可感知功能定义）：「用户可感知功能」指改动涉及以下任一组件：hook handler、cron 定时任务、CLI 命令/子命令行为、配置模板（init 生成的文件）、init/setup 流程、Web 页面/API 端点。判定依据：陌生用户在运行时能否接触到该组件。若能接触到，则该改动属于用户可感知功能变更，implement 完成后必须触发 L3 扫描。
 - AC-29.20（可达性验证）：L3 扫描内容必须包含可达性检查——新实现的功能，陌生用户通过 `npm install` + `init` 后能否自动获得？如果不能自动获得，是否有 init/setup 命令自动配置？发现「代码存在但用户不可达」的功能（代码在仓库中但用户正常安装流程无法触达）= P0 阻断，必须修复后复验。
 - AC-29.21（独立仓库同步门禁）：implement 完成后如果涉及用户可感知功能变更，L3 扫描必须验证改动已同步推送到项目的独立 GitHub 仓库。仅存在于主仓库（monorepo）但未同步到独立仓库的用户可感知功能变更 = P0 阻断。验证方式：对比独立仓库最新 commit 与主仓库对应目录的 diff，diff 非空则阻断。
@@ -1298,7 +1324,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 ### FR-34 Incremental FR Lifecycle（增量 FR 生命周期管理）
 
 - **定位**：生命周期操作。为已有项目追加的增量 FR 提供从 implement 到 publish 的子流程触发能力。解决的核心问题：项目已有完整 pipeline 历史，PM 在 spec 中新增了 FR，但 `sevo:create` 报「已存在」。FR-27 的 `sevo:create --from` 会重跑整个项目而非聚焦单个 FR，本 FR 提供精确到单个 FR 粒度的增量推进入口。
-- **与 FR-12 的关系**：FR-12 为项目创建首次 FR 流程实例（全量 pipeline）。FR-34 为已有项目中新增的 FR 创建增量流程实例，复用 FR-12 的实例创建逻辑但跳过 spec/contract 阶段。
+- **与 FR-12 的关系**：FR-12 为项目创建首次 FR 流程实例（全量 pipeline）。FR-34 为已有项目中新增的 FR 创建增量流程实例，复用 FR-12 的实例创建逻辑；spec 阶段可因目标 FR 已存在而标记为已就绪，plan/contract 阶段必须由 SA 评估。
 - **与 FR-27 的关系**：FR-27 允许从任意阶段切入但作用于整个项目。FR-34 作用于项目中的特定 FR，只推进该 FR 相关的实现子流程。
 - **与 FR-13 的关系**：增量流程实例创建后，由 PipelineEngine（FR-13）接管后续生命周期推进，复用相同的状态机和阶段流转逻辑。
 - **触发条件**：用户通过 CLI 命令 `sevo fr advance <project-slug> --fr <fr-id>` 触发，或主会话调度时在 label 中包含 `fr-advance:<project>:<fr-id>` 标记。
@@ -1308,17 +1334,18 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
   1. 校验目标 FR 存在于项目的 spec 文件（`product-requirements.md`）中——通过解析 FR 编号格式匹配。
   1. 校验该 FR 没有正在进行的 active 流程实例（同一 FR 同时只能有一个 active 实例）。
   1. 生成增量流程实例 ID（格式：`fr-<project-slug>-<fr-id>-<yyyyMMdd>-<seq>`）。
-  1. 将 spec 和 contract 阶段标记为 skipped（跳过理由：「增量 FR，spec 已就绪」）。若项目有 arc42 架构文档，将其作为 implement 阶段的输入上下文注入。
-  1. 确定增量流程的阶段队列：implement → review → regression → publish。根据 Tier 路由（§3.2）裁剪——L0 微小改动可跳过 regression。
+  1. 将 spec 阶段标记为 ready（理由：「目标 FR 已在 spec 中定义」），随后必须执行 spec-review-gate（mandatory, never skip）确认该 spec 覆盖本次增量变更。plan/contract 阶段派发给 SA 评估，评估结论为 pass-no-change 或 needs-update；若结论为 needs-update，先完成架构更新和复验，再进入 implement。若项目有 arc42 架构文档，将其作为 plan/contract 与 implement 阶段的输入上下文注入。
+  1. 确定增量流程的阶段队列：spec-ready → spec-review-gate（mandatory, never skip）→ plan/contract（SA 评估）→ plan-review-gate（mandatory, never skip）→ implement → implement-review-gate（mandatory, never skip）→ regression → publish。不按任务分级裁剪主链；specify、spec-review-gate、plan/contract、plan-review-gate、implement、implement-review-gate 均为 mandatory, never skip。regression 作为辅助验证节点，只有在本轮没有代码、配置、依赖、运行时行为、发布制品或外部交付物变化，且 review 报告记录全部证据时，才可标记为 skipped。
   1. 创建增量流程实例记录，状态设为 created。
   1. 向 PipelineEngine（FR-13）发送 pipeline-created 事件，PipelineEngine 接管后续推进。
   1. implement 阶段的 prompt 自动注入：目标 FR 的完整定义（从 spec 提取）、关联的 AC 列表、项目架构上下文（若存在）。
-- **输出**：增量 FR 流程实例（含实例 ID、目标 FR 绑定、跳过阶段记录、阶段队列）。
+- **输出**：增量 FR 流程实例（含实例 ID、目标 FR 绑定、spec ready 记录、plan/contract SA 评估记录、阶段队列）。
 - **执行阶段**：Pipeline Create 的增量入口（复用 FR-12 实例创建逻辑的子集）。
 - **验收标准**：
   - AC-34.1：`sevo fr advance <project-slug> --fr <fr-id>` 命令被正确解析。project-slug 不存在时返回错误「项目不存在」；fr-id 在 spec 中不存在时返回错误「FR 未在 spec 中定义」。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-34.2：增量流程实例的 spec 和 contract 阶段在 Stage Record 中标记为 skipped，跳过理由为「增量 FR，spec 已就绪」。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-34.3：增量流程实例创建后，PipelineEngine 自动接管并触发 implement 阶段执行，implement 阶段的执行上下文包含目标 FR 的完整定义和 AC 列表。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-34.2：增量流程实例的 spec 阶段在 Stage Record 中标记为 ready，理由为「目标 FR 已在 spec 中定义」；随后 spec-review-gate 必须执行并通过，确认 spec 覆盖本次增量变更；contract 阶段由 SA 评估后标记为 pass-no-change 或 needs-update，并记录评估结论和证据。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-34.2a：增量流程的 specify、spec-review-gate、plan/contract、plan-review-gate、implement、implement-review-gate 均为 mandatory, never skip；任何路由或辅助节点不适用判定不得移除这些主链节点。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-34.3：增量流程实例创建后，PipelineEngine 自动接管并在 spec-review-gate、plan/contract 与 plan-review-gate 通过后触发 implement 阶段执行，implement 阶段的执行上下文包含目标 FR 的完整定义和 AC 列表。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-34.4：同一 FR 已有 active 流程实例时，创建请求被拒绝并返回错误「该 FR 已有进行中的流程实例」。不同 FR 的增量流程可以与项目的其他增量流程并行存在（受 Agent 资源池约束）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-34.5：增量流程的 review 阶段复用 FR-06 的审计逻辑，审计范围限定为目标 FR 相关的代码变更。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-34.6：增量流程的 publish 阶段复用 FR-19 的终局交付链逻辑。若项目配置了版本管理，自动 bump patch 版本。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -1393,7 +1420,7 @@ Stage 4：发布链闭环
 
 **解决方案**
 
-产品定位：围绕使用 Agent 研发软件项目的用户对流程绕过和质量失控的痛点，SEVO 通过按动作类型默认路由、按路径辅助归属、显式豁免审计、阶段化任务拆分和发布前 stranger-ready gate，解决 spec、架构、UX、开发、测试、审计、发布全链路治理断裂的问题。
+产品定位：围绕使用 Agent 研发软件项目的用户对流程未接入和质量失控的痛点，SEVO 通过按动作类型默认路由、按路径辅助归属、显式豁免审计、阶段化任务拆分和发布前 stranger-ready gate，解决 spec、架构、UX、开发、测试、审计、发布全链路治理断裂的问题。
 
 用户体验流：
 
@@ -1411,7 +1438,7 @@ Stage 4：发布链闭环
 1. **路径只作归属识别**：路径规则只回答“归哪个项目”，不能回答“要不要走流水线”。项目路径、扩展目录、入口脚本、README、配置文件和发布脚本都不能作为跳过流水线的理由。
 1. **任务粒度约束**：每次 spawn 的任务只能属于一个研发阶段，阶段枚举为 specify / plan / implement / review / release；每次 spawn 的任务只能由一个角色类型执行，角色类型包括 PM 写 spec、SA 写架构、Dev 写代码、Auditor 审计、Release 执行发布。禁止在一个 task prompt 中要求 agent 同时完成多个阶段的产出。
 1. **单 Agent 环境分步执行**：即使环境中只有一个 agent 可用，也必须按阶段分步执行：先 spawn 做 spec 阶段，完成并沉淀工件后，再 spawn 做 implement 阶段。没有多角色 agent 池时，可以用同一个 agent 客串不同角色，但任务仍必须一步一步走，不能把多个阶段打包成一个 prompt。
-1. **分步派发不得绕过**：即使 spawn 的 label 不含 `sevo:` 前缀，只要 task prompt 语义上是在做软件研发动作，插件仍必须路由到 SEVO；禁止通过把 README 更新、插件修改、测试执行、GitHub 推送拆成多个小步骤绕过流水线。
+1. **分步派发必须接入流水线**：即使 spawn 的 label 不含 `sevo:` 前缀，只要 task prompt 语义上是在做软件研发动作，插件仍必须路由到 SEVO；不要通过把 README 更新、插件修改、测试执行、GitHub 推送拆成多个小步骤脱离流水线引导。
 1. **活跃 pipeline 校验**：对 Specify / Plan / UX / Implement / Review / Audit / Deploy 阶段任务，插件检查是否存在对应的活跃 pipeline 实例。不存在时阻断执行，并提示 `sevo:create <project-slug>` 或 `sevo:create <project-slug> --from <stage>`。
 1. **非研发例外边界**：仅纯查询、纯调研、纯宿主环境配置检查且不修改项目产物的任务可不创建 pipeline。凡是承担项目测试、审计、发布职责，或会写入 spec、架构文档、测试文件、配置、README、发布脚本、源码、产物的任务，都必须进入路由判定。
 1. **Stranger-Ready Gate**：pipeline 的 publish 阶段执行前，插件检查 stranger-ready gate 是否通过。gate 执行 `scripts/npm-stranger-verify.sh` 或项目配置的等效验证脚本，在干净环境中验证产物对陌生用户的开箱即用性。
@@ -1439,7 +1466,7 @@ Stage 4：发布链闭环
 - AC-35.15：stranger-ready gate 失败时，pipeline 状态停留在 `publish-blocked`，不推进到 completed。输出内容包含失败原因（脚本 stderr）、exit code、修复建议。修复后可通过 `sevo gate retry <instance-id> stranger-ready` 重新触发验证。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-35.16：项目 pipeline 配置中声明 `strangerVerify: false` 时，stranger-ready gate 自动跳过。CLI 支持 `--skip-stranger-verify` 参数作为单次运行时覆盖。未声明且未传参时，gate 为强制执行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-35.17：路由判定使用 LLM 语义理解，分析 task prompt 内容判断是否涉及软件研发活动。判定结果包含置信度和推理依据，记录到 `aco-dispatch-guard-events.jsonl` 供审计追溯。禁止纯关键词匹配、FTS5 全文检索或正则表达式作为判定手段。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-- AC-35.18：aco-dispatch-guard 在 L2 插件层提供确定性路由兜底：当任务会修改项目产物，且入口是 spec 修改、架构设计、UX 设计、构建、打包、测试、发布、review、audit 或等效研发动作时，即使 prompt 未显式包含 `sevo:` 前缀，也必须强制路由到 SEVO。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+- AC-35.18：aco-dispatch-guard 在 插件层提供确定性路由兜底：当任务会修改项目产物，且入口是 spec 修改、架构设计、UX 设计、构建、打包、测试、发布、review、audit 或等效研发动作时，即使 prompt 未显式包含 `sevo:` 前缀，也必须强制路由到 SEVO。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-35.19：对项目执行构建命令或等效研发入口时，必须存在活跃 pipeline 上下文；不存在时直接阻断，并提示用户执行 `sevo:create <project-slug>` 或 `sevo:create <project-slug> --from <stage>`，禁止“先做动作再补流水线”。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-36 Verify-With-Real-Data Gate（发版前真实数据通路门禁）
@@ -1558,13 +1585,13 @@ AC:
 1. sevo-pipeline 插件的错误提示中包含完整前缀语义说明
 1. `sevo init` 后生成的引导文档中包含前缀使用指南
 1. 插件注入到主会话的 context 提示中包含前缀速查表
-1. 前缀语义说明中不得出现“`sevo:fix` 跳过 specify，直接 implement→audit”这类会误导用户绕过 spec 门禁的表述
+1. 前缀语义说明中不得出现“`sevo:fix` 跳过 specify，直接 implement→audit”这类会误导用户跳过 spec 门禁的表述
 1. `sevo:fix` 和 `sevo:from` 的帮助文案必须明确写出：若 spec 未覆盖，则流水线自动暂停补 spec；若 spec 已覆盖，则从目标阶段恢复，并继续自动推进到终局，不允许做完就停
 
 ### FR-39a 流水线引导 + 主 Agent 握手协议（Pipeline Guidance + Main-Agent Handshake Protocol）
 
 - **定位**：跨入口治理协议。把 SEVO 的路由语义从“发现研发动作后直接说不”明确收敛为“发现研发动作后主动引导主 Agent 进入质量路径，并由主 Agent 做出遵循流程的显式握手”。这是 SEVO 的核心交互机制，约束插件注入行为与主 Agent 的响应义务。
-- **为什么**：SEVO 路由不是障碍，而是质量保障通道的入口引导。如果插件只会返回禁止信息、主 Agent 只会被动服从，系统会不断出现“想绕过流程”的对抗关系；只有把路由定义成主动提醒、把响应定义成主动握手，Agent 才会把流水线理解为帮助自己稳定交付的质量路径，这是 SEVO 形成自主进化能力的基础。
+- **为什么**：SEVO 路由不是障碍，而是质量保障通道的入口引导。如果插件只会返回禁止信息、主 Agent 只会被动服从，系统会不断出现“想脱离流程”的对抗关系；只有把路由定义成主动提醒、把响应定义成主动握手，Agent 才会把流水线理解为帮助自己稳定交付的质量路径，这是 SEVO 形成自主进化能力的基础。
 - **输入**：当前研发动作语义、项目归属、活跃 pipeline 状态、当前阶段状态、阶段推进建议、适用入口前缀语义、最近一次门禁结论。
 - **处理**：
   1. `sevo-pipeline` 插件作为引导端，在每轮与研发动作相关的注入中，必须同时提供三类信息：本次动作对应的流水线路由说明、当前 pipeline / stage 状态、下一步推进建议。
@@ -1578,7 +1605,7 @@ AC:
   - AC-39a.1：与研发动作相关的每轮 SEVO 路由注入，必须同时包含路由说明、阶段状态、推进建议三项信息；缺任一项视为协议未完成。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-39a.2：SEVO 路由文案必须把流水线描述为质量路径引导，不得把默认语义写成“返回禁止信息就是目的”；即使返回 blocked，文案也必须说明应进入哪条质量路径以及为什么。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-39a.3：主 Agent 在执行研发动作前，必须存在“已评估 pipeline 状态与推进建议”的握手证据；不存在该证据时，视为未遵循 SEVO 交互协议。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-39a.4：命中研发动作语义后，主 Agent 必须 100% 接受 SEVO 路由引导；不得以“简单改动”“文档改动”“测试改动”“发布链边角动作”等理由绕过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-39a.4：命中研发动作语义后，主 Agent 必须 100% 接受 SEVO 路由引导；不得以“简单改动”“文档改动”“测试改动”“发布链边角动作”等理由忽略引导。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-39a.5：当任务不满足继续执行条件（如缺活跃 pipeline、spec 未覆盖、门禁未通过）时，SEVO 输出必须同时给出阻断原因和下一步推进建议，形成“引导 + 握手”闭环，而不是只返回禁止信息。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-39a.6：协议记录必须可回答三件事——“插件引导了什么”“主 Agent 评估了什么”“最终沿哪条流水线动作推进”；三者缺一不可。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
@@ -1641,7 +1668,7 @@ SEVO 受管项目的需求规格以飞书文档作为唯一真相源，本地 `d
 
 - NFR-5.9：SEVO 的阶段定义、工件定义、门禁定义与具体运行时解耦。
 - NFR-5.10：支持不同类型 Agent 接入同一流程，包括 ACP agent、原生 subagent、未来独立验证器。
-- NFR-5.11：支持按任务级别裁剪流程，但不破坏统一工件语言。
+- NFR-5.11：支持辅助节点不适用判定，但不破坏统一工件语言；主链节点不允许裁剪。
 - NFR-5.12：新阶段规则和新门禁可以增量追加，不要求重写整套流程。
 
 ### 5.4 安全性
@@ -1712,7 +1739,7 @@ SEVO 管理的不是“聊天消息”，而是研发过程里的标准工件和
 - **Ledger Entry**：交付账本记录，关联 FR 流程实例 ID，作为一次研发闭环的最终摘要对象。
 - **Clarification Record**：澄清记录，记录模糊检测触发点、澄清问题、回复内容和收敛结论，挂接到对应阶段的 Stage Record。
 - **PipelineEngine**：SEVO 的核心运行时引擎，负责 pipeline 实例的全生命周期推进。读取路由结果中的阶段队列，按顺序或并行通过 Adapter 触发阶段执行，监听完成事件，评估门禁，决定推进或阻断。PipelineEngine 定义编排语义，具体任务派发通过 Adapter 抽象层实现。
-- **SEVO Config**：SEVO 的配置对象，承载渐进式披露的四级配置（L0 默认值 → L1 用户配置 → L2 自定义阶段 → L3 编程控制）。
+- **SEVO Config**：SEVO 的配置对象，承载渐进式披露的配置能力（默认值 → 用户配置 → 自定义辅助阶段 → 编程控制）。
 - **Stage Queue**：pipeline 实例的阶段执行队列，由路由结果生成，PipelineEngine 按此队列推进。支持顺序阶段和并行阶段组。
 
 ### 6.2 阶段状态机
@@ -1724,7 +1751,7 @@ SEVO 管理的不是“聊天消息”，而是研发过程里的标准工件和
 - **blocked**：被上游缺失、外部依赖或门禁失败阻断。
 - **passed**：当前阶段通过。
 - **failed**：当前阶段结论不通过，需要修复后重试。
-- **skipped**：因任务级别裁剪而跳过。
+- **skipped**：仅用于辅助节点输入不适用、项目配置明确声明或用户显式确认豁免时记录；主链节点不得进入该状态。
 
 状态流转规则：
 
@@ -1733,19 +1760,20 @@ SEVO 管理的不是“聊天消息”，而是研发过程里的标准工件和
 - active → blocked：前置工件缺失、依赖未满足或门禁中断。
 - active → failed：已执行但验收不通过。
 - failed → active：问题修复后重新进入。
-- pending → skipped：路由规则允许跳过，且跳过理由已记录。
+- pending → skipped：仅辅助节点满足严格不适用条件，且跳过理由、证据和复核入口已记录。
 
 ### 6.3 阶段间数据流转
 
 SEVO 的数据流是工件驱动，不是口头驱动：
 
 1. PipelineEngine 接收 pipeline-created 事件，读取路由结果，生成 Stage Queue，开始自动推进。0a. Pipeline Create 在用户已创建 Project、已新增 FR 的前提下，为该 FR 创建 FR 流程实例，绑定 Project，初始化目录结构，产出路由结果。
+1. Stage Queue 固定包含 specify → spec-review-gate（mandatory, never skip）→ plan（SA 架构评估 + UX 设计，可并行）→ plan-review-gate（mandatory, never skip）→ implement → implement-review-gate（mandatory, never skip）→ 后续 endgame。已就绪的产出阶段可记录 ready/pass-no-change，但对应审计门禁不得跳过。
 1. Spec 产出 Spec Package，作为 Spec Review Gate 的唯一需求输入。
-1. Spec Review Gate 产出 Spec Review Bundle，决定是否允许进入 Contract。
-1. Contract 产出 Contract Package 和 Work Package，作为 Contract Review Gate 与 Implement 的执行输入。
-1. Contract Review Gate 产出 Contract Review Bundle，决定是否允许进入 Implement。
+1. Spec Review Gate 产出 Spec Review Bundle，决定是否允许进入 Contract / Plan。
+1. Contract / Plan 产出 Contract Package、Work Package 或 pass-no-change 评估记录，作为 Contract Review Gate 与 Implement 的执行输入。
+1. Contract Review Gate / plan-review-gate 产出 Contract Review Bundle，决定是否允许进入 Implement。
 1. Implement 产出 Implementation Bundle，作为 Review 和 Regression 的验证基础。
-1. Review 产出 Review Bundle，决定是否允许进入 Smoke Test。
+1. Review / implement-review-gate 产出 Review Bundle，决定是否允许进入 Smoke Test。
 - 6a. Review 结论为有条件通过或不通过时，自动触发 Review Fix Loop：解析报告 → 生成 Review Issue → P0/P1 自动生成 Fix Task → Agent 认领修复 → 定向复验 → 问题关闭 → 门禁重新评估。循环直到放行条件满足。
 - 6b. Smoke Test 验证核心功能路径可用，通过后自动触发 UX Acceptance 和 PM Commercial Review 并行执行。
 - 6c. UX Acceptance 由 ux-01 按检查清单执行视觉验收。
@@ -1800,7 +1828,7 @@ SEVO 的设计必须明确区分“核心逻辑”和“可配置实现”，前
 - AC-6.1：任一阶段都能明确说清输入工件、输出工件和状态变化。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-6.2：任一工作包都能挂接到上游 Spec 与下游 Ledger。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-6.3：Spec Review Gate 和 Contract Review Gate 都有明确输入、输出和阻断语义。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-- AC-6.4：跳过阶段不会造成账本断链。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+- AC-6.4：辅助节点被标记为 skipped 不会造成账本断链；主链节点不得跳过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC-6.5：状态机同时适用于 ACP agent 和原生 subagent。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### 6.6 流程阶段执行原则注入
@@ -1898,7 +1926,7 @@ Claw Design 是面向设计产物生成与交付的独立产品。SEVO 可以作
 
 范围：
 
-- FR-15 Progressive Disclosure（L1/L2 配置能力）。
+- FR-15 Progressive Disclosure（配置能力）。
 - FR-14 补充命令：pause / resume / cancel / ledger。
 - 路由判定自动化。
 - 门禁检查脚本化。
@@ -1946,7 +1974,7 @@ Claw Design 是面向设计产物生成与交付的独立产品。SEVO 可以作
 - OpenClaw 环境提供文件读写、任务派发（sessions_spawn）和结果回收（completion event）能力。
 - 每个阶段至少能落一个可读工件，而不是只有口头说明。
 - 团队或系统愿意为质量闭环付出额外成本，而不是只追求最快生成。
-- 用户接受按任务级别裁剪流程，但不接受没有证据链的交付。
+- 用户接受辅助节点在严格条件下标记为不适用，但不接受按研发活动等级裁掉主链流程，也不接受没有证据链的交付。
 
 ### 9.3 非目标
 
@@ -2077,7 +2105,7 @@ spec 中出现的每个名词实体（会成为系统中的对象、状态机、
 - **验收标准**：
   - AC-45.1：`/projects`、`/dashboard` 或等价的流水线总览入口，必须基于 `state/active-pipelines.json` 展示所有活跃流水线；至少包含 `projectSlug`、`pipelineId`、`currentStage`、`status`、`updatedAt` 和阶段进度。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-45.2：流水线详情页必须以 `data/pipelines/<pipelineId>/state.json` 作为唯一真相源，展示真实阶段队列、每阶段状态、`requiredStages`、`skippedStages`、阻断原因、重试次数和工件引用；仅靠前端推导或 mock 补齐视为不通过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-45.3：Web 展示阶段定义时，必须从插件源码、配置或引擎导出的阶段注册表动态读取，禁止在 `types`、`page`、`service`、`reader` 等任一 Web 文件里硬编码固定 11 阶段词表。真实流水线新增或裁剪阶段后，Web 无需手工改常量即可展示。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-45.3：Web 展示阶段定义时，必须从插件源码、配置或引擎导出的阶段注册表动态读取，禁止在 `types`、`page`、`service`、`reader` 等任一 Web 文件里硬编码固定 11 阶段词表。真实流水线新增辅助阶段或辅助节点不适用后，Web 无需手工改常量即可展示。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-45.4：事件流必须消费 `data/pipelines/<pipelineId>/events.jsonl` 和 `workspace/logs/sevo-pipeline-events.jsonl` 中至少一类真实事件源；列表中至少可见阶段推进、阻断、修复、复验、发布和完成事件，且支持按 `pipelineId` 回看完整时序。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-45.5：生产态 Web 数据层禁止使用 `MOCK_*`、demo pipeline、seed pipeline 或固定假通知作为 Project、Pipeline、Stage、Gate、Todo、Notification、Review、Analytics、Search 的主数据源。代码中若保留 mock，仅允许用于测试或 Storybook，并与生产路径物理隔离。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-45.6：当真实状态文件不存在、为空、损坏或版本不兼容时，Web 必须明确展示空态/错误态和缺失原因；不得偷偷回退到 mock 数据，让用户误以为流水线正在运行。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -2112,7 +2140,7 @@ spec 中出现的每个名词实体（会成为系统中的对象、状态机、
 - **定位**：README 内容更新阶段。把 README 更新从发布泛化门禁的存在性检查中拆出，作为 SEVO 流水线的正式阶段，确保项目功能、接口、配置、阶段变化能同步反映到用户入口文档。
 - **阶段 ID**：`readme-update`
 - **阶段位置**：`verify` 之后，`ledger` 之前。
-- **执行角色**：PM，tier 为 `pm`。
+- **执行角色**：PM，roleType 为 `pm`。
 - **输入**：本次流水线变更摘要、已完成阶段输出、受影响文件清单、当前 README 内容、项目独立仓库同步规则。
 - **处理**：
   1. PM 先评估本次流水线变更是否影响 README 内容。影响范围包括新增功能、功能行为变化、命令或入口变化、接口变化、配置变化、阶段变化、安装与使用方式变化、故障排查信息变化。
@@ -2121,7 +2149,7 @@ spec 中出现的每个名词实体（会成为系统中的对象、状态机、
   1. README 更新完成后，触发独立仓库同步，确保独立仓库中的 README 与主工作区一致。
 - **输出**：README 更新结果或跳过结论、阶段状态、独立仓库同步结果。
 - **验收标准**：
-  - AC-43.1：`task-mapper.js` 的 `DEFAULT_STAGE_AGENT_MAP` 必须包含 `readme-update` 条目，tier 为 `pm`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-43.1：`task-mapper.js` 的 `DEFAULT_STAGE_AGENT_MAP` 必须包含 `readme-update` 条目，roleType 为 `pm`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-43.2：`STAGE_FALLBACK_CHAIN` 必须包含 `readme-update` 条目。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-43.3：`QUICKSTART_STAGES` 必须包含 `readme-update`，位置在 `verify` 之后、`ledger` 之前。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-43.4：`readme-update` 阶段 prompt 必须要求 PM 先评估是否需要更新 README；如果不需要更新，直接给出跳过理由并 pass。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -2215,7 +2243,7 @@ spec 中出现的每个名词实体（会成为系统中的对象、状态机、
 
 ### 审计与修复闭环规则
 
-- 审计必须留在 SEVO 流水线内执行，不能用流水线外的审计绕过 Review Gate。
+- 审计必须留在 SEVO 流水线内执行，不能用流水线外的审计跳过 Review Gate。
 - Implement completion 到达后，系统必须自动触发 Review 审计任务；审计通过后进入后续终局阶段链。
 - 审计失败后，Pipeline 必须进入 review→fix loop：将 Finding 转成修复 Task，回到 Implement 修复，修复完成后重新进入 Review 复验，直到通过或达到既有重试上限。
 - Finding 未关闭时，对应 Stage 不能标记 passed；所有关键 Finding 关闭后，Stage 才能进入下一阶段。
