@@ -1,0 +1,194 @@
+{
+  "pipelineId": "4ef238e7-3d08-40fa-a75b-317f28fa13ef",
+  "taskId": "task-kivo-mq348vj6",
+  "level": "L1",
+  "requiredStages": [
+    "spec",
+    "spec-review-gate",
+    "architecture-design",
+    "contract",
+    "contract-review-gate",
+    "implement",
+    "review",
+    "smoke-test",
+    "ux-acceptance",
+    "regression",
+    "publish-generalization-gate",
+    "readme-update",
+    "deploy",
+    "verify",
+    "post-release-validation",
+    "ledger"
+  ],
+  "skippedStages": [
+    {
+      "stage": "architecture-design",
+      "reason": "未配置 LLM，按安全默认值触发条件性设计阶段；范围未显示多域、数据模型或多文件复杂变更，暂不触发 Architecture Design"
+    }
+  ],
+  "stages": {
+    "spec": {
+      "stageId": "spec",
+      "status": "active",
+      "artifacts": [],
+      "startedAt": "2026-06-07T01:41:35.429Z"
+    },
+    "spec-review-gate": {
+      "stageId": "spec-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "test-case-authoring": {
+      "stageId": "test-case-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance-authoring": {
+      "stageId": "ux-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "commercial-acceptance-authoring": {
+      "stageId": "commercial-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-interaction-design": {
+      "stageId": "ux-interaction-design",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract": {
+      "stageId": "contract",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract-review-gate": {
+      "stageId": "contract-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "implement": {
+      "stageId": "implement",
+      "status": "pending",
+      "artifacts": []
+    },
+    "review": {
+      "stageId": "review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "smoke-test": {
+      "stageId": "smoke-test",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance": {
+      "stageId": "ux-acceptance",
+      "status": "pending",
+      "artifacts": []
+    },
+    "pm-commercial-review": {
+      "stageId": "pm-commercial-review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "regression": {
+      "stageId": "regression",
+      "status": "pending",
+      "artifacts": []
+    },
+    "publish-generalization-gate": {
+      "stageId": "publish-generalization-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "deploy": {
+      "stageId": "deploy",
+      "status": "pending",
+      "artifacts": []
+    },
+    "verify": {
+      "stageId": "verify",
+      "status": "pending",
+      "artifacts": []
+    },
+    "readme": {
+      "stageId": "readme",
+      "status": "pending",
+      "artifacts": []
+    },
+    "post-release-validation": {
+      "stageId": "post-release-validation",
+      "status": "pending",
+      "artifacts": []
+    },
+    "clean-install-verification": {
+      "stageId": "clean-install-verification",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ledger": {
+      "stageId": "ledger",
+      "status": "pending",
+      "artifacts": []
+    },
+    "architecture-design": {
+      "stageId": "architecture-design",
+      "status": "skipped",
+      "artifacts": []
+    },
+    "readme-update": {
+      "status": "pending"
+    }
+  },
+  "currentStage": "spec",
+  "createdAt": "2026-06-07T01:41:35.428Z",
+  "updatedAt": "2026-06-07T01:41:35.429Z",
+  "pipelineScale": "full",
+  "stagePlan": {
+    "scale": "full",
+    "requiredStages": [
+      "spec",
+      "spec-review-gate",
+      "architecture-design",
+      "contract",
+      "contract-review-gate",
+      "implement",
+      "review",
+      "smoke-test",
+      "ux-acceptance",
+      "regression",
+      "publish-generalization-gate",
+      "readme-update",
+      "deploy",
+      "verify",
+      "post-release-validation",
+      "ledger"
+    ],
+    "skippedStages": [],
+    "designRouting": {
+      "needsUxDesign": false,
+      "needsArchitectureDesign": true,
+      "reason": "Backend-only implementation with new/changed database schema, repositories, internal/confirmation APIs, and LLM extraction workflow; no explicit Web/UI or layout changes.",
+      "source": "llm"
+    },
+    "endgamePolicy": {
+      "recoverSkippedEndgameBeforeCompletion": true,
+      "includeDeploy": true
+    }
+  },
+  "tier": 3,
+  "isTier2": false,
+  "fr19EndgameChain": [
+    "implement",
+    "review",
+    "smoke-test",
+    "regression",
+    "deploy",
+    "verify",
+    "readme-update",
+    "publish-generalization-gate"
+  ],
+  "scaleReason": "Implements backend registry across DB schema, repositories, and multiple APIs, including LLM/full-text workflow and data model changes; cross-module and high-risk integration."
+}

@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-07T02:10:52.798Z","pipelineId":"6eac4f48-84b9-43d5-966b-1fc9cdffbc39","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-sevo-mq35alla","level":"L1"}}
+{"timestamp":"2026-06-07T02:10:52.798Z","pipelineId":"6eac4f48-84b9-43d5-966b-1fc9cdffbc39","stage":"spec","eventType":"stage_activated","payload":{}}
