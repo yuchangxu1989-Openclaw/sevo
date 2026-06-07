@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { buildTaskPrompt, getStageMapping } from '../task-mapper.js';
-import { queueActiveStagesForFr19, QUICKSTART_STAGES, TIER2_STAGES, CANONICAL_14_STAGES, insertDesignStages, areDesignStagesSatisfied, assertImplementPromptReferencesDesign } from '../index.js';
+import { queueActiveStagesForFr19, QUICKSTART_STAGES, TIER2_STAGES, CANONICAL_14_STAGES, LIGHTWEIGHT_BASE_STAGES, FULL_PIPELINE_STAGES, buildPipelineStagePlan, insertDesignStages, areDesignStagesSatisfied, assertImplementPromptReferencesDesign } from '../index.js';
 
 describe('FR-02d / FR-02e task mapper integration', () => {
   const state = {
@@ -135,6 +135,11 @@ describe('FR-02d / FR-02e task mapper integration', () => {
         implement: { status: 'active' },
         'architecture-design': {
           status: 'passed',
+          metadata: {
+            architectureReviewRequired: true,
+            pmReviewStatus: 'passed',
+            architectureReviewStatus: 'passed',
+          },
           artifacts: [{ path: archArtifactAbs }],
         },
       },
@@ -198,6 +203,11 @@ describe('FR-02d / FR-02e task mapper integration', () => {
         implement: { status: 'active' },
         'architecture-design': {
           status: 'passed',
+          metadata: {
+            architectureReviewRequired: true,
+            pmReviewStatus: 'passed',
+            architectureReviewStatus: 'passed',
+          },
           artifacts: [{ path: archArtifactAbs }],
         },
       },
@@ -253,6 +263,43 @@ describe('FR-02d / FR-02e task mapper integration', () => {
     expect(withDesign).toContain('architecture-design');
     expect(withDesign.indexOf('ux-interaction-design')).toBeLessThan(withDesign.indexOf('implement'));
     expect(withDesign.indexOf('architecture-design')).toBeLessThan(withDesign.indexOf('implement'));
+  });
+
+  it('keeps every full-pipeline stage required regardless of design routing', () => {
+    const plan = buildPipelineStagePlan({
+      scale: 'full',
+      designRouting: {
+        needsUxDesign: false,
+        needsArchitectureDesign: false,
+        reason: 'LLM says no dedicated design work is needed',
+        source: 'llm',
+      },
+    });
+
+    expect(plan.designRouting).toMatchObject({
+      needsUxDesign: false,
+      needsArchitectureDesign: false,
+      source: 'llm',
+    });
+    expect(plan.requiredStages).toEqual(FULL_PIPELINE_STAGES);
+    expect(plan.requiredStages).toContain('ux-interaction-design');
+    expect(plan.requiredStages).toContain('architecture-design');
+  });
+
+  it('preserves lightweight base behavior when design routing says no design stages are needed', () => {
+    const plan = buildPipelineStagePlan({
+      scale: 'lightweight',
+      designRouting: {
+        needsUxDesign: false,
+        needsArchitectureDesign: false,
+        reason: 'LLM says no dedicated design work is needed',
+        source: 'llm',
+      },
+    });
+
+    expect(plan.requiredStages).toEqual(LIGHTWEIGHT_BASE_STAGES);
+    expect(plan.requiredStages).not.toContain('ux-interaction-design');
+    expect(plan.requiredStages).not.toContain('architecture-design');
   });
 
   it('keeps new design stages in canonical stage sequence', () => {

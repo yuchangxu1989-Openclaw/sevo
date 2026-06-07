@@ -110,7 +110,7 @@ SEVO 不负责知识资产的提取、检索与治理，不负责 Agent 效果�
 
 ### 核心对象与状态流转
 
-SEVO 管理六类核心对象：Project 是受管研发项目，承载产品目标、代码路径、配置和发布目标；Pipeline 是一次围绕 Project 与 FR 触发的研发闭环，记录从 Spec 到 Ledger 的完整执行链；Stage 是 Pipeline 中可门禁的阶段，如 Spec、Contract、Implement、Review、Regression、Deploy、Verify、Ledger；Task 是某个 Stage 下派给具体角色或 Agent 的执行单元；Finding 是门禁、审计、验证或发布检查发现的问题；Ledger Entry 是 Pipeline 完成或阶段关键节点形成的不可丢失记录。
+SEVO 管理六类核心对象：Project 是受管研发项目，承载产品目标、代码路径、配置和发布目标；Pipeline 是一次围绕 Project 与 FR 触发的研发闭环，记录从 Spec 到 Ledger 的完整执行链；Stage 是 Pipeline 中可门禁的阶段，如 Spec、Contract、Implement、Review、Generalize、Publish、Verify、Ledger；Task 是某个 Stage 下派给具体角色或 Agent 的执行单元；Finding 是门禁、审计、验证或发布检查发现的问题；Ledger Entry 是 Pipeline 完成或阶段关键节点形成的不可丢失记录。
 
 状态流转从 Project 被纳管开始：用户提交 FR 后创建 Pipeline，Pipeline 生成 Stage 队列；每个 Stage 进入 pending、running、passed、blocked、failed、skipped 中的一种状态；Stage 运行时创建 Task，Task 完成后产出工件或 Finding；Finding 未关闭时对应 Stage 保持 blocked，并自动创建修复 Task；修复 Task 通过后回到原 Stage 复验；全部阻断 Finding 关闭后 Stage 才能 passed 并进入下一 Stage；Pipeline 完成后写入 Ledger Entry，后续 Pipeline 可读取这些记录作为经验与约束输入。
 
@@ -162,7 +162,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 1. 用户创建 Project 并添加第一条 FR；AI 创建 FR 流程实例、初始化目录结构、给出单一阶段队列；用户看到 Project 编号、FR 编号、当前进入的 Stage、预计要经过的门禁列表，以及“当前不需要人工盯盘”的提示。关联 FR-12、FR-13、FR-27。
 1. 用户查看当前 pipeline 状态；AI 明确告诉用户现在走到哪个阶段、卡在哪里、下一步是什么；用户在 `sevo status` 中看到按 Project 分组的状态摘要，例如：`sevo / FR-37 / Review / blocked: audit finding F-12 / next: fix assigned`。通过项显示证据路径，阻断项显示责任阶段、失败原因、正在执行的修复任务和最近更新时间。关联 FR-13、FR-14。
 1. 用户推进 spec、contract、implement、review 等研发动作；AI 自动按阶段注入 PM、UX、架构、审计等专业标准，并在门禁失败时生成修复任务；用户看到每个 Stage 的门禁结论、关键 Finding、修复任务和重试次数。`sevo:doctor` 跑完后输出结构化报告：Errors、Warnings、受影响项目、失败门禁、建议修复动作；Errors 大于 0 时报告明确提示“禁止继续推进或重启 Gateway”。关联 FR-01、FR-02、FR-03、FR-04、FR-05、FR-06、FR-06a、FR-06f。
-1. 用户进入发布链；AI 自动串起 README 同步、版本管理、发布执行、真实数据验证、清洁环境验证和终局差距扫描；用户看到 npm、GitHub、ClawHub、独立仓库同步、真实数据验证、清洁环境验收的逐项结果。失败时报告显示失败平台、失败命令摘要、可复验入口和已创建的修复任务。关联 FR-08、FR-17、FR-19、FR-28、FR-29、FR-36。
+1. 用户进入发布链；AI 自动串起 README 同步、版本管理、通用化门禁、发布分流、真实数据验证、清洁环境验证和终局差距扫描；用户看到通用化检查、npm、GitHub、ClawHub、独立仓库同步、真实数据验证、清洁环境验收的逐项结果。失败时报告显示失败阶段、失败目标、失败原因、可复验入口和已创建的修复任务。关联 FR-08、FR-17、FR-19、FR-28、FR-29、FR-36、FR-48、FR-49。
 1. 用户完成一轮交付后回看结果；AI 把所有关键工件、结论、责任边界和经验沉淀写入 Ledger，供后续 pipeline 复用；用户看到一条可追溯的交付账本，包含 Project、FR、Pipeline、Stage 结果、Finding 处理记录、发布证据和复用经验。Ledger 支持按项目、FR、阶段、失败原因检索。关联 FR-10、FR-18。
 
 ### 功能需求
@@ -963,7 +963,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 
 - **定位**：Pipeline 级别的交付自动化机制。Review/Audit 通过后，自动推进 README 同步、版本管理、发布、终局差距扫描和用户通知，不需要用户手动触发。解决「代码是库不是引擎」的核心断点——阶段间推进从 prompt 软约束升级为程序化硬约束。
 - **触发条件**：Pipeline 的 Review 阶段（FR-06）通过且所有验收阶段（FR-06b/06c/06d）通过后，自动进入终局交付链。
-- **标准终局阶段链**：任何研发入口一旦进入受管流水线，后续必须收敛到统一终局阶段链：implement → review → smoke → regression → deploy → verify → readme → publish。不同入口可以跳过已完成阶段，但不得把终局链裁短成“做到当前阶段就停”。
+- **标准终局阶段链**：任何研发入口一旦进入受管流水线，后续必须收敛到统一终局阶段链：implement → review → smoke → regression → generalize → publish → verify → readme → ledger。不同入口可以跳过已完成阶段，但不得把终局链裁短成“做到当前阶段就停”。
 - **处理**：
   1. **README 同步**：检测项目 README 是否反映本次变更的新能力。如果 README 缺少新增 FR 的描述，自动生成 README 更新任务并派发。README 更新完成后进入下一步。
   1. **版本管理**：根据变更类型自动判定版本 bump 级别（patch：bug fix；minor：新功能；major：破坏性变更）。执行版本号 bump 并更新 package.json。
@@ -976,7 +976,7 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 - **执行阶段**：Review 通过后自动触发，贯穿 Deploy（FR-08）→ Verify（FR-09）→ Post-Release Validation（FR-17）→ Ledger（FR-10）。
 - **验收标准**：
   - AC-19.1：Review 阶段（FR-06）所有子阶段通过后，Pipeline 自动进入终局交付链，不需要用户手动触发或主会话 prompt 驱动。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
-  - AC-19.1a：任何入口路径（`sevo:create`、`sevo:implement`、`sevo:fix`、`sevo:from`）一旦创建或重入流水线，PipelineEngine 都必须自动收敛到统一终局阶段链 `implement → review → smoke → regression → deploy → verify → readme → publish`。前置阶段可因已完成而跳过，但后续阶段不得因入口不同而缺失。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-19.1a：任何入口路径（`sevo:create`、`sevo:implement`、`sevo:fix`、`sevo:from`）一旦创建或重入流水线，PipelineEngine 都必须自动收敛到统一终局阶段链 `implement → review → smoke → regression → generalize → publish → verify → readme → ledger`。前置阶段可因已完成而跳过，但后续阶段不得因入口不同而缺失。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-19.1b：终局交付链的推进是程序化硬门禁，不允许出现“当前阶段完成后等待人工继续”“审计通过后停住”“修复完成后停在 implement/review”这类断点。只要流水线未被明确阻断或完成，就必须继续自动推进。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-19.1c：不存在按成本或等级裁掉阶段的模式。若辅助节点因输入不适用被标记为 `skipped`，必须在 pipeline state 中逐项记录跳过原因、证据、判定人/判定器和复核入口；主链节点不得标记为 `skipped`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-19.2：终局交付链中，README 同步阶段检测 README 是否包含本次新增 FR 的描述。缺失时自动生成 README 更新任务；README 已包含时跳过。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
@@ -2048,6 +2048,61 @@ spec 中出现的每个名词实体（会成为系统中的对象、状态机、
   - AC-47.5：审计通过后，PipelineEngine 必须自动推进到 endgame 阶段链，不允许停留在“审计已通过，等待主会话继续”的状态。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-47.6：审计失败后，PipelineEngine 必须自动进入 review→fix loop，派发修复任务并在修复完成后重新进入审计，直到通过或达到既有重试上限。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-47.7：自动审计触发全链路必须写入审计日志，至少包含 implement completion 时间、completion 来源任务标识、被选择的 audit agent、审计任务 prompt 关键信息摘要、审计结论和后续推进结果。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+
+### FR-48 Generalize Gate（通用化门禁）
+
+- **定位**：Review/Audit 通过后的强制门禁。把“陌生第三方用户可运行、可理解、可迁移”从原则文字升级为 Pipeline 状态机阶段，避免通用化依赖主会话记忆或人工提醒。
+- **服务原则**：原则 1（任意入口全自动走到终局）、原则 3（一致性闭环校验）、原则 5（卡好准入和准出）、原则 8（无差别覆盖一切研发活动）。
+- **触发时机**：Implement Review Gate（FR-06/FR-47）通过后自动进入 `generalize` 阶段；`generalize` 通过后才能进入 `publish`。若流水线从 audit/pass、deploy 或 publish 入口重入，系统必须先检查本轮变更是否已有有效 `generalize` 通过证据；没有证据时补跑本阶段。
+- **跳过条件**：仅当本轮没有代码、配置、文档入口、发布制品、README、脚本、初始化流程、运行时行为或外部交付物变化，并且已有审计证据证明本轮只更新流水线内部记录时，`generalize` 可标记为 `skipped-with-evidence`。跳过记录必须包含判定依据、适用范围、复核入口和 `publishEligible: true`；缺少证据的跳过只能记为 `skipped-without-evidence`，不得进入 Publish。
+- **跳过反例**：只改一个 agent 名称、一个本机路径、一个默认项目 slug 或一条发布配置，看起来是“小改动”，但会影响陌生环境运行或发布目标归属，必须执行 `generalize`，不得跳过。
+- **输入**：Review 通过结论、本轮变更清单、项目 spec 与 README、项目配置、Agent/模型/发布目标配置、安装初始化说明、发布候选产物、上一轮 Generalize 证据。
+- **处理**：
+  1. 检查产品定义和运行入口是否面向第三方用户，不能依赖团队内部路径、默认账号、默认 Agent 池或维护者机器状态。
+  1. 检查 Agent、模型、provider、发布目标和通知渠道是否来自宿主配置、项目配置或 adapter，不得把当前环境中的具体名称写成功能依赖。
+  1. 检查路径、端口、缓存、状态文件和工作区位置是否可配置或可探测，不得把本机绝对路径作为功能前提。
+  1. 检查“受管项目”或 tracked project 只作为运行时发现与追溯概念，不得成为功能能否启动、能否发布、能否审计的硬依赖。
+  1. 检查单 Agent 最小运行路径是否成立：第三方用户只有一个可用 Agent 时，仍能按阶段分步完成核心流水线并得到有意义结果。
+  1. 检查 README、初始化说明、配置参考和错误提示是否足以让陌生用户完成安装、初始化、运行和失败修复。
+- **输出**：Generalize Gate Result，包含阶段状态、逐项检查结果、阻断 Finding、跳过证据（如有）、陌生用户最小运行路径证据和是否允许进入 Publish 的结论。`passed` 与 `skipped-with-evidence` 都属于可进入 Publish 的有效结果；`blocked`、`failed`、`skipped-without-evidence` 或缺少结果都不允许进入 Publish。
+- **执行阶段**：`generalize`，位于 `review/audit passed` 之后、`publish` 之前；本阶段失败时回到 Implement/Fix，修复完成后重新 Review，再重新执行 Generalize。
+- **Why**：通用化如果只停留在原则层，Agent 会在审计通过后直接发布，把本机路径、硬编码 Agent、内部 tracked project 依赖和单 Agent 不可用问题带到外部交付；把它放进状态机门禁，才能让每轮研发自动检查、自动阻断、自动修复。
+- **用户视角验证准则**：陌生用户在一台未配置维护者私有路径和内部 Agent 名称的环境里，按 README 完成安装与初始化后，5 分钟内能启动一条最小流水线；若只有一个 Agent 可用，系统仍按阶段分步推进，并给出可追溯的阶段状态和失败提示。
+- **验收标准**：
+  - AC-48.1：Implement Review Gate 通过后，Pipeline 状态必须在进入 Publish 前出现 `generalize` 阶段记录；记录字段至少包含 `{ pipelineId, stageId: "generalize", status, startedAt, completedAt, resultPath }`。缺少该阶段记录时不得进入 Publish。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-48.2：Generalize Gate Result 必须逐项给出 Agent/模型/provider 动态配置检查、绝对路径检查、tracked project 依赖检查、单 Agent 最小运行路径检查、README/初始化说明检查五类结论；任一类缺失即判定本阶段不完整。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-48.3：发现硬编码 Agent 名称、模型/provider 名称、维护者本机绝对路径、固定端口、固定工作区路径或内部项目枚举被作为功能依赖时，`generalize` 状态必须为 `blocked`，并生成包含具体对象、影响范围和修复建议的 Finding。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-48.4：`generalize` 标记为 `skipped-with-evidence` 时，阶段记录必须同时包含无产物变化证据、跳过理由、判定来源、复核入口和 `publishEligible: true`；只写“无需通用化”“改动很小”不得通过。缺少证据的跳过必须标记为 `skipped-without-evidence`，且不得作为 Publish 前置条件。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-48.5：只有一个可用 Agent 的环境下，Generalize Gate 必须验证阶段队列仍可分步执行；验证结果包含可用 Agent 数量、阶段分步策略和一次最小流水线运行证据。无法证明单 Agent 可运行时不得进入 Publish。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-48.6：从 audit/pass、deploy 或 publish 入口重入时，如果当前变更没有可追溯的 `generalize` 通过记录，PipelineEngine 必须先补跑 `generalize`；不得因入口靠后而跳过本阶段。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+
+### FR-49 Publish Split Routing（发布分流阶段）
+
+- **定位**：Generalize 通过后的发布阶段。把发布从“统一推一下”拆成可审计的目标分流：通用化产物发布到独立仓库或外部分发渠道，本地定制配置进入 main 仓库留痕，避免外部产物混入本机私有配置，也避免本地必要配置丢失。
+- **服务原则**：原则 1（任意入口全自动走到终局）、原则 3（一致性闭环校验）、原则 5（卡好准入和准出）、原则 8（无差别覆盖一切研发活动）。
+- **触发时机**：`generalize` 阶段结果为 `passed` 或 `skipped-with-evidence` 后自动进入 `publish`；`generalize` blocked、failed、skipped-without-evidence 或缺少证据时不得触发。
+- **跳过条件**：仅当项目没有配置任何外部发布目标、项目策略显式关闭发布、本轮没有通用化产物、变更全部属于本地 main 配置或无需发布内容，并且 Publish Routing Result 记录四类分类计数与零发布目标证据时，`publish` 可标记为 `skipped-with-evidence`。跳过记录必须包含 no-target/no-artifact/no-policy-target 的判定依据、分类计数、复核入口和 Ledger 可消费的 no-op 证据。
+- **跳过反例**：同一轮变更里只要存在一个通用化 CLI、README、安装脚本、外部仓库映射或可供第三方获取的交付物，即使同时包含本地配置、运行态缓存或无需发布文档，也必须执行 Publish 分流；通用化产物进入外部目标，本地配置留 main，敏感内容阻断，无需发布内容记录 no-op。
+- **输入**：Generalize Gate Result、发布目标配置、本轮变更清单、产物分类结果、版本信息、独立仓库映射、main 仓库状态、发布凭证可用性检查结果。
+- **处理**：
+  1. 对本轮变更做产物分类：通用化产物、本地定制配置、敏感或不可发布内容、无需发布内容。
+  1. 正常输入中，通用化产物发布到项目声明的独立仓库或外部分发渠道；独立仓库目标用于承载第三方用户可读取、可安装、可构建或可运行的内容。
+  1. 边界输入中，项目没有外部发布目标、发布策略关闭、通用化产物计数为 0 或只有本地 main 配置时，不创建外部发布动作，必须产出 explicit no-op 证据，而不是默认失败或静默成功。
+  1. 混合输入中，同一变更集按对象拆分：通用化产物进入外部目标，本地定制配置进入 main 仓库，敏感内容阻断发布，无需发布内容记录 no-op；不得把混合输入整体归为单一路径。
+  1. 本地定制配置进入 main 仓库，只保留对本环境有意义的配置、映射、运行态说明和内部集成痕迹。
+  1. 敏感内容、凭据、维护者本机缓存、运行态临时文件不得进入任何发布目标；发现后阻断 Publish 并生成 Finding。
+  1. 每个发布目标或 no-op 分类都产出独立结果，包含目标或分类、状态、版本或提交标识、失败原因、跳过原因和复验入口。
+- **输出**：Publish Routing Result，包含分类清单、目标分流表、每个目标的发布结果、失败 Finding、Ledger 可消费的发布证据。
+- **执行阶段**：`publish`，位于 `generalize` 之后、`verify/readme/ledger` 之前；任一必需目标失败时 publish blocked，修复后从 Publish 重试。
+- **Why**：通用化后的内容需要进入外部用户能获取的独立交付面，本地定制配置需要留在 main 仓库服务当前环境；如果发布阶段不自动分流，Agent 会把两类内容混推或漏推，最终要么外部仓库不可用，要么本地运行配置丢失。
+- **用户视角验证准则**：发布完成后，第三方用户从独立仓库或外部分发渠道获取到的是通用化产物；维护者在 main 仓库仍能看到本地定制配置和运行态集成记录；两边都有可追溯的版本或提交证据。
+- **验收标准**：
+  - AC-49.1：`publish` 启动前必须读取同一 pipeline 的 Generalize Gate Result，且该结果状态为 `passed` 或 `skipped-with-evidence`；状态为 `blocked`、`failed`、`skipped-without-evidence` 或不存在时，Publish 必须拒绝执行并记录阻断原因。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-49.2：Publish Routing Result 必须包含至少四类分类计数：`generalizedArtifacts`、`localMainConfig`、`blockedSensitiveItems`、`noPublishItems`；每个非零分类必须列出对象路径或对象标识和判定依据。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-49.3：分类为通用化产物的内容必须发布到项目声明的独立仓库或外部分发渠道；发布结果必须记录目标名称、目标类型、版本或提交标识、状态和可访问位置。任一必需目标失败时 publish 状态为 `blocked`。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-49.4：分类为本地定制配置的内容必须进入 main 仓库留痕，发布结果必须记录 main 仓库提交标识或待提交状态、包含对象和用途说明；不得发布到独立仓库或外部分发渠道。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-49.5：发现凭据、密钥、维护者本机缓存、设备身份、运行态临时文件或私有状态文件被归入任一发布目标时，Publish 必须阻断，并在 Finding 中列出对象、风险类型、目标和移除建议。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-49.6：Publish 完成后，Ledger 可消费的发布证据必须覆盖四类分类结果：通用化产物目标结果、main 仓库本地配置结果、敏感内容阻断结果、无需发布/no-target/no-artifact 的 no-op 结果。某一类计数为 0 时，Ledger 证据必须包含 `{ category, count: 0, reason, checkedAt }`；非零且缺少对应目标证据时，流水线不得标记 completed。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
 ### FR-46 程序化派发完成回路（Programmatic Dispatch Completion Loop）
 
