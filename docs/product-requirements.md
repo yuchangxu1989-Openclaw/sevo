@@ -156,6 +156,16 @@ Why：准入和准出是 AI 与人的关键交互界面。人不可能盯着 Age
 
 任何研发活动进入 SEVO 后，阶段队列固定执行：specify（PM 出 spec）→ spec-review-gate（mandatory, never skip）→ plan（SA 架构评估 + UX 设计，可并行）→ plan-review-gate（mandatory, never skip；架构审计 + UX 审计）→ implement（Dev 开发）→ implement-review-gate（mandatory, never skip；开发审计）→ 后续 endgame。每个产出阶段（specify/plan/implement）后面都必须跟独立审计门禁；审计通过才能进入下一阶段。没有任何阶段可以被跳过，包括 plan 阶段。SA 评估结论可以是“无需架构变更，pass-no-change”，但 SA 必须评估，阶段不能跳。Why：主会话或 PM 没有资格判断“不需要架构”或“不需要审计”。每个专业判断必须由对应专业角色做出。跳过审计就是跳过质量门禁，会让低质量产出直接流入下游。
 
+#### 原则 10：流水线强路由提示 + 主 Agent 强配合
+
+SEVO 插件绝对不能自己 spawn agent，也不能绕过主会话直接派发阶段任务。SEVO 的职责边界是判断当前流水线阶段是否可以推进，并生成 advance prompt；advance prompt 必须包含目标阶段、推荐角色或 agent、建议 timeout、建议 label、阶段输入、准入条件、准出标准和阻断原因。主 Agent 收到 advance prompt 后，负责补充实时上下文，再派发对应 Agent；实时上下文包括用户最新纠偏、需求变更、跨任务关联、当前会话里的判断、正在运行任务的状态和用户观测窗口里刚发生的变化。
+
+Why：SEVO 没有主会话拥有的实时上下文。若 SEVO 自己派任务，子任务很容易缺失关键背景；中途需求背景变化时，主 Agent 插不上话，用户也看不到和纠偏不了，流水线会变成失控黑箱。主 Agent 是唯一能把用户最新意图注入下一节点的人，也是用户观测、纠偏和授权的唯一窗口。
+
+职责划分：SEVO 负责阶段状态机、门禁判断、推进提示和可审计记录；主 Agent 负责读取提示、补充实时上下文、选择实际执行者、派发任务、接收 completion、把结果回填给 SEVO。SEVO 给出“下一步应该怎么走”的结构化提示，主 Agent 完成“把这一棒带着最新背景交给下一个人”。
+
+边界：这是 SEVO 的长期架构约束，不是临时妥协。未来即使技术上可以让 SEVO 自动派任务，也不得改成插件自派发模式，除非用户明确授权变更这个原则。
+
 ### 用户体验流
 
 1. 用户安装 `sevo-pipeline` 并执行 `npx sevo init`；AI 自动完成环境检测、插件注册、角色发现和默认配置生成；用户看到一份初始化报告，包含环境检查结果、已发现的项目、已识别的 Agent 角色、缺失配置和下一条可复制命令。成功时报告末尾显示 `Ready: create a project or run sevo status`；失败时列出阻断项、修复建议和可重试命令。关联 FR-14。
