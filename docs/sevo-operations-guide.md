@@ -645,3 +645,20 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 
 - 有 required stage 未终态：不得写完成 ledger。
 - 证据链缺失：回到缺证据的阶段补验收。
+
+## 任务命名规范（label 格式，强制）
+
+label = `sevo:<stage> <简短描述>`，和 task prompt 正文第一行的触发词保持一致。
+
+| 前缀 | 阶段 | 典型角色 | 示例 |
+|------|------|----------|------|
+| `sevo:create` | 新建项目/流水线 | 主会话 | `sevo:create exam-sprint` |
+| `sevo:specify` | spec 撰写/修改 | PM | `sevo:specify 知识提取FR补充` |
+| `sevo:design` | 架构设计 | SA | `sevo:design 向量检索架构` |
+| `sevo:implement` | 编码实现 | Dev | `sevo:implement autoDispatch无条件化` |
+| `sevo:review` | 审计/评审 | Audit | `sevo:review autoDispatch实现审计` |
+| `sevo:fix` | 审计问题修复 | Dev | `sevo:fix P1-evaluator逻辑收紧` |
+| `sevo:ux` | UX/陌生人走查 | UX | `sevo:ux KIVO开箱即用验证` |
+| `sevo:from` | 从某阶段继续 | 视情况 | `sevo:from sevo implement` |
+
+Why：看板上一眼能识别任务属于流水线的哪个阶段，避免混淆研发任务和非研发任务。

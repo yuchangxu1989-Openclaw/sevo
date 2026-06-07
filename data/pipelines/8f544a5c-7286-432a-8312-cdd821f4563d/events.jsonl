@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-07T18:12:27.115Z","pipelineId":"8f544a5c-7286-432a-8312-cdd821f4563d","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-fr-38a-spec-gap-mq43nay7","level":"L1"}}
+{"timestamp":"2026-06-07T18:12:27.116Z","pipelineId":"8f544a5c-7286-432a-8312-cdd821f4563d","stage":"spec","eventType":"stage_activated","payload":{}}

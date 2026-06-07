@@ -86,3 +86,69 @@ describe('SEVO spec-gap auto-advance (原则1 / AC-27.1b)', () => {
     });
   });
 });
+
+// FR-38 AC5/AC6 + FR-39a: advisory-mode spec-gap. At an entry, a detected gap must
+// produce a "建议先补 spec" advance prompt WITHOUT pausing the pipeline; the main
+// agent decides whether to fill the spec first.
+describe('SEVO spec-gap advisory mode (FR-38 AC5/AC6 / FR-39a)', () => {
+  const baseResult = {
+    entryType: 'fix',
+    projectSlug: 'aco',
+    targetStage: 'implement',
+    verdict: 'incomplete',
+    reason: 'spec does not cover the dispatch-guard why-backfill task',
+    missing: [
+      'A numbered FR requiring dispatch-guard injection text to include Why.',
+      'A specific AC verifying every injected segment contains a Why line.',
+    ],
+    relatedFRs: ['FR-B01'],
+    relatedACs: ['AC15'],
+    resumeCondition: 'Add the FR/AC and pass Spec Review Gate.',
+  };
+
+  it('frames the notice as a suggestion, not a block', () => {
+    const text = mod.buildSpecGapAdvisory(baseResult);
+
+    expect(text).toContain('建议先补 spec');
+    expect(text).toContain('建议');
+    // Must NOT claim the pipeline is paused/blocked (advisory, not blocking).
+    expect(text).not.toContain('已暂停');
+    expect(text).toContain('由主 Agent 决定');
+  });
+
+  it('includes target stage and entry type so the main agent has context', () => {
+    const text = mod.buildSpecGapAdvisory(baseResult);
+
+    expect(text).toContain('implement');
+    expect(text).toContain('fix');
+  });
+
+  it('lists every missing gap item and related FR/AC', () => {
+    const text = mod.buildSpecGapAdvisory(baseResult);
+
+    for (const m of baseResult.missing) {
+      expect(text).toContain(m);
+    }
+    expect(text).toContain('FR-B01');
+    expect(text).toContain('AC15');
+  });
+
+  it('falls back to the reason when there is no explicit missing list', () => {
+    const text = mod.buildSpecGapAdvisory({
+      entryType: 'from',
+      targetStage: 'review',
+      reason: 'coverage could not be confirmed',
+      missing: [],
+    });
+
+    expect(text).toContain('coverage could not be confirmed');
+  });
+
+  it('does not pause the pipeline (noticeSpecGapAdvisory is a no-throw advisory emit)', () => {
+    // noticeSpecGapAdvisory only pushes a notice + appends an audit event; it must
+    // never throw or touch pipeline pause state for an unregistered pipeline.
+    expect(() =>
+      mod.noticeSpecGapAdvisory('nonexistent-pipeline-id-for-test', baseResult, 'aco'),
+    ).not.toThrow();
+  });
+});

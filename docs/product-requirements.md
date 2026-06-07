@@ -1594,22 +1594,219 @@ SEVO 流水线的 dispatch-guard 插件内置 spec 覆盖检查逻辑。派发�
 - AC6：`sevo:from` 任意阶段入口同样必须先过 spec 完整性检查；未覆盖时与 `sevo:fix` 走同一条“生成补 spec advance prompt → 等待主 Agent 握手 → 由主 Agent 决定后续执行”的引导路径。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 - AC7：spec 完整性检查结果必须写入结构化记录，至少包含入口类型、目标阶段、判定结论、关联 FR/AC、未覆盖原因和恢复条件，供流水线状态与审计日志追溯。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
 
+### FR-38a 语义级 Spec-Gap Advisory
+
+SEVO 在开发类任务派发前，对任务描述与目标项目 spec 的 FR/AC 列表做 LLM 语义对照，识别任务里出现但 spec 尚未定义的新概念、新命令、新入口、新实体、新角色、新状态或新用户可见行为。发现缺口时，系统生成 advisory 建议通知，引导主 Agent 先补 spec，再继续后续阶段；advisory 不直接中断派发，由流水线握手规则和主 Agent 执行纪律承接后续动作。
+
+Why：文件路径只能判断“任务属于哪个项目”，不能判断“任务描述里新增的产品语义是否已被 spec 定义”。如果新概念绕过 spec 直接进入实现，代码会先于需求定义漂移，审计只能事后发现，返工成本更高。
+
+- **触发条件**：开发、修复、设计、审计、UX 或发布相关任务进入 SEVO 路由，且任务描述包含可能改变用户可见行为、命令语义、入口前缀、阶段名称、配置项、数据实体、状态机节点、角色职责或对外文案的新概念时触发。
+- **跳过条件**：纯 bug fix 可跳过本 advisory。纯 bug fix 必须同时满足：已有明确复现步骤；能定位到现有 FR/AC；实际行为与该 FR/AC 的明确描述矛盾；任务不引入新的概念、命令、实体、边界或验收标准。任一条件缺失时不得跳过。
+- **检测方式**：调用 LLM 对“任务描述 + 已解析 FR/AC 摘要 + 已定义术语/命令/实体清单”做语义判断，输出新增概念及覆盖结论。禁止用关键词匹配、正则、文件名、路径或 FR 标题包含关系冒充语义覆盖。
+- **输出格式**：advisory 结构化记录至少包含 `projectSlug`、`taskId`、`introducedConcepts[]`、`matchedFrAc[]`、`gapSummary`、`recommendedSpecPatch`、`severity`、`confidence`、`reason`、`createdAt`。面向主 Agent 的通知使用“建议先补 spec”的引导式措辞，不使用对抗式表达。
+- **性能约束**：检测不得阻塞派发主链路超过 2 秒；超时或 LLM 不可用时记录 `status: skipped` 与原因，并异步补跑。异步补跑发现高置信缺口时补发 advisory 通知。
+- **验收标准**：
+  - AC-38a.1：任务描述中出现 spec 未定义的新入口、新命令、新阶段、新实体、新角色、新状态、配置项或用户可见行为时，语义级 spec-gap 检测必须产出 advisory。验收验证：构造“把前缀速查表从 4 个扩展到 8 个，新增 specify/design/review/ux”且 spec 仅定义 4 个前缀的任务，检测结果包含 4 个新增前缀，`status` 为 `advisory`，`recommendedSpecPatch` 非空。
+  - AC-38a.2：任务只修改现有 FR/AC 已定义行为的实现缺陷，且不引入新概念、新边界或新验收标准时，不生成 spec-gap advisory。验收验证：构造带复现步骤、对应 FR/AC、实际行为与预期行为矛盾的纯 bug fix 任务，检测结果为 `covered` 或 `skipped-pure-bugfix`，并记录对应 FR/AC 与复现证据。
+  - AC-38a.3：混合任务必须拆分判断：已有 FR/AC 覆盖的 bug fix 部分标记为 covered，新概念或边界变化部分生成 advisory；不得因任务包含 bug fix 字样整体跳过。验收验证：构造“修复现有前缀显示错误，并新增 review/ux 前缀”的任务，结果同时包含 covered 项和 advisory 项。
+  - AC-38a.4：检测必须调用 LLM 进行任务描述与 FR/AC 摘要的语义判断；检测日志记录模型调用 ID、输入摘要、输出结论和置信度。验收验证：检查检测日志，存在 LLM 调用记录；若只存在关键词、正则、文件名或路径匹配证据，则判定为 fail。
+  - AC-38a.5：advisory 输出字段必须完整，至少包含 `projectSlug`、`taskId`、`introducedConcepts[]`、`matchedFrAc[]`、`gapSummary`、`recommendedSpecPatch`、`severity`、`confidence`、`reason`、`createdAt`。验收验证：对输出 JSON 做 schema 校验，缺任一字段即 fail。
+  - AC-38a.6：advisory 采用现有建议通知模式，不直接改变 pipeline 状态为 blocked，不直接替主 Agent 派 PM，也不自动修改 spec。验收验证：触发 advisory 后，pipeline 状态保持原阶段可推进或待主 Agent 握手状态，事件记录包含 advisory 通知，不包含自动派单或自动写 spec 动作。
+  - AC-38a.7：同步检测耗时超过 2 秒、LLM 不可用或模型返回不可解析时，不得卡住任务派发；系统记录 skipped/error 原因并安排异步补跑。验收验证：模拟 LLM 超时，派发链路在 2 秒内返回，结构化记录包含 `status: skipped`、`reason: llm-timeout` 和异步补跑标记。
+  - AC-38a.8：异步补跑发现高置信缺口时，系统补发 advisory 通知，并把结果写入 spec 完整性检查记录，供后续审计和流水线状态查询使用。验收验证：模拟同步跳过后异步补跑命中缺口，检查通知记录和 spec 完整性记录均出现同一 `taskId` 的 advisory 结果。
+
 ### FR-39: 流水线前缀语义规范与开箱即用引导
 
-SEVO 流水线通过 label 前缀识别任务类型并自动路由。前缀语义定义：
+SEVO 流水线通过 `sevo:` label 前缀识别研发入口、目标阶段和角色约束。前缀不是普通标签，而是流水线握手协议：主 Agent 或用户用前缀表达“这件事应进入 SEVO 管理”，SEVO 据此前置检查 spec 覆盖、创建或复用 pipeline、选择阶段队列，并在后续阶段继续收敛到终局交付链。
 
-- `sevo:create <project>` — 创建新项目并初始化流水线
-- `sevo:implement <描述>` — 新功能实现（走完整 specify→implement→audit→终局交付链）
-- `sevo:fix <描述>` — 修复已有问题（先检查 spec 覆盖；已覆盖时从 implement 进入，未覆盖时先补 spec，再继续 implement→终局交付链）
-- `sevo:from <stage> <project>` — 从指定阶段恢复/重入流水线（先过 spec 完整性检查，再从目标阶段进入并继续走完整终局交付链）
+Why：如果前缀只靠历史约定或口头记忆，主 Agent、插件和子 Agent 会各自理解入口语义，导致补 spec、架构设计、实现、审计、UX 验收和修复闭环被拆散。把完整前缀体系写成产品定义后，每个入口都有可追溯的阶段、角色和验收依据，陌生用户也能从提示文案直接知道该用哪个入口。
+
+#### 完整前缀定义
+
+<lark-table rows="9" cols="5" header-row="true" column-widths="146,146,146,146,146">
+
+  <lark-tr>
+    <lark-td>
+      前缀
+    </lark-td>
+    <lark-td>
+      阶段入口
+    </lark-td>
+    <lark-td>
+      默认角色映射
+    </lark-td>
+    <lark-td>
+      使用场景
+    </lark-td>
+    <lark-td>
+      示例
+    </lark-td>
+  </lark-tr>
+  <lark-tr>
+    <lark-td>
+      `sevo:create <project>`
+    </lark-td>
+    <lark-td>
+      Pipeline Create → Specify
+    </lark-td>
+    <lark-td>
+      Product
+    </lark-td>
+    <lark-td>
+      创建新项目或为未纳管项目初始化 spec、目录和流水线
+    </lark-td>
+    <lark-td>
+      `sevo:create kivo`
+    </lark-td>
+  </lark-tr>
+  <lark-tr>
+    <lark-td>
+      `sevo:specify <描述>`
+    </lark-td>
+    <lark-td>
+      Specify / Spec Review Gate
+    </lark-td>
+    <lark-td>
+      Product
+    </lark-td>
+    <lark-td>
+      补充、修正或收敛需求定义、FR/AC、边界和验收标准
+    </lark-td>
+    <lark-td>
+      `sevo:specify 补齐实时提取的 FR/AC`
+    </lark-td>
+  </lark-tr>
+  <lark-tr>
+    <lark-td>
+      `sevo:design <描述>`
+    </lark-td>
+    <lark-td>
+      Contract / Architecture Design
+    </lark-td>
+    <lark-td>
+      Architect
+    </lark-td>
+    <lark-td>
+      做架构方案、接口契约、数据流、ADR 或技术设计评估
+    </lark-td>
+    <lark-td>
+      `sevo:design 设计实时提取架构`
+    </lark-td>
+  </lark-tr>
+  <lark-tr>
+    <lark-td>
+      `sevo:implement <描述>`
+    </lark-td>
+    <lark-td>
+      Implement → Review → 终局交付链
+    </lark-td>
+    <lark-td>
+      Coder
+    </lark-td>
+    <lark-td>
+      按已覆盖的 spec 实现新能力或功能改动
+    </lark-td>
+    <lark-td>
+      `sevo:implement 实现实时提取入口`
+    </lark-td>
+  </lark-tr>
+  <lark-tr>
+    <lark-td>
+      `sevo:review <描述>`
+    </lark-td>
+    <lark-td>
+      Review / Gate Review
+    </lark-td>
+    <lark-td>
+      Auditor
+    </lark-td>
+    <lark-td>
+      对实现、spec、架构、回归或发布候选执行独立审计
+    </lark-td>
+    <lark-td>
+      `sevo:review 审计实时提取实现`
+    </lark-td>
+  </lark-tr>
+  <lark-tr>
+    <lark-td>
+      `sevo:ux <描述>`
+    </lark-td>
+    <lark-td>
+      UX Acceptance / UX Design Review
+    </lark-td>
+    <lark-td>
+      UX
+    </lark-td>
+    <lark-td>
+      设计或验收用户体验、页面流、视觉可用性和陌生人走查
+    </lark-td>
+    <lark-td>
+      `sevo:ux 验收首次使用路径`
+    </lark-td>
+  </lark-tr>
+  <lark-tr>
+    <lark-td>
+      `sevo:fix <描述>`
+    </lark-td>
+    <lark-td>
+      Spec 覆盖检查 → Implement 修复 → Review Fix Loop
+    </lark-td>
+    <lark-td>
+      Coder + Auditor
+    </lark-td>
+    <lark-td>
+      修复已有 FR/AC 覆盖的问题；若未覆盖，先回到 Specify 补 spec
+    </lark-td>
+    <lark-td>
+      `sevo:fix 修复登录失败`
+    </lark-td>
+  </lark-tr>
+  <lark-tr>
+    <lark-td>
+      `sevo:from <stage> <project>`
+    </lark-td>
+    <lark-td>
+      Flexible Stage Entry
+    </lark-td>
+    <lark-td>
+      由目标阶段决定
+    </lark-td>
+    <lark-td>
+      从指定阶段恢复、重入或承接已有 pipeline；进入目标阶段前仍做 spec 完整性检查
+    </lark-td>
+    <lark-td>
+      `sevo:from implement kivo`
+    </lark-td>
+  </lark-tr>
+</lark-table>
+
+阶段名与角色名必须使用通用产品语义，不绑定本机私有 agentId。运行时具体 agent 由角色注册表和当前宿主配置动态选择。
+
+#### Label 命名规范
+
+所有由主会话派发给 SEVO 管理的任务，label 必须采用统一格式：
+
+`sevo:<stage> <简短描述>`
+
+- `<stage>` 使用前缀中的阶段词：`create`、`specify`、`design`、`implement`、`review`、`ux`、`fix`、`from`。
+- `<简短描述>` 用一句人话说明本轮目标，避免只写“修改”“审计”“任务”。
+- label 只表达入口和目标，不塞技术路径、agentId、模型名、内部文件路径或本机私有信息。
+- 同一任务的 label、pipeline managedChange 和审计事件必须保持同一前缀语义，便于去重、状态查询和 completion 归因。
 
 AC:
 
-1. sevo-pipeline 插件的错误提示中包含完整前缀语义说明
-1. `sevo init` 后生成的引导文档中包含前缀使用指南
-1. 插件注入到主会话的 context 提示中包含前缀速查表
-1. 前缀语义说明中不得出现“`sevo:fix` 跳过 specify，直接 implement→audit”这类会误导用户跳过 spec 门禁的表述
-1. `sevo:fix` 和 `sevo:from` 的帮助文案必须明确写出：若 spec 未覆盖，则 SEVO 生成补 spec advance prompt 建议主 Agent 先收敛 spec；若 spec 已覆盖，则生成从目标阶段继续推进到终局的 advance prompt，不允许做完就停
+1. sevo-pipeline 插件的错误提示中包含完整 8 个 `sevo:` 前缀的语义说明，覆盖 create、specify、design、implement、review、ux、fix、from。验收验证：审计时读取实际错误提示或注入文本，8 个前缀缺任一项即判定为 fail。
+1. `sevo init` 后生成的引导文档中包含完整前缀使用指南，并写清每个前缀对应阶段、角色语义和示例。验收验证：审计时读取初始化产物，检查 8 个前缀、阶段入口、默认角色映射和示例是否齐全。
+1. 插件注入到主会话的 context 提示中包含前缀速查表，且前缀语义与本 FR 的完整定义一致。验收验证：读取一次实际注入文本，与本 FR 的 8 前缀定义逐项比对；缺失、冲突或角色语义错误均判定为 fail。
+1. 前缀语义说明中不得出现“`sevo:fix` 跳过 specify，直接 implement→audit”这类会误导用户跳过 spec 门禁的表述。验收验证：审计时搜索帮助文案、错误提示和注入文本，发现跳过 spec 门禁的误导表述即判定为 fail。
+1. `sevo:fix` 和 `sevo:from` 的帮助文案必须明确写出：若 spec 未覆盖，则 SEVO 生成补 spec advance prompt 建议主 Agent 先收敛 spec；若 spec 已覆盖，则生成从目标阶段继续推进到终局的 advance prompt，不允许做完就停。验收验证：审计时读取帮助文案，缺少未覆盖/已覆盖两种路径任一说明即判定为 fail。
+1. `sevo:specify` 必须路由到 Specify / Spec Review Gate，并默认要求 Product 角色执行；不得被当作实现、审计或普通文档编辑任务处理。验收验证：触发 `sevo:specify <描述>`，路由结果中的阶段入口为 Specify，requiredRole 为 product，且生成 spec 工件或 spec review 工件。
+1. `sevo:design` 必须路由到 Contract / Architecture Design，并默认要求 Architect 角色执行；不得绕过 spec 覆盖检查直接进入编码。验收验证：触发 `sevo:design <描述>`，路由结果中的阶段入口为 Contract 或架构设计阶段，requiredRole 为 architect，且引用对应 FR/AC 上下文。
+1. `sevo:review` 必须路由到 Review 或对应 Gate Review，并默认要求 Auditor 角色执行；Review 发现 P0/P1 后必须进入修复→复验闭环。验收验证：触发 `sevo:review <描述>`，路由结果 requiredRole 为 auditor；审计失败场景中存在 Review Fix Loop 事件记录。
+1. `sevo:ux` 必须路由到 UX Acceptance 或 UX Design Review，并默认要求 UX 角色执行；不得由开发者自验替代。验收验证：触发 `sevo:ux <描述>`，路由结果 requiredRole 为 ux，产出工件 authorRole 为 ux 或记录单 Agent 降级原因。
+1. 由主会话或 PipelineEngine 生成的 SEVO 任务 label 必须符合 `sevo:<stage> <简短描述>` 格式；`<stage>` 只能取 `create/specify/design/implement/review/ux/fix/from`，且描述非空。验收验证：审计任务看板、pipeline state 或调度审计日志，发现不符合格式、stage 不在白名单或描述为空即判定为 fail。
+1. label 中禁止出现宿主私有信息，包括具体 agentId、provider/model、绝对路径、用户 ID、token 或本机端口。验收验证：审计 label、managedChange 和通知文案，发现宿主私有信息即判定为 fail。
+1. Completion 归因、去重和 active pipeline 检查必须使用结构化字段中的 label 前缀语义，不得用 substring、宽泛文本包含或正则近似匹配冒充同一变更。验收验证：构造相似 label 的不同任务，系统只在 `label`、`taskId` 或 `title` 结构化字段完全匹配时去重。
 
 ### FR-39a 流水线引导 + 主 Agent 握手协议（Pipeline Guidance + Main-Agent Handshake Protocol）
 
@@ -2377,3 +2574,4 @@ sevo-pipeline 中所有 LLM 判定调用（包括 trigger 分类、阶段门禁 
   - AC-4.67：处于澄清模式时，用户给出方向确认后，下一条判定结果 `mode` 转为 `dispatch`，澄清模式退出可在状态记录中观测到；确认是否成立由 LLM 判定，不依赖固定确认词表。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.68：用户消息含明确"少问/别问"但任务范围未闭合或 spec 覆盖不足时，`mode` 仍为 `clarify`；`basis` 记录范围未闭合的具体缺口（待定义阈值、未覆盖边界或缺失 FR/AC）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.69：同一条消息混合"已清晰执行指令"和"探讨/质疑"两类意图时，判定结果必须拆分标注两部分各自的处置（清晰部分 `dispatch`、探讨部分 `clarify`），不得整体归为单一处置。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+

@@ -479,7 +479,7 @@ SEVO 不是单一状态源，而是**按职责拆成四层状态**。
 - `sevo:create <project-slug>`：创建项目并初始化流水线
 - `sevo:implement <描述>`：以完整研发链处理新功能实现
 - `sevo:fix <描述>`：先核实 spec，再修问题并继续后续门禁
-- `sevo:from <stage> <project>`：从指定阶段重入
+- `sevo:from <project> <stage>`：从指定阶段重入
 
 这四个不是普通 CLI 子命令名，而是**主会话路由协议**。SEVO 插件会在 `before_prompt_build` 中给出对应指引。
 

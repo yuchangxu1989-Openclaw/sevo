@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { resolveStageLabel } from '@/lib/stage-labels';
 import type {
   ArtifactRef,
@@ -123,8 +124,9 @@ interface ProjectProgress {
   progress: JsonRecord;
 }
 
-const WORKSPACE_ROOT = process.env.SEVO_WORKSPACE_ROOT ?? path.resolve(process.cwd(), '../../..');
-const SEVO_ROOT = path.resolve(process.cwd(), '..');
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const SEVO_ROOT = path.resolve(MODULE_DIR, '../..');
+const WORKSPACE_ROOT = process.env.SEVO_WORKSPACE_ROOT ?? path.resolve(SEVO_ROOT, '../..');
 const PROJECTS_ROOT = path.join(WORKSPACE_ROOT, 'projects');
 
 const ACTIVE_PIPELINE_PATHS = [

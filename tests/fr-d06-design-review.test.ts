@@ -9,6 +9,8 @@ import {
   buildDesignReviewFixPrompt,
   queueDesignReview,
   queueDesignReviewFix,
+  queueStageAdvancePrompt,
+  autoDispatchStage,
   patchDesignReviewStatus,
   designStageArtifactPath,
   areDesignStagesSatisfied,
@@ -273,6 +275,81 @@ describe('FR-D06 design review orchestration', () => {
       const fixEntry = entries.find(e => e.stageId === 'architecture-design-design-review-fix-1');
       expect(fixEntry).toBeTruthy();
       expect(fixEntry.taskDescription).toContain('data model missing');
+      clearPending(pipelineId);
+    });
+
+    it('queueStageAdvancePrompt enqueues every transition even when the same stage is already pending', () => {
+      const pipelineId = 'pipe-stage-transition';
+      clearPending(pipelineId);
+      const state: any = {
+        requiredStages: ['spec', 'implement', 'review'],
+        stages: {
+          spec: { status: 'passed' },
+          implement: { status: 'active' },
+          review: { status: 'pending' },
+        },
+      };
+
+      expect(queueStageAdvancePrompt({
+        pipelineId,
+        stageId: 'implement',
+        projectSlug: 'demo',
+        projectRoot: 'projects/demo',
+        state,
+        taskDescription: '[custom implement prompt]',
+        agentId: 'cc',
+        timeout: 1200,
+        source: 'test-transition-1',
+      })).toBe(true);
+      expect(queueStageAdvancePrompt({
+        pipelineId,
+        stageId: 'implement',
+        projectSlug: 'demo',
+        projectRoot: 'projects/demo',
+        state,
+        taskDescription: '[custom implement prompt second event]',
+        agentId: 'codex',
+        timeout: 900,
+        source: 'test-transition-2',
+      })).toBe(true);
+
+      const entries = pendingFor(pipelineId).filter(e => e.stageId === 'implement');
+      expect(entries).toHaveLength(2);
+      expect(entries[0].label).toBe('sevo:demo:implement:1');
+      expect(entries[0].taskDescription).toContain('[custom implement prompt]');
+      expect(entries[1].label).toBe('sevo:demo:implement:2');
+      expect(entries[1].taskDescription).toContain('[custom implement prompt second event]');
+      expect(entries[1].enqueuedBy).toBe('test-transition-2');
+      clearPending(pipelineId);
+    });
+
+    it('autoDispatchStage creates an implement→review advance prompt without direct board dispatch prerequisites', () => {
+      const pipelineId = 'pipe-implement-review';
+      clearPending(pipelineId);
+      const queued = autoDispatchStage({
+        pipelineId,
+        projectSlug: 'demo',
+        projectRoot: 'projects/demo',
+        pipelineState: {
+          requiredStages: ['implement', 'review'],
+          stages: {
+            implement: { status: 'passed', artifacts: [{ path: 'src/changed.ts' }] },
+            review: { status: 'active' },
+          },
+        },
+        evt: { agentId: 'cc', outputFiles: ['src/changed.ts'] },
+        toStage: 'review',
+      });
+
+      expect(queued).toBe(true);
+      const reviewEntry = pendingFor(pipelineId).find(e => e.stageId === 'review');
+      expect(reviewEntry).toBeTruthy();
+      expect(reviewEntry.label).toBe('sevo:demo:review:1');
+      expect(reviewEntry.agentId).toMatch(/^audit-/);
+      expect(reviewEntry.timeout).toBe(1200);
+      expect(reviewEntry.taskDescription).toContain('Implement stage passed and review must start automatically.');
+      expect(reviewEntry.taskDescription).toContain('src/changed.ts');
+      expect(reviewEntry.taskDescription).toContain('Spec path:');
       clearPending(pipelineId);
     });
   });
