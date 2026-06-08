@@ -2611,3 +2611,36 @@ sevo-pipeline 中所有 LLM 判定调用（包括 trigger 分类、阶段门禁 
   - AC-4.67：处于澄清模式时，用户给出方向确认后，下一条判定结果 `mode` 转为 `dispatch`，澄清模式退出可在状态记录中观测到；确认是否成立由 LLM 判定，不依赖固定确认词表。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.68：用户消息含明确"少问/别问"但任务范围未闭合或 spec 覆盖不足时，`mode` 仍为 `clarify`；`basis` 记录范围未闭合的具体缺口（待定义阈值、未覆盖边界或缺失 FR/AC）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.69：同一条消息混合"已清晰执行指令"和"探讨/质疑"两类意图时，判定结果必须拆分标注两部分各自的处置（清晰部分 `dispatch`、探讨部分 `clarify`），不得整体归为单一处置。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+
+### FR-38c 精准路由提示注入（Precise Route Hint Injection）
+
+SEVO 在主会话每轮收到消息并识别到已注册项目时，主动把该项目当前 pipeline 状态、已完成阶段、推荐下一步和不建议跳转的阶段注入到主会话 system prompt。提示在主会话选择阶段之前出现，帮助主会话先看到“为什么应从这里继续”，减少选错阶段后再被门禁拦住的对抗感和停滞。
+
+Why：只在选错后拦截，会让主会话看到规则却看不到路径，容易把门禁理解成阻断。精准路由提示把原因前置：先告诉主会话当前走到哪、哪一步最合理、跳过哪些阶段会丢证据；如果主会话仍选择错误阶段，再由 FR-38b 的门禁和澄清机制兜底。
+
+- **触发条件**：OpenClaw 主会话收到消息，且消息语义涉及已注册 SEVO 项目；或主会话准备派发、推进、重入任何 `sevo:*` 任务时触发。
+- **输入**：用户消息或任务描述、projectSlug、pipelineId、pipeline 当前阶段、阶段队列、已完成阶段、待推进阶段、最近门禁结论、spec 覆盖状态、当前阻断原因、最近一次推荐记录。
+- **处理**：
+  1. 识别消息涉及的受管项目；无法唯一识别项目时不注入项目级推荐，只注入“需要先确认项目”的提示。
+  1. 读取该项目 active pipeline 状态；无 active pipeline 时，提示主会话先创建或选择 pipeline。
+  1. 基于阶段队列、mandatory gate、spec 覆盖状态和最近门禁结论生成推荐下一步。
+  1. 生成不建议跳转的阶段列表，并说明跳转风险，如缺少 spec 覆盖、缺少 plan/contract 评估、审计未通过、终局链未完成。
+  1. 通过 L2 system prompt 注入给主会话；注入内容每轮可见，且随着 pipeline 状态变化刷新。
+- **注入内容**：至少包含项目名、pipelineId、当前阶段、已完成阶段列表、待推进阶段列表、推荐下一步阶段、推荐理由、不建议跳转的阶段及原因、是否需要主会话做最终选择。
+- **边界**：SEVO 只提供信息和推荐，不替主会话做最终决策，不自动派发任务，不自动修改 pipeline 状态。精准路由提示与 FR-38b 互补：先提示正确路径；主会话仍选错时，再由阶段路由 advisory、澄清和门禁处理。
+- **措辞要求**：提示必须解释 why，使用引导、准入校验和路径建议措辞；禁止使用对抗、惩罚、控制主会话的表达。
+
+**验收标准**：
+
+- AC-38c.1：主会话收到涉及已注册项目的消息时，SEVO 在本轮 system prompt 中注入项目级路由提示；提示包含 `projectSlug`、`pipelineId`、`currentStage`、`completedStages[]`、`pendingStages[]` 和 `recommendedNextStage`。验收时触发一条涉及 active pipeline 项目的普通消息，检查 prompt 注入记录，缺任一字段即 fail。
+- AC-38c.2：推荐下一步必须包含理由，理由至少引用一项结构化状态证据：当前阶段、已完成阶段、待推进阶段、spec 覆盖状态、mandatory gate 结论或最近阻断原因。验收时检查注入文本和结构化记录，只有阶段名没有 why 即 fail。
+- AC-38c.3：注入内容必须列出不建议跳转的阶段及原因；当存在缺失 spec、缺少 plan/contract 评估、审计未通过或终局链未完成任一风险时，对应阶段必须出现在 `doNotJumpTo[]` 或等价字段中。验收时构造 spec gap 后请求 implement，提示必须说明不应直接进入 implement。
+- AC-38c.4：当消息涉及多个候选项目或无法唯一识别项目时，SEVO 不得编造推荐阶段；注入内容必须提示主会话先确认项目，并列出候选项目和匹配依据。验收时构造同时提到两个受管项目的消息，输出必须为项目确认提示，不得默认选择最近项目。
+- AC-38c.5：当项目没有 active pipeline 时，注入内容必须提示主会话先创建或选择 pipeline，且不得给出基于不存在 pipeline 的当前阶段或已完成阶段。验收时构造已注册但无 active pipeline 的项目消息，`currentStage` 不得伪造，推荐动作应为创建或选择 pipeline。
+- AC-38c.6：精准路由提示不得自行触发 spawn、推进阶段、跳过 mandatory gate 或写入 handshake result；验收时检查同一注入事件后的任务记录和 pipeline state，没有主会话显式选择前不得新增阶段任务或阶段通过记录。
+- AC-38c.7：当 pipeline 状态变化后，下一轮注入必须反映最新状态；不得继续显示旧的 currentStage、completedStages 或 recommendedNextStage。验收时模拟阶段完成事件后触发下一轮 prompt 构建，注入记录必须使用更新后的 pipeline state。
+- AC-38c.8：精准路由提示必须在主会话选择 sevo 阶段之前可见。验收时构造“主会话准备派 `sevo:implement`”场景，prompt 注入记录必须早于阶段派发请求，不能只在派发被拦后出现。
+- AC-38c.9：注入内容必须明确与 FR-38b 的关系：本机制提供前置提示；若主会话仍选择与推荐不一致的阶段，FR-38b 的 advisory、澄清和门禁继续生效。验收时检查提示模板，缺少互补关系说明即 fail。
+- AC-38c.10：提示内容应短而可执行，单项目注入正文不超过 300 字；结构化字段可完整记录在注入事件中。验收时检查实际 prompt 注入文本，超过 300 字且不是多项目确认场景即 fail。
+- AC-38c.11：当同一 `projectSlug` 下存在多条 active 或 recent pipeline，且用户消息或任务描述无法唯一定位 `pipelineId` 时，SEVO 不得默认选择任一 pipeline 注入单一推荐；注入内容必须列出每条候选 pipeline 的 `pipelineId`、`currentStage`、`lastActivityAt` 和匹配依据，并提示主会话先选择 pipeline。验收时构造同一项目多条 active pipeline 的消息，缺少候选列表、缺少任一候选 pipeline 的 ID/当前阶段/最后活动时间，或默认选择最近 pipeline，即 fail。
+- AC-38c.12：当目标 pipeline 已到终局且 `pendingStages=[]`、所有必需阶段已完成时，注入内容必须明确提示“所有阶段已完成，无需新的阶段推进”，`recommendedNextStage` 不得推荐任何普通阶段；可提示主会话判断结束当前 pipeline、创建新 pipeline，或按新增范围重入。验收时构造 completed pipeline 的项目消息，注入内容若重复推荐 review、ux、publish、ledger 等旧阶段，或未明确说明无需阶段推进，即 fail。

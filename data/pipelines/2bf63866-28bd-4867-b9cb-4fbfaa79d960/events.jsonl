@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-08T11:57:37.990Z","pipelineId":"2bf63866-28bd-4867-b9cb-4fbfaa79d960","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-fr-38c-mq55p927","level":"L1"}}
+{"timestamp":"2026-06-08T11:57:37.990Z","pipelineId":"2bf63866-28bd-4867-b9cb-4fbfaa79d960","stage":"spec","eventType":"stage_activated","payload":{}}
