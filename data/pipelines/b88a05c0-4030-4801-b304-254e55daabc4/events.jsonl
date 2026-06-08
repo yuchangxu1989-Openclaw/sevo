@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-07T22:30:55.885Z","pipelineId":"b88a05c0-4030-4801-b304-254e55daabc4","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-aco-mq4cvpo4","level":"L1"}}
+{"timestamp":"2026-06-07T22:30:55.885Z","pipelineId":"b88a05c0-4030-4801-b304-254e55daabc4","stage":"spec","eventType":"stage_activated","payload":{}}

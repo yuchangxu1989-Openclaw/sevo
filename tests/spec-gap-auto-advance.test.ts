@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import * as mod from '../index.js';
 
-// 原则1 / AC-27.1b: a spec-integrity gap at any entry must auto-dispatch the spec
-// stage to fill the gap (instead of dead-ending at a manual-resume pause) and
-// auto-recover on spec completion. These tests pin the pure, deterministic parts
-// of that behavior.
+// SEVO 原则：流水线永远往前走。spec-gap 是 advisory 信号，绝不暂停流水线。
+// 检测仍然执行并记录（specIntegrityChecks），但入口/完成/恢复路径都不写 paused。
+// 这些测试钉住 advisory 行为的纯、确定性部分。
 
-describe('SEVO spec-gap auto-advance (原则1 / AC-27.1b)', () => {
+describe('SEVO spec-gap advisory (流水线永不因 spec-gap 暂停)', () => {
   describe('buildSpecGapSupplement', () => {
     const baseResult = {
       entryType: 'fix',
@@ -73,9 +72,10 @@ describe('SEVO spec-gap auto-advance (原则1 / AC-27.1b)', () => {
   });
 
   describe('recoverFromSpecGapOnCompletion guard', () => {
-    it('is a no-op for a pipeline that is not paused at spec-gap', async () => {
+    it('is a no-op for an unknown / non-stuck pipeline', async () => {
       // Unknown pipeline id → not registered → must report handled:false so the
       // completion handler falls through to the normal advance path untouched.
+      // (spec-gap no longer pauses; this only heals LEGACY stuck state files.)
       const result = await mod.recoverFromSpecGapOnCompletion(
         'nonexistent-pipeline-id-for-test',
         'aco',
@@ -83,6 +83,40 @@ describe('SEVO spec-gap auto-advance (原则1 / AC-27.1b)', () => {
       );
 
       expect(result).toEqual({ recovered: false, handled: false });
+    });
+  });
+
+  describe('autoDispatchSpecForGap never pauses', () => {
+    it('emits an advisory without throwing for an unregistered pipeline', () => {
+      // Record-only + advisory notice. Must never throw or touch pause state.
+      const result = {
+        entryType: 'fix', projectSlug: 'aco', targetStage: 'implement',
+        verdict: 'incomplete', reason: 'spec gap', missing: ['x'],
+        relatedFRs: [], relatedACs: [], resumeCondition: 'fill spec',
+      };
+      expect(() =>
+        mod.autoDispatchSpecForGap('nonexistent-pipeline-id-for-test', result, 'aco', '.'),
+      ).not.toThrow();
+    });
+  });
+
+  describe('recoverAllSpecGapPipelinesOnSpecCompletion sweep', () => {
+    it('reports handled:false with empty id lists when no project slug is given', async () => {
+      const result = await mod.recoverAllSpecGapPipelinesOnSpecCompletion('');
+
+      expect(result).toEqual({ handled: false, recoveredIds: [], stillPausedIds: [] });
+    });
+
+    it('reports handled:false when no pipeline is paused at spec-gap for the project', async () => {
+      // A project slug that has no registered paused(spec-gap) pipeline must yield
+      // a clean no-op so the caller falls through to the normal advance path.
+      const result = await mod.recoverAllSpecGapPipelinesOnSpecCompletion(
+        'nonexistent-project-slug-for-test',
+      );
+
+      expect(result.handled).toBe(false);
+      expect(result.recoveredIds).toEqual([]);
+      expect(result.stillPausedIds).toEqual([]);
     });
   });
 });
