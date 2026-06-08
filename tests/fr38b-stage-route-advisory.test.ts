@@ -332,7 +332,9 @@ describe('FR-38b Stage Route Advisory + Clarification Gate', () => {
 
       expect(advisory.advisoryType).toBe('clarification-required');
       expect(result.resolvedPid).toBeNull();
-      expect(result.blockResponse?.block).toBe(true);
+      // FR-38b advisory-only (2026-06-08): spawn is never hard-blocked; clarification is
+      // surfaced via injected advisory, not a block. blockResponse must stay null.
+      expect(result.blockResponse).toBeNull();
       expect(advisory.pipelineId).toBeNull();
       expect(advisory.requiresClarificationGate).toBe(true);
       const readySignals = advisory.routeOptions.map((o: any) => o.readySignals.join(' ')).join(' ');
