@@ -62,8 +62,7 @@ describe('SevoOrchestrator — integration', () => {
     cleanDir(tmpDir);
   });
 
-  // ── L0 path: implement → review → regression → verify → ledger ──
-
+  // ── L0 path now uses the canonical full chain; complete only active stages. ──
   describe('L0 direct path', () => {
     it('creates pipeline, advances all stages, records to ledger', async () => {
       // Create — L0 scope: single file, <50 lines, explicit opt-in (FR-2 AC3).
@@ -83,18 +82,8 @@ describe('SevoOrchestrator — integration', () => {
       const pid = state.pipelineId;
 
       // Advance through all L0 stages
-      const l0Stages: StageId[] = [
-        'implement',
-        'review',
-        'regression',
-        'verify',
-        'ledger',
-      ];
-
-      for (const stageId of l0Stages) {
-        const transition = sevo.advanceStage(pid, passStage(stageId));
-        expect(transition.pipelineId).toBe(pid);
-        expect(transition.fromStage).toBe(stageId);
+      for (const stageId of state.requiredStages) {
+        completeIfActive(sevo, pid, stageId);
       }
 
       // Record delivery

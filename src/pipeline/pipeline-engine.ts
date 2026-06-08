@@ -25,6 +25,7 @@ import type {
   RuleVerdict,
   TaskLevel,
 } from '../types/index.js';
+import { appendJsonLineWithRotation } from '../utils/event-log.js';
 import {
   BlockingLevel,
   ClarificationType,
@@ -78,9 +79,7 @@ function atomicWriteJson(filePath: string, data: unknown): void {
 
 /** Append a single event line (O_APPEND semantics). */
 function appendEvent(eventsPath: string, event: PipelineEvent): void {
-  const dir = path.dirname(eventsPath);
-  fs.mkdirSync(dir, { recursive: true });
-  fs.appendFileSync(eventsPath, JSON.stringify(event) + '\n', 'utf-8');
+  appendJsonLineWithRotation(eventsPath, event);
 }
 
 // ─── Path helpers ───

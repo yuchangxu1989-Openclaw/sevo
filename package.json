@@ -46,6 +46,8 @@
     "role-templates.js",
     "sevo-init.js",
     "task-mapper.js",
+    "event-log.js",
+    "advance-prompt-templates.js",
     "utils.js"
   ],
   "engines": {

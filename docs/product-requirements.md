@@ -1622,6 +1622,36 @@ Why：文件路径只能判断“任务属于哪个项目”，不能判断“�
   - AC-38a.7：同步检测耗时超过 2 秒、LLM 不可用或模型返回不可解析时，不得卡住任务派发；系统记录 skipped/error 原因并安排异步补跑。验收验证：模拟 LLM 超时，派发链路在 2 秒内返回，结构化记录包含 `status: skipped`、`reason: llm-timeout` 和异步补跑标记。
   - AC-38a.8：异步补跑发现高置信缺口时，系统补发 advisory 通知，并把结果写入 spec 完整性检查记录，供后续审计和流水线状态查询使用。验收验证：模拟同步跳过后异步补跑命中缺口，检查通知记录和 spec 完整性记录均出现同一 `taskId` 的 advisory 结果。
 
+### FR-38b 智能阶段路由与主动澄清（Stage Route Advisory + Clarification）
+
+SEVO 收到任意 `sevo:*` 入口请求时，必须检查项目 pipeline 状态、目标阶段、已完成阶段、待推进阶段和 spec 覆盖度，产出给主 Agent 的阶段路由 advisory。advisory 只能做模糊判断和信息整理，不能替主 Agent 做精准阶段决策，不能自行派发、跳过或推进阶段。
+
+Why：任意入口可以提高研发效率，但入口阶段不一定是正确起点；如果 SEVO 直接按 label 进入目标阶段，前置 spec、架构或审计缺口会被带到下游；如果 SEVO 自己替主会话精确选阶段，又会越过主 Agent 对上下文、用户最新纠偏和任务边界的判断权。SEVO 应把不确定性整理成结构化澄清提示，让主 Agent 做最终判断。
+
+- **服务原则**：任意入口全自动走到终局、任意入口先核实 Spec、主动需求澄清、流水线引导 + 主 Agent 握手协议。
+- **触发条件**：任何 `sevo:create`、`sevo:specify`、`sevo:design`、`sevo:implement`、`sevo:review`、`sevo:ux`、`sevo:fix`、`sevo:from` 请求到达，或主 Agent 准备把研发动作接入 SEVO 时触发。
+- **输入**：入口 label、任务描述、projectSlug、pipeline 当前状态、阶段历史、已完成阶段记录、待推进阶段记录、spec 是否存在、spec 覆盖度 advisory、最近一次门禁结论和用户最新上下文摘要。
+- **处理**：SEVO 只输出三类 advisory 之一：
+  1. `direct-advance-advisory`：请求阶段与当前 pipeline 状态、已完成阶段和 spec 覆盖记录一致，建议主 Agent 从该阶段继续推进。
+  1. `earlier-stage-advisory`：请求阶段可能早于或晚于正确起点，且存在明确前置缺口信号，列出更早阶段选项及依据。
+  1. `clarification-required`：spec 是否覆盖、阶段是否已完成、目标变更范围或入口意图存在不确定性，生成结构化澄清问题和可选起始阶段列表，等待主 Agent 判断。
+- **输出格式**：结构化 advisory 至少包含 `projectSlug`、`requestedEntry`、`requestedStage`、`pipelineId`、`currentStage`、`completedStages[]`、`pendingStages[]`、`specCoverageStatus`、`routeOptions[]`、`recommendedQuestion`、`confidence`、`reason`、`requiresMainAgentDecision`、`createdAt`。`routeOptions[]` 每项包含 `stage`、`whyThisStage`、`missingInputs[]`、`readySignals[]` 和 `riskIfSkipped`。
+- **边界**：SEVO 不输出“已决定从某阶段开始并执行”的结论；SEVO 只能提示“可能从这些阶段开始，请主 Agent 判断”。主 Agent 完成握手后，才由主 Agent 选择阶段并派发对应任务。
+
+**验收标准**：
+
+- AC-38b.1：当 `sevo:*` 请求到达且 pipeline 状态显示请求阶段已具备准入条件、spec 覆盖状态为 covered、前置 mandatory 阶段已有通过记录时，SEVO 产出 `direct-advance-advisory`，字段包含 requestedStage、currentStage、completedStages、specCoverageStatus=covered、routeOptions 且 `requiresMainAgentDecision=true`；验收时检查结构化记录和注入文本，缺字段或把 advisory 写成自动执行结论均判定为 fail。
+- AC-38b.2：当请求阶段晚于当前应补阶段，且存在明确前置缺口信号（如 spec 不存在、specCoverageStatus=gap、mandatory gate 无通过记录、plan/contract 无 SA 评估记录）时，SEVO 产出 `earlier-stage-advisory`，routeOptions 必须列出至少一个更早阶段及依据；验收时构造 `sevo:implement` 但 spec 未覆盖的场景，输出必须包含 specify/spec-review 相关选项和 missingInputs，不得直接进入 implement。
+- AC-38b.3：当 spec 存在但无法判断是否覆盖当前变更范围，或 pipeline 阶段历史与请求阶段存在冲突，SEVO 产出 `clarification-required`，recommendedQuestion 必须面向主 Agent，至少给出 2 个可选起始阶段及每个选项的依据；验收时构造“spec 存在但新增概念未明确归属”的任务，输出问题应类似“从补 spec 开始、从 spec 审计开始，还是从 design 开始？”，不得替主 Agent 选择唯一答案。
+- AC-38b.4：任何 advisory 都不得触发 SEVO 自行 spawn、修改 pipeline 阶段为已推进、跳过 mandatory 阶段或写入“已决策”状态；验收时检查事件日志和 pipeline state，同一 advisory 事件之后若没有主 Agent 握手记录，不得出现新的阶段任务或阶段通过记录。
+- AC-38b.5：主 Agent 回答澄清并选择起始阶段后，SEVO 才能把该选择记录为 handshake result；记录必须包含主 Agent 选择的 stage、选择原因、引用的 advisoryId 和下一步 advance prompt。验收时检查握手记录，缺少 advisoryId、选择原因或下一步准入/准出标准均判定为 fail。
+- AC-38b.6：混合输入必须拆成多个 routeOptions 或 clarification item：同一请求同时包含补 spec、架构设计和实现诉求时，SEVO 不得把它压成单一 implement 路由；验收时构造“补一个 FR 并实现”的输入，输出必须提示拆分阶段，且标记需要主 Agent 决策。
+- AC-38b.7：阶段路由判断必须基于 LLM 语义理解与结构化 pipeline 状态，不得用关键词匹配、正则、文件名或 label 字符串包含关系冒充覆盖判断；验收时检查检测日志，必须存在 LLM 语义判断记录和 pipeline state 读取摘要，只有关键词或正则证据即 fail。
+- AC-38b.8：当 pipeline 已到终局、所有 mandatory 阶段已有通过记录且 `pendingStages=[]` 时，SEVO 产出 `completed-no-action-advisory` 或等价的 completion advisory，字段必须包含 `pipelineId`、`completedStages[]`、`pendingStages=[]`、`requiresMainAgentDecision=true` 和 `recommendedQuestion`，提示主 Agent 判断“结束当前 pipeline、创建新 pipeline，还是按用户新增范围重新进入”；验收时构造已完成 pipeline 的 `sevo:*` 请求，原 pipeline 不得新增阶段任务、不得改写通过记录、不得重复触发审计或发布。
+- AC-38b.9：当目标项目 spec 不存在时，SEVO 必须把 `specCoverageStatus` 明确标记为 `missing`，advisory 只能给出 specify 和 spec-review 相关 routeOptions，`missingInputs[]` 必须包含 spec 文件或飞书真相源缺失；验收时构造无 spec 项目的 `sevo:implement`、`sevo:review`、`sevo:ux`、`sevo:publish` 请求，输出必须提示“该项目没有 spec，建议从 spec 开始”，不得进入 implement、review、ux 或 publish。
+- AC-38b.10：当同一 `projectSlug` 下存在多条 active 或 recent pipeline，且请求未明确 `pipelineId` 或任务描述可匹配多条 pipeline 时，SEVO 必须产出 `clarification-required`，`routeOptions[]` 或 clarification item 必须列出候选 pipeline、当前阶段、最近任务摘要和匹配依据，并要求主 Agent 选择目标 pipeline；验收时构造两条并存 pipeline 的请求，SEVO 不得默认选择最近一条、任意一条或把不同 pipeline 的阶段历史合并使用。
+- AC-38b.11：当请求阶段早于当前阶段，且当前 pipeline 已有后续阶段通过记录时，SEVO 必须产出 `clarification-required` 或 `earlier-stage-advisory`，说明回退会影响哪些已完成阶段、需要确认的变更范围，以及“复用当前 pipeline 重开范围”或“创建新 pipeline”的选项；验收时构造已进入 implement/review 后收到 `sevo:specify` 或 `sevo:design` 的请求，SEVO 不得直接覆盖已完成阶段、不得清除通过记录、不得替主 Agent 决定回退。
+
 ### FR-39: 流水线前缀语义规范与开箱即用引导
 
 SEVO 流水线通过 `sevo:` label 前缀识别研发入口、目标阶段和角色约束。前缀不是普通标签，而是流水线握手协议：主 Agent 或用户用前缀表达“这件事应进入 SEVO 管理”，SEVO 据此前置检查 spec 覆盖、创建或复用 pipeline、选择阶段队列，并在后续阶段继续收敛到终局交付链。
@@ -2581,3 +2611,4 @@ sevo-pipeline 中所有 LLM 判定调用（包括 trigger 分类、阶段门禁 
   - AC-4.67：处于澄清模式时，用户给出方向确认后，下一条判定结果 `mode` 转为 `dispatch`，澄清模式退出可在状态记录中观测到；确认是否成立由 LLM 判定，不依赖固定确认词表。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.68：用户消息含明确"少问/别问"但任务范围未闭合或 spec 覆盖不足时，`mode` 仍为 `clarify`；`basis` 记录范围未闭合的具体缺口（待定义阈值、未覆盖边界或缺失 FR/AC）。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.69：同一条消息混合"已清晰执行指令"和"探讨/质疑"两类意图时，判定结果必须拆分标注两部分各自的处置（清晰部分 `dispatch`、探讨部分 `clarify`），不得整体归为单一处置。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+

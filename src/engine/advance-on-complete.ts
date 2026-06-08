@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import { appendJsonLineWithRotation } from '../utils/event-log.js';
 import * as path from 'node:path';
 
 import type { ArtifactRef, PipelineState, RuleVerdict, StageId, StageResult, StageTransition } from '../types/index.js';
@@ -250,8 +251,7 @@ function appendPipelineEvent(
   payload: Record<string, unknown>,
 ): void {
   const filePath = path.join(basePath, 'pipelines', pipelineId, 'events.jsonl');
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.appendFileSync(filePath, JSON.stringify({ timestamp: new Date().toISOString(), pipelineId, stage, eventType, payload }) + '\n', 'utf8');
+  appendJsonLineWithRotation(filePath, { timestamp: new Date().toISOString(), pipelineId, stage, eventType, payload });
 }
 
 

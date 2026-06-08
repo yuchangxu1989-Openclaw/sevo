@@ -1,6 +1,6 @@
-import { mkdirSync, appendFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
 import type { StageId, PipelineEvent, GateVerdict, RuleVerdict } from '../types/index.js';
+import { join } from 'node:path';
+import { appendJsonLineWithRotation } from '../utils/event-log.js';
 
 export interface AdvanceDecision {
   timestamp: string;
@@ -27,6 +27,5 @@ export function appendAdvanceDecision(basePath: string, decision: AdvanceDecisio
     payload: { ...decision },
   };
   const eventsPath = pipelineEventsPath(basePath, decision.pipelineId);
-  mkdirSync(dirname(eventsPath), { recursive: true });
-  appendFileSync(eventsPath, JSON.stringify(event) + '\n', 'utf8');
+  appendJsonLineWithRotation(eventsPath, event);
 }

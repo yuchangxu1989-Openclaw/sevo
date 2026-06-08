@@ -41,16 +41,29 @@ const L2_FULL_ROUTING: RoutingResult = {
     'regression', 'publish-generalization-gate', 'deploy', 'verify', 'ledger',
   ],
   matchedRules: ['new-module'],
-      needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
+  needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
 };
 
 const L0_ROUTING: RoutingResult = {
   taskId: 'lifecycle-l0',
   level: 'L0',
-  requiredStages: ['implement', 'review', 'regression', 'verify', 'ledger'],
+  requiredStages: [...L2_FULL_ROUTING.requiredStages],
   matchedRules: [],
-      needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
+  needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
 };
+
+function completeCanonicalL0(engine: PipelineEngine, pid: string, failure?: { stageId: StageId; reason: string }): void {
+  for (const stageId of L0_ROUTING.requiredStages) {
+    const state = engine.load(pid);
+    const status = state.stages[stageId]?.status;
+    if (status !== 'active') continue;
+    if (failure && stageId === failure.stageId) {
+      engine.advance(pid, { stageId, outcome: 'failed', artifacts: [], failureReason: failure.reason });
+      return;
+    }
+    engine.advance(pid, { stageId, outcome: 'passed', artifacts: [makeArtifact(stageId)] });
+  }
+}
 function readEvents(tmpDir: string, pipelineId: string): PipelineEvent[] {
   const fp = path.join(tmpDir, 'pipelines', pipelineId, 'events.jsonl');
   return fs.readFileSync(fp, 'utf-8').trim().split('\n').map(l => JSON.parse(l));
@@ -245,16 +258,24 @@ describe('Pipeline Lifecycle — L0 minimal flow', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('L0 pipeline completes with minimal stages', async () => {
+  it('L0 pipeline completes through the canonical stage chain', async () => {
     const state = engine.create(L0_ROUTING);
     const pid = state.pipelineId;
 
-    expect(state.stages['implement'].status).toBe('active');
-    expect(state.stages['spec']?.status).toBe('skipped');
+    expect(state.stages['spec'].status).toBe('active');
 
+    engine.advance(pid, { stageId: 'spec', outcome: 'passed', artifacts: [makeArtifact('spec')] });
+    engine.advance(pid, { stageId: 'spec-review-gate', outcome: 'passed', artifacts: [] });
+    engine.advance(pid, { stageId: 'test-case-authoring', outcome: 'passed', artifacts: [makeArtifact('test-case')] });
+    engine.advance(pid, { stageId: 'ux-acceptance-authoring', outcome: 'passed', artifacts: [] });
+    engine.advance(pid, { stageId: 'commercial-acceptance-authoring', outcome: 'passed', artifacts: [] });
+    engine.advance(pid, { stageId: 'contract', outcome: 'passed', artifacts: [makeArtifact('contract')] });
+    engine.advance(pid, { stageId: 'contract-review-gate', outcome: 'passed', artifacts: [] });
     engine.advance(pid, { stageId: 'implement', outcome: 'passed', artifacts: [makeArtifact('impl')] });
     engine.advance(pid, { stageId: 'review', outcome: 'passed', artifacts: [] });
     engine.advance(pid, { stageId: 'regression', outcome: 'passed', artifacts: [] });
+    engine.advance(pid, { stageId: 'publish-generalization-gate', outcome: 'passed', artifacts: [] });
+    engine.advance(pid, { stageId: 'deploy', outcome: 'passed', artifacts: [] });
     engine.advance(pid, { stageId: 'verify', outcome: 'passed', artifacts: [] });
     engine.advance(pid, { stageId: 'ledger', outcome: 'passed', artifacts: [] });
 
@@ -269,8 +290,7 @@ describe('Pipeline Lifecycle — L0 minimal flow', () => {
     const state = engine.create(L0_ROUTING);
     const pid = state.pipelineId;
 
-    engine.advance(pid, { stageId: 'implement', outcome: 'passed', artifacts: [] });
-    engine.advance(pid, { stageId: 'review', outcome: 'failed', artifacts: [], failureReason: 'Code quality issues' });
+    completeCanonicalL0(engine, pid, { stageId: 'review', reason: 'Code quality issues' });
 
     let s = engine.load(pid);
     // 原则：流水线永远往前走。失败 → fix_pending 修复循环，而非 failed 终态。
@@ -280,10 +300,7 @@ describe('Pipeline Lifecycle — L0 minimal flow', () => {
 
     // Retry and complete
     engine.activate(pid, 'review');
-    engine.advance(pid, { stageId: 'review', outcome: 'passed', artifacts: [] });
-    engine.advance(pid, { stageId: 'regression', outcome: 'passed', artifacts: [] });
-    engine.advance(pid, { stageId: 'verify', outcome: 'passed', artifacts: [] });
-    engine.advance(pid, { stageId: 'ledger', outcome: 'passed', artifacts: [] });
+    completeCanonicalL0(engine, pid);
 
     expect(engine.isComplete(pid)).toBe(true);
   });

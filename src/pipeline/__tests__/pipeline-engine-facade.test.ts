@@ -316,9 +316,9 @@ describe('PipelineEngineFacade', () => {
       expect(summary.stages).toContain('post-release-validation');
     });
 
-    it('L0 pipeline skips post-release-validation', async () => {
+    it('L0 pipeline keeps post-release-validation in the canonical stage chain', async () => {
       const summary = await engine.createPipeline('proj', 'tiny fix', 'L0');
-      expect(summary.stages).not.toContain('post-release-validation');
+      expect(summary.stages).toContain('post-release-validation');
     });
 
     it('post-release-validation comes after verify and clean-install verification before ledger', async () => {

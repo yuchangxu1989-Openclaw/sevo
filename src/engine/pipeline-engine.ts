@@ -32,6 +32,7 @@ import * as path from 'node:path';
 
 import type { StageId } from '../types/index.js';
 import { STAGE_IDS, ALL_STAGES } from '../constants.js';
+import { appendJsonLineWithRotation } from '../utils/event-log.js';
 
 // Touch every Stage class so they are no longer orphans. Each handler holds
 // a reference to its Stage class symbol, ensuring the import graph is real.
@@ -179,12 +180,7 @@ function atomicWriteJson(filePath: string, data: unknown): void {
 }
 
 function appendEvent(eventsPath: string, event: Record<string, unknown>): void {
-  fs.mkdirSync(path.dirname(eventsPath), { recursive: true });
-  fs.appendFileSync(
-    eventsPath,
-    JSON.stringify({ timestamp: new Date().toISOString(), ...event }) + '\n',
-    'utf-8',
-  );
+  appendJsonLineWithRotation(eventsPath, { timestamp: new Date().toISOString(), ...event });
 }
 
 // ─── Default placeholder-artifact handler factory ────────────────

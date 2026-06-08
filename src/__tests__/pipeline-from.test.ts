@@ -429,20 +429,15 @@ describe('AC-27.9: Tier stage compatibility', () => {
 // ── P1 Fix: targetStageId not in requiredStages ─────────────────
 
 describe('P1: targetStageId not in requiredStages', () => {
-  it('returns error when target stage is not in pipeline required stages (L0 routing)', async () => {
-    // L0 must be explicitly opted-in (FR-2 AC3); only contains: implement, review, regression, verify, ledger.
-    // 'contract' is not in L0 requiredStages.
+  it('allows contract for explicit L0 because current routing keeps the canonical full stage chain', async () => {
+    // Current SEVO routing keeps every canonical stage in all tiers; L0 no longer omits contract.
     const store = createMockStore();
     const result = await createPipelineFromStage(
       createRequest({ stage: 'contract', task: createMockTask({ scope: { userExplicitL0: true } }) }),
       createDefaultOptions(store),
     );
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('STAGE_NOT_IN_TIER');
-      expect(result.error.message).toContain('not in this pipeline\'s stage list');
-    }
+    expect(result.ok).toBe(true);
   });
 
   it('succeeds when target stage is in pipeline required stages (L1+ routing)', async () => {
