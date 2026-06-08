@@ -575,7 +575,11 @@ export class PipelineEngine {
     } else if (stageRecord.status === 'gate_blocked') {
       state.status = 'blocked';
     } else {
-      state.status = 'failed';
+      // 原则：SEVO 流水线永远往前走。stage handler 失败/抛错不是 pipeline 终态。
+      // stage 保持 'failed'，使下一次 advanceAsync 的 resolveTargetStage 重新选中
+      // 它进入重试/修复循环；pipeline 层保持 'running'（而非 'failed' 终态）。
+      // autoAdvance 仅在 outcome==='passed' 时递归，失败时停止而不会空转重试。
+      state.status = 'running';
     }
     state.updatedAt = this.now();
 

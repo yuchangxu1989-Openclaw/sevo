@@ -122,7 +122,7 @@ describe('PipelineEngineFacade', () => {
       }
     });
 
-    it('evaluates gate when running and blocks if gate fails', async () => {
+    it('evaluates gate when running and enters fix loop without blocking the pipeline', async () => {
       const gateEngine = new GateEngine();
       const blockingRule: GateRule = {
         id: 'always-block',
@@ -153,9 +153,11 @@ describe('PipelineEngineFacade', () => {
       }
 
       if (status.currentStage === 'implement' && status.lifecycle === 'running') {
-        // Now advance should evaluate gate and block
+        // 原则：流水线永远往前走。gate 未过 → stage 进 fix_pending 修复循环，
+        // pipeline lifecycle 保持 running（不再写 blocked 终态）。
         const result = engine.advance(summary.pipelineId);
-        expect(result.lifecycle).toBe('blocked');
+        expect(result.lifecycle).toBe('running');
+        expect(result.transition!.status).toBe('fix_pending');
         expect(result.gateVerdict).toBeDefined();
         expect(result.gateVerdict!.pass).toBe(false);
       }
@@ -183,7 +185,7 @@ describe('PipelineEngineFacade', () => {
       expect(result.transition!.fromStage).toBe(firstStage);
     });
 
-    it('marks pipeline as failed when stage fails', async () => {
+    it('routes a failed stage into the fix loop and keeps the pipeline running', async () => {
       const summary = await engine.createPipeline('proj', 'desc', 'L0');
       engine.advance(summary.pipelineId);
 
@@ -197,8 +199,11 @@ describe('PipelineEngineFacade', () => {
         failureReason: 'compilation error',
       });
 
-      expect(result.lifecycle).toBe('failed');
-      expect(result.transition!.status).toBe('failed');
+      // 原则：流水线永远往前走。失败 completion 转入 fix_pending 修复循环，
+      // pipeline 生命周期保持 running，而非 failed 终态。
+      expect(result.lifecycle).toBe('running');
+      expect(result.transition!.status).toBe('fix_pending');
+      expect(engine.getStatus(summary.pipelineId).lifecycle).not.toBe('failed');
     });
 
     it('marks pipeline as completed when all stages pass', async () => {

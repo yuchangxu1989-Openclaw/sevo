@@ -105,7 +105,9 @@ describe('ClarificationCoordinator core flow', () => {
     const records = coordinator.open([finding]);
     expect(records).toHaveLength(1);
     expect(records[0]!.status).toBe(Status.OPEN);
-    expect(stageRecords.get('spec')!.status).toBe('blocked');
+    // 原则：流水线永远往前走。BLOCKING 澄清不再把 stage 冻结为 'blocked'；
+    // 记录照常 open/dispatch/resolve/apply，但 stage 保持 'active' 继续推进。
+    expect(stageRecords.get('spec')!.status).toBe('active');
 
     // Dispatch
     const handle = coordinator.dispatch(records[0]!);
@@ -125,9 +127,10 @@ describe('ClarificationCoordinator core flow', () => {
     const artifacts = coordinator.applyResolution(records[0]!.clarificationId);
     expect(coordinator.getRecord(records[0]!.clarificationId)!.status).toBe(Status.SETTLED);
 
-    // Resume
+    // Resume is a compatibility no-op now (no 'blocked' state to restore); the
+    // stage was never frozen, so it stays 'active' throughout.
     const transition = coordinator.resumeStage('spec', records[0]!.clarificationId);
-    expect(transition.from).toBe('blocked');
+    expect(transition.from).toBe('active');
     expect(transition.to).toBe('active');
     expect(stageRecords.get('spec')!.status).toBe('active');
   });

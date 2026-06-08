@@ -70,7 +70,7 @@ function makeStageRecord(stageId: StageId, attempt = 1): StageRecord {
 }
 
 describe('ClarificationCoordinator', () => {
-  it('blocks the stage for blocking findings discovered by scan/open and resumes after settlement', () => {
+  it('opens blocking findings without freezing the stage (pipeline keeps advancing)', () => {
     const adapter = new FakeClarificationAdapter();
     const stage = makeStageRecord('spec');
     const settled: string[] = [];
@@ -112,7 +112,8 @@ describe('ClarificationCoordinator', () => {
 
     const findings = coordinator.scan(stage, [makeArtifact('spec-draft')]);
     const [record] = coordinator.open(findings);
-    expect(stage.status).toBe('blocked');
+    // 原则：流水线永远往前走。BLOCKING 澄清不再冻结 stage，保持 active 继续推进。
+    expect(stage.status).toBe('active');
 
     const handle = coordinator.dispatch(record!);
     expect(handle.clarificationId).toBe('clr-blocking');
@@ -129,9 +130,10 @@ describe('ClarificationCoordinator', () => {
 
     expect(settled).toEqual(['clr-blocking']);
     expect(coordinator.getRecord('clr-blocking')?.status).toBe(Status.SETTLED);
+    // resumeStage 对未冻结 stage 是兼容 no-op：from/to 均为 active。
     expect(transition).toEqual({
       stageId: 'spec',
-      from: 'blocked',
+      from: 'active',
       to: 'active',
       triggeredBy: 'clr-blocking',
     });
@@ -175,7 +177,7 @@ describe('ClarificationCoordinator', () => {
     expect(coordinator.getRecord('clr-non-blocking')?.status).toBe(Status.OPEN);
   });
 
-  it('keeps the stage blocked until all concurrent blocking clarifications are settled', () => {
+  it('keeps the stage active while concurrent blocking clarifications are tracked and settled', () => {
     const adapter = new FakeClarificationAdapter();
     const stage = makeStageRecord('contract');
     let idCounter = 0;
@@ -232,8 +234,9 @@ describe('ClarificationCoordinator', () => {
     coordinator.applyResolution('clr-1');
     const firstTransition = coordinator.resumeStage('contract', 'clr-1');
 
-    expect(firstTransition.to).toBe('blocked');
-    expect(stage.status).toBe('blocked');
+    // 原则：流水线永远往前走。stage 从未被冻结，始终是 active；resumeStage 是 no-op。
+    expect(firstTransition.to).toBe('active');
+    expect(stage.status).toBe('active');
 
     coordinator.resolve('clr-2', {
       clarificationId: 'clr-2',
@@ -297,7 +300,7 @@ describe('ClarificationCoordinator', () => {
     expect(stage.status).toBe('blocked');
   });
 
-  it('marks blocking clarifications as expired on timeout and keeps the stage blocked', () => {
+  it('marks blocking clarifications as expired on timeout while the stage stays active', () => {
     const adapter = new FakeClarificationAdapter();
     const stage = makeStageRecord('spec');
     stage.status = 'active';
@@ -330,14 +333,15 @@ describe('ClarificationCoordinator', () => {
     }]);
 
     const handle = coordinator.dispatch(record!);
-    expect(stage.status).toBe('blocked');
+    // 原则：流水线永远往前走。BLOCKING 澄清不冻结 stage，保持 active。
+    expect(stage.status).toBe('active');
 
     adapter.emitTimeout(handle);
 
     const expired = coordinator.getRecord('clr-timeout');
     expect(expired?.status).toBe(Status.EXPIRED);
     expect(expired?.response).toBeUndefined();
-    expect(stage.status).toBe('blocked');
+    expect(stage.status).toBe('active');
   });
 
   it('applies timeout fallback with assumedDefault for non-blocking clarifications', () => {

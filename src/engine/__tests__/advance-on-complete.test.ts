@@ -16,7 +16,6 @@ function makeState(basePath: string): PipelineState {
     taskId: 'task-review-scan',
     level: 'L0',
     requiredStages: [STAGE_IDS.REVIEW, STAGE_IDS.VERIFY],
-    skippedStages: [],
     stages: {
       [STAGE_IDS.REVIEW]: { stageId: STAGE_IDS.REVIEW, status: 'active', artifacts: [] },
       [STAGE_IDS.VERIFY]: { stageId: STAGE_IDS.VERIFY, status: 'pending', artifacts: [] },
@@ -76,7 +75,7 @@ describe('advanceOnComplete review tiered scan handoff', () => {
     expect(updated.stages[STAGE_IDS.REVIEW]?.artifacts[0]?.metadata?.['tieredScan']).toEqual(updated.tieredScan);
   });
 
-  it('blocks verify when persisted tiered scan is not an explicit pass', async () => {
+  it('does not advance verify when persisted tiered scan is not an explicit pass', async () => {
     const basePath = fs.mkdtempSync(path.join(os.tmpdir(), 'sevo-advance-tiered-fail-'));
     const state = makeState(basePath);
     state.tieredScan = {
@@ -109,7 +108,9 @@ describe('advanceOnComplete review tiered scan handoff', () => {
       getPipelineState: () => JSON.parse(fs.readFileSync(path.join(basePath, 'pipelines', state.pipelineId, 'state.json'), 'utf8')) as PipelineState,
     });
 
-    expect(result.transition.status).toBe('failed');
+    // 原则：流水线永远往前走。tiered scan 未明确通过 → review 进 fix_pending
+    // 修复循环（而非 failed 终态），verify 保持 pending 不前进。
+    expect(result.transition.status).toBe('fix_pending');
     const updated = JSON.parse(fs.readFileSync(path.join(basePath, 'pipelines', state.pipelineId, 'state.json'), 'utf8')) as PipelineState;
     expect(updated.stages[STAGE_IDS.VERIFY]?.status).toBe('pending');
   });

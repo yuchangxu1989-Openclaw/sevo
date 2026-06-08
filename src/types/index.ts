@@ -84,18 +84,11 @@ export interface PipelineTask {
   scope: TaskScope;
 }
 
-/** A stage that was skipped, with justification. */
-export interface SkippedStage {
-  stage: StageId;
-  reason: string;
-}
-
 /** Router output (spec §3.3, arc42 §5.1). */
 export interface RoutingResult {
   taskId: string;
   level: TaskLevel;
   requiredStages: StageId[];
-  skippedStages: SkippedStage[];
   matchedRules: TriggerRule[];
   needsUxDesign: boolean;
   uxDesignReason: string;
@@ -190,7 +183,6 @@ export interface PipelineState {
   taskId: string;
   level: TaskLevel;
   requiredStages: StageId[];
-  skippedStages: SkippedStage[];
   stages: Record<StageId, StageRecord>;
   currentStage: StageId | null;
   createdAt: string;

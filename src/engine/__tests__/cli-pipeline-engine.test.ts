@@ -131,7 +131,7 @@ describe('CLI PipelineEngine (engine/pipeline-engine.ts)', () => {
     expect(exitCalls).toEqual([`${STAGE_IDS.SPEC}:passed`]);
   });
 
-  it('handler exception is captured as failed outcome', async () => {
+  it('handler exception is captured as failed outcome but keeps the pipeline running for retry', async () => {
     const base = makeBase();
     const engine = new PipelineEngine(base, {
       handlers: {
@@ -145,8 +145,10 @@ describe('CLI PipelineEngine (engine/pipeline-engine.ts)', () => {
     expect(result.reason).toBe('boom');
 
     const state = engine.load('p1');
+    // 原则：流水线永远往前走。stage 失败保留 'failed' 以便 resolveTargetStage
+    // 重新选中重试，但 pipeline 层不再终结为 'failed'，保持 'running'。
     expect(state.stages[STAGE_IDS.SPEC]?.status).toBe('failed');
-    expect(state.status).toBe('failed');
+    expect(state.status).toBe('running');
   });
 
   it('advancing a completed pipeline is idempotent', async () => {

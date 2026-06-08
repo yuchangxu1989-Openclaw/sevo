@@ -34,7 +34,6 @@ import type {
   PipelineState,
   StageId,
   StageRecord,
-  SkippedStage,
 } from '../../types/index.js';
 
 // ─── Stage Machine unit tests ───
@@ -196,7 +195,6 @@ describe('PipelineEngine', () => {
       'contract', 'contract-review-gate', 'implement', 'review', 'regression',
       'publish-generalization-gate', 'deploy', 'verify', 'ledger',
     ],
-    skippedStages: [],
     matchedRules: ['new-module'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
   };
@@ -253,7 +251,7 @@ describe('PipelineEngine', () => {
     expect(reloaded.stages['commercial-acceptance-authoring'].status).toBe('active');
   });
 
-  it('blocks implement when test-case-authoring not done (ADR-004)', async () => {
+  it('does not block implement even when test-case-authoring not done (pipeline always moves forward)', async () => {
     const state = engine.create(l2Routing);
     const pid = state.pipelineId;
 
@@ -264,12 +262,13 @@ describe('PipelineEngine', () => {
     engine.advance(pid, { stageId: 'contract-review-gate', outcome: 'passed', artifacts: [] });
 
     const reloaded = engine.load(pid);
-    // implement should be blocked because test-case-authoring is still active
-    expect(reloaded.stages['implement'].status).toBe('blocked');
-    expect(reloaded.stages['implement'].blockReason).toContain('Test Case Document');
+    // 原则：流水线永远往前走。implement 不再因 test-case-authoring 未完成而冻结，
+    // 直接激活推进（仅发 advisory 事件）。
+    expect(reloaded.stages['implement'].status).toBe('active');
+    expect(reloaded.stages['implement'].blockReason).toBeUndefined();
   });
 
-  it('unblocks implement after test-case-authoring completes', async () => {
+  it('activates implement directly regardless of test-case-authoring status', async () => {
     const state = engine.create(l2Routing);
     const pid = state.pipelineId;
 
@@ -278,11 +277,11 @@ describe('PipelineEngine', () => {
     engine.advance(pid, { stageId: 'contract', outcome: 'passed', artifacts: [] });
     engine.advance(pid, { stageId: 'contract-review-gate', outcome: 'passed', artifacts: [] });
 
-    // Verify implement is blocked
+    // implement is active (not blocked) under the always-forward principle
     let reloaded = engine.load(pid);
-    expect(reloaded.stages['implement'].status).toBe('blocked');
+    expect(reloaded.stages['implement'].status).toBe('active');
 
-    // Now complete test-case-authoring — should auto-unblock implement
+    // Completing test-case-authoring leaves implement active (no unblock needed)
     engine.advance(pid, { stageId: 'test-case-authoring', outcome: 'passed', artifacts: [] });
 
     reloaded = engine.load(pid);
@@ -300,7 +299,6 @@ describe('PipelineEngine', () => {
         'smoke-test', 'ux-acceptance', 'pm-commercial-review',
         'regression', 'publish-generalization-gate', 'deploy', 'verify', 'ledger',
       ],
-      skippedStages: [],
       matchedRules: ['new-module'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
     };
@@ -349,7 +347,8 @@ describe('PipelineEngine', () => {
     });
 
     let reloaded = engine.load(pid);
-    expect(reloaded.stages['spec'].status).toBe('failed');
+    // 原则：流水线永远往前走。stage 失败 → fix_pending 修复循环，而非 failed 终态。
+    expect(reloaded.stages['spec'].status).toBe('fix_pending');
     expect(reloaded.stages['spec'].failureReason).toBe('Incomplete requirements');
 
     // Retry spec
@@ -358,24 +357,18 @@ describe('PipelineEngine', () => {
     expect(reloaded.stages['spec'].status).toBe('active');
   });
 
-  it('L0 pipeline skips early stages', async () => {
+  it('L0 pipeline starts from its required stage chain', async () => {
     const l0Routing: RoutingResult = {
       taskId: 'task-l0',
       level: 'L0',
       requiredStages: ['implement', 'review', 'regression', 'ledger'],
-      skippedStages: [
-        { stage: 'spec', reason: 'L0 micro change' },
-        { stage: 'spec-review-gate', reason: 'L0 micro change' },
-        { stage: 'contract', reason: 'L0 micro change' },
-        { stage: 'contract-review-gate', reason: 'L0 micro change' },
-      ],
       matchedRules: [],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
     };
 
     const state = engine.create(l0Routing);
     expect(state.stages['implement'].status).toBe('active');
-    expect(state.stages['spec']?.status).toBe('skipped');
+    expect(state.stages['spec']).toBeUndefined();
   });
 
   it('isComplete returns true when all stages terminal', async () => {
@@ -383,7 +376,6 @@ describe('PipelineEngine', () => {
       taskId: 'task-simple',
       level: 'L0',
       requiredStages: ['implement', 'review'],
-      skippedStages: [],
       matchedRules: [],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
     };
@@ -424,7 +416,6 @@ describe('PipelineEngine', () => {
       taskId: 'task-clr-1',
       level: 'L1',
       requiredStages: ['spec', 'spec-review-gate'],
-      skippedStages: [],
       matchedRules: ['user-explicit'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
     });
@@ -460,7 +451,6 @@ describe('PipelineEngine', () => {
       taskId: 'task-clr-2',
       level: 'L1',
       requiredStages: ['spec', 'spec-review-gate'],
-      skippedStages: [],
       matchedRules: ['user-explicit'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
     });
@@ -587,7 +577,6 @@ function makeMockState(requiredStages: StageId[]): PipelineState {
     taskId: 'mock-task',
     level: 'L2+',
     requiredStages,
-    skippedStages: [],
     stages,
     currentStage: null,
     createdAt: new Date().toISOString(),

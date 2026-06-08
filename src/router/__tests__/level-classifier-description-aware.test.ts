@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { classifyLevel } from '../level-classifier.js';
 import { route } from '../router.js';
 import { inferScopeFromDescription } from '../description-scope-inferrer.js';
+import { ALL_STAGES } from '../../constants.js';
 import type { PipelineTask, ProjectConfig, TaskScope } from '../../types/index.js';
 
 function makeTask(scope: TaskScope, description?: string): PipelineTask {
@@ -73,8 +74,7 @@ describe('FR-1 \u2014 description scope inferrer', () => {
     if (!r.ok) return;
     // new-module rule \u2192 L2+ which trivially contains architecture-design.
     expect(['L1', 'L2+']).toContain(r.value.level);
-    expect(r.value.requiredStages).toContain('architecture-design');
-    expect(r.value.skippedStages.find(s => s.stage === 'architecture-design')).toBeUndefined();
+    expect(r.value.requiredStages).toEqual(ALL_STAGES);
   });
 
   it('Test 3: multi-file change description \u2192 L1 (with arch design)', async () => {
@@ -135,7 +135,7 @@ describe('FR-1 AC4/AC5 \u2014 LLM fallback safety', () => {
 });
 
 describe('FR-4 \u2014 forceArchDesignAllLevels project switch', () => {
-  it('default false \u2192 L0 still skips architecture-design', async () => {
+  it('default false \u2192 L0 still includes architecture-design', async () => {
     const r = await route(
       makeTask({ userExplicitL0: true, estimatedFiles: 1, estimatedLines: 5 }),
       undefined,
@@ -143,8 +143,7 @@ describe('FR-4 \u2014 forceArchDesignAllLevels project switch', () => {
     );
     if (!r.ok) return;
     expect(r.value.level).toBe('L0');
-    expect(r.value.requiredStages).not.toContain('architecture-design');
-    expect(r.value.skippedStages.find(s => s.stage === 'architecture-design')).toBeDefined();
+    expect(r.value.requiredStages).toEqual(ALL_STAGES);
   });
 
   it('true \u2192 architecture-design appears in L0 requiredStages', async () => {
@@ -154,7 +153,6 @@ describe('FR-4 \u2014 forceArchDesignAllLevels project switch', () => {
       { forceArchDesignAllLevels: true } as Partial<ProjectConfig>,
     );
     if (!r.ok) return;
-    expect(r.value.requiredStages).toContain('architecture-design');
-    expect(r.value.skippedStages.find(s => s.stage === 'architecture-design')).toBeUndefined();
+    expect(r.value.requiredStages).toEqual(ALL_STAGES);
   });
 });

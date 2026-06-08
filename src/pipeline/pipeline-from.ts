@@ -14,7 +14,6 @@ import type {
   PipelineInstance,
   PipelineTask,
   StageId,
-  SkippedStage,
   Result,
 } from '../types/index.js';
 import type { PipelineCreateError } from '../types/index.js';
@@ -130,26 +129,10 @@ export function parseSevoFromCommand(input: string): { projectSlug: string; stag
 // ── Core Logic ──────────────────────────────────────────────────
 
 /**
- * Compute which stages to skip when entering from a given stage.
- * Returns all stages in ALL_STAGES that come before the target stage.
- */
-export function computeSkippedStages(entryStage: StageId): SkippedStage[] {
-  const skipped: SkippedStage[] = [];
-  const reason = `用户指定从 ${entryStage} 开始`;
-
-  for (const stage of ALL_STAGES) {
-    if (stage === entryStage) break;
-    skipped.push({ stage, reason });
-  }
-
-  return skipped;
-}
-
-/**
  * Create a Pipeline Instance starting from a specific stage (FR-27).
  *
  * AC-27.7: If stage is 'spec', delegates directly to FR-12 createPipelineInstance.
- * AC-27.2: Stages before the entry point are marked as skipped.
+ * AC-27.2: Stages before the entry point are omitted from this instance's active chain.
  * AC-27.3: Subsequent stages proceed normally via FR-12 pipeline engine.
  */
 export async function createPipelineFromStage(
@@ -268,7 +251,7 @@ export async function createPipelineFromStage(
     };
   }
 
-  // ── AC-27.2: Mark preceding stages as skipped ──
+  // ── AC-27.2: Start the instance from the requested stage ──
   const instance = createResult.value;
 
   // ── Defensive: Validate target stage exists in this pipeline's required stages ──
@@ -282,21 +265,8 @@ export async function createPipelineFromStage(
     };
   }
 
-  const skippedStages = computeSkippedStages(stage as StageId);
-
-  // Merge skipped stages from FR-27 with any from routing
-  const existingSkippedIds = new Set(instance.routingResult.skippedStages.map(s => s.stage));
-  for (const skip of skippedStages) {
-    if (!existingSkippedIds.has(skip.stage)) {
-      instance.routingResult.skippedStages.push(skip);
-    }
-  }
-
-  // Update required stages: remove skipped ones
-  const skippedIds = new Set(skippedStages.map(s => s.stage));
-  instance.routingResult.requiredStages = instance.routingResult.requiredStages.filter(
-    s => !skippedIds.has(s),
-  );
+  const entryIndex = instance.routingResult.requiredStages.indexOf(stage as StageId);
+  instance.routingResult.requiredStages = instance.routingResult.requiredStages.slice(entryIndex);
 
   // Persist updated instance
   store.save(instance);

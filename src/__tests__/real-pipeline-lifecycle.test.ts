@@ -71,7 +71,6 @@ const KIVO_FULL_ROUTING: RoutingResult = {
     'verify',
     'ledger',
   ],
-  skippedStages: [],
   matchedRules: ['new-module', 'cross-domain'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
 };
@@ -81,20 +80,6 @@ const L0_ROUTING: RoutingResult = {
   taskId: 'kivo-lifecycle-l0',
   level: 'L0',
   requiredStages: ['implement', 'review', 'regression', 'verify', 'ledger'],
-  skippedStages: [
-    { stage: 'spec', reason: 'L0 微小改动' },
-    { stage: 'spec-review-gate', reason: 'L0 无 Spec' },
-    { stage: 'test-case-authoring', reason: 'L0 微小改动' },
-    { stage: 'ux-acceptance-authoring', reason: 'L0 微小改动' },
-    { stage: 'commercial-acceptance-authoring', reason: 'L0 微小改动' },
-    { stage: 'contract', reason: 'L0 微小改动' },
-    { stage: 'contract-review-gate', reason: 'L0 无 Contract' },
-    { stage: 'smoke-test', reason: 'L0 微小改动' },
-    { stage: 'ux-acceptance', reason: 'L0 微小改动' },
-    { stage: 'pm-commercial-review', reason: 'L0 微小改动' },
-    { stage: 'publish-generalization-gate', reason: 'L0 微小改动' },
-    { stage: 'deploy', reason: 'L0 微小改动' },
-  ],
   matchedRules: [],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
 };
@@ -305,11 +290,6 @@ describe('Real Pipeline Lifecycle — KIVO full SDD', () => {
     const state = engine.create(L0_ROUTING);
     const pid = state.pipelineId;
 
-    // Skipped stages should be marked as skipped
-    for (const skip of L0_ROUTING.skippedStages) {
-      expect(state.stages[skip.stage].status).toBe('skipped');
-    }
-
     // Required stages: implement → review → regression → verify → ledger
     expect(state.stages['implement'].status).toBe('active');
 
@@ -347,7 +327,8 @@ describe('Real Pipeline Lifecycle — KIVO full SDD', () => {
     });
 
     let s = engine.load(pid);
-    expect(s.stages['spec'].status).toBe('failed');
+    // 原则：流水线永远往前走。失败 → fix_pending 修复循环，而非 failed 终态。
+    expect(s.stages['spec'].status).toBe('fix_pending');
     expect(s.stages['spec'].failureReason).toBe('Missing acceptance criteria');
     expect(s.stages['spec-review-gate'].status).toBe('pending');
     expect(engine.isComplete(pid)).toBe(false);
@@ -389,7 +370,8 @@ describe('Real Pipeline Lifecycle — KIVO full SDD', () => {
     });
 
     let s = engine.load(pid);
-    expect(s.stages['ux-acceptance'].status).toBe('failed');
+    // 原则：流水线永远往前走。失败 → fix_pending 修复循环，而非 failed 终态。
+    expect(s.stages['ux-acceptance'].status).toBe('fix_pending');
     // Sibling unaffected
     expect(s.stages['pm-commercial-review'].status).toBe('active');
     // Regression still pending
@@ -407,9 +389,9 @@ describe('Real Pipeline Lifecycle — KIVO full SDD', () => {
     expect(s.stages['regression'].status).toBe('active');
   });
 
-  // ── 6. Implement Blocked by Test-Case-Authoring (ADR-004) ──
+  // ── 6. Implement Proceeds Regardless of Test-Case-Authoring (always forward) ──
 
-  it('implement is blocked when test-case-authoring is not yet passed', async () => {
+  it('implement is not blocked when test-case-authoring is not yet passed', async () => {
     const state = engine.create(KIVO_FULL_ROUTING);
     const pid = state.pipelineId;
 
@@ -423,10 +405,11 @@ describe('Real Pipeline Lifecycle — KIVO full SDD', () => {
     engine.advance(pid, { stageId: 'contract-review-gate', outcome: 'passed', artifacts: [] });
 
     let s = engine.load(pid);
-    expect(s.stages['implement'].status).toBe('blocked');
-    expect(s.stages['implement'].blockReason).toContain('Test Case');
+    // 原则：流水线永远往前走。implement 不再被 test-case-authoring 阻断。
+    expect(s.stages['implement'].status).toBe('active');
+    expect(s.stages['implement'].blockReason).toBeUndefined();
 
-    // Now complete test-case-authoring → implement should unblock
+    // Completing test-case-authoring leaves implement active.
     engine.advance(pid, { stageId: 'test-case-authoring', outcome: 'passed', artifacts: [] });
     s = engine.load(pid);
     expect(s.stages['implement'].status).toBe('active');

@@ -93,24 +93,12 @@ export class ClarificationCoordinator {
 
       this.records.set(record.clarificationId, record);
 
-      if (
-        record.blockingLevel === BlockingLevel.BLOCKING &&
-        this.options.updateStageRecord !== undefined
-      ) {
-        this.options.updateStageRecord(record.stageId, (current) => {
-          if (resolveStageAttempt(current) !== record.stageAttempt) {
-            return current;
-          }
-          if (current.status !== 'active') {
-            return current;
-          }
-          return {
-            ...current,
-            status: 'blocked',
-            blockReason: `Blocking clarification open: ${record.clarificationId}`,
-          };
-        });
-      }
+      // 原则：SEVO 流水线永远往前走。即使是 BLOCKING 级澄清，也不再把 active
+      // stage 冻结为 'blocked'——冻结会让 advanceAsync 静默停在该 stage 等待人工
+      // resume，违反“永远往前走”。澄清记录照常 open/dispatch/track（保留澄清与
+      // 审计能力），但 stage 状态保持不变（继续推进），澄清作为 advisory backlog
+      // 由上层在审计→修复循环中消化。对历史 blocked 记录，resumeStage 仍可用作
+      // 兼容入口（人工 resume）；新流程不再产生 blocked 态，因此对新记录是 no-op。
 
       return { ...record };
     });

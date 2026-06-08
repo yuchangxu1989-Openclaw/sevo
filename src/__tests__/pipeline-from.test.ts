@@ -11,7 +11,6 @@ import {
   isGateStage,
   parseFromLabel,
   parseSevoFromCommand,
-  computeSkippedStages,
   VALID_ENTRY_STAGES,
   GATE_STAGES,
   type PipelineFromOptions,
@@ -112,34 +111,10 @@ describe('AC-27.1: Stage validation', () => {
   });
 });
 
-// ── AC-27.2: Skipped Stages ─────────────────────────────────────
+// ── AC-27.2: Entry Stage Chain ──────────────────────────────────
 
-describe('AC-27.2: Skipped stages', () => {
-  it('marks all stages before entry point as skipped', async () => {
-    const skipped = computeSkippedStages('implement');
-    const skippedIds = skipped.map(s => s.stage);
-
-    expect(skippedIds).toContain('spec');
-    expect(skippedIds).toContain('spec-review-gate');
-    expect(skippedIds).toContain('contract');
-    expect(skippedIds).toContain('contract-review-gate');
-    expect(skippedIds).not.toContain('implement');
-    expect(skippedIds).not.toContain('review');
-  });
-
-  it('includes skip reason in each skipped stage', async () => {
-    const skipped = computeSkippedStages('review');
-    for (const s of skipped) {
-      expect(s.reason).toContain('用户指定从 review 开始');
-    }
-  });
-
-  it('skips nothing when entering from spec', async () => {
-    const skipped = computeSkippedStages('spec');
-    expect(skipped).toHaveLength(0);
-  });
-
-  it('pipeline instance has skipped stages in routing result', async () => {
+describe('AC-27.2: Entry stage chain', () => {
+  it('pipeline instance starts requiredStages at the entry point', async () => {
     const store = createMockStore();
     const result = await createPipelineFromStage(
       createRequest({ stage: 'implement' }),
@@ -148,10 +123,9 @@ describe('AC-27.2: Skipped stages', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const skippedIds = result.value.routingResult.skippedStages.map(s => s.stage);
-      expect(skippedIds).toContain('spec');
-      expect(skippedIds).toContain('contract');
-      expect(skippedIds).not.toContain('implement');
+      expect(result.value.routingResult.requiredStages[0]).toBe('implement');
+      expect(result.value.routingResult.requiredStages).not.toContain('spec');
+      expect(result.value.routingResult.requiredStages).not.toContain('contract');
     }
   });
 });
@@ -351,11 +325,7 @@ describe('AC-27.7: spec entry delegates to FR-12', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      // When entering from spec, no stages are skipped (full pipeline)
-      const skippedByFR27 = result.value.routingResult.skippedStages.filter(
-        s => s.reason.includes('用户指定从'),
-      );
-      expect(skippedByFR27).toHaveLength(0);
+      expect(result.value.routingResult.requiredStages[0]).toBe('spec');
     }
   });
 });
@@ -373,7 +343,6 @@ describe('AC-27.8: Active pipeline conflict', () => {
           taskId: 'existing',
           level: 'L1',
           requiredStages: [],
-          skippedStages: [],
           matchedRules: [],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
         },
@@ -454,34 +423,6 @@ describe('AC-27.9: Tier stage compatibility', () => {
     );
 
     expect(result.ok).toBe(true);
-  });
-});
-
-// ── computeSkippedStages edge cases ─────────────────────────────
-
-describe('computeSkippedStages', () => {
-  it('skips all stages before deploy', async () => {
-    const skipped = computeSkippedStages('deploy');
-    const skippedIds = skipped.map(s => s.stage);
-
-    expect(skippedIds).toContain('spec');
-    expect(skippedIds).toContain('implement');
-    expect(skippedIds).toContain('review');
-    expect(skippedIds).toContain('publish-generalization-gate');
-    expect(skippedIds).not.toContain('deploy');
-    expect(skippedIds).not.toContain('verify');
-  });
-
-  it('skips only spec for contract entry', async () => {
-    const skipped = computeSkippedStages('contract');
-    const skippedIds = skipped.map(s => s.stage);
-
-    expect(skippedIds).toContain('spec');
-    expect(skippedIds).toContain('spec-review-gate');
-    // test-case-authoring, ux-acceptance-authoring, commercial-acceptance-authoring
-    // come between spec-review-gate and contract in ALL_STAGES
-    expect(skippedIds).toContain('test-case-authoring');
-    expect(skippedIds).not.toContain('contract');
   });
 });
 

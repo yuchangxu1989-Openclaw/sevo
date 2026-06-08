@@ -144,7 +144,7 @@ describe('PipelineEngineFacade — lifecycle control', () => {
       expect(interrupted).toEqual([]);
     });
 
-    it('detects and blocks stale running pipelines', async () => {
+    it('detects stale running pipelines and re-queues them into the fix loop', async () => {
       const summary = await engine.createPipeline('proj', 'desc', 'L0');
       engine.advance(summary.pipelineId);
 
@@ -152,19 +152,21 @@ describe('PipelineEngineFacade — lifecycle control', () => {
       const interrupted = engine.recoverInterrupted(0);
       expect(interrupted).toContain(summary.pipelineId);
 
+      // 原则：流水线永远往前走。stale stage 退回 fix_pending 等待重新激活，
+      // pipeline lifecycle 保持 running（不再冻结为 blocked 终态）。
       const status = engine.getStatus(summary.pipelineId);
-      expect(status.lifecycle).toBe('blocked');
+      expect(status.lifecycle).toBe('running');
     });
 
-    it('records stage_blocked and pipeline_blocked events', async () => {
+    it('records fix_attempt_initiated and pipeline_running events on recovery', async () => {
       const summary = await engine.createPipeline('proj', 'desc', 'L0');
       engine.advance(summary.pipelineId);
 
       engine.recoverInterrupted(0);
 
       const events = engine.getLedger().getHistory(summary.pipelineId);
-      expect(events.some((e) => e.type === 'stage_blocked')).toBe(true);
-      expect(events.filter((e) => e.type === 'pipeline_blocked').length).toBeGreaterThan(0);
+      expect(events.some((e) => e.type === 'fix_attempt_initiated')).toBe(true);
+      expect(events.filter((e) => e.type === 'pipeline_running').length).toBeGreaterThan(0);
     });
 
     it('ignores non-running pipelines', async () => {

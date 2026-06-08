@@ -9,7 +9,6 @@ function makeState(clarificationRefs?: { id: string }[]): PipelineState {
     taskId: 't1',
     level: 'L1',
     requiredStages: ['spec', 'implement'],
-    skippedStages: [],
     stages: {
       spec: {
         stageId: 'spec',

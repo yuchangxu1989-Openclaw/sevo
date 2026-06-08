@@ -2,7 +2,7 @@
  * Router — entry point for SEVO pipeline routing.
  *
  * Receives a PipelineTask, classifies its level, and produces a
- * RoutingResult with required/skipped stages and justifications.
+ * RoutingResult with the full required stage chain.
  *
  * Sub-modules (arc42 §5.2.1):
  *   Rule Matcher    → matchTriggerRules (in level-classifier.ts)
@@ -15,15 +15,13 @@ import type {
   ProjectConfig,
   RoutingResult,
   StageId,
-  SkippedStage,
-  TaskLevel,
   Result,
   RouterError,
 } from '../types/index.js';
 import type { SpecOutput } from '../stages/spec-types.js';
 import { classifyLevel } from './level-classifier.js';
-import { classifyDesignNeeds, type DesignNeedResult } from './design-need-classifier.js';
-import { ALL_STAGES, L0_REQUIRED_STAGES, L0_SKIP_REASONS, STAGE_IDS } from '../constants.js';
+import { classifyDesignNeeds } from './design-need-classifier.js';
+import { ALL_STAGES } from '../constants.js';
 
 // ── Public API ──────────────────────────────────────────────────
 
@@ -47,7 +45,7 @@ export async function route(
     specOutput,
     projectConfig,
   });
-  const { requiredStages, skippedStages } = planStages(level, designNeeds, projectConfig);
+  const requiredStages = planStages();
 
   return {
     ok: true,
@@ -55,7 +53,6 @@ export async function route(
       taskId: task.taskId,
       level,
       requiredStages,
-      skippedStages,
       matchedRules,
       needsUxDesign: designNeeds.needsUxDesign,
       uxDesignReason: designNeeds.uxDesignReason,
@@ -69,69 +66,10 @@ export async function route(
 
 interface StagePlan {
   requiredStages: StageId[];
-  skippedStages: SkippedStage[];
 }
 
-function planStages(
-  level: TaskLevel,
-  designNeeds: DesignNeedResult,
-  projectConfig?: Partial<ProjectConfig>,
-): StagePlan {
-  switch (level) {
-    case 'L0':
-      return planL0(projectConfig);
-    case 'L1':
-    case 'L2+':
-      return planFullPipeline(designNeeds, projectConfig);
-  }
-}
-
-function planFullPipeline(
-  designNeeds: DesignNeedResult,
-  projectConfig?: Partial<ProjectConfig>,
-): StagePlan {
-  const requiredStages: StageId[] = [];
-  const skippedStages: SkippedStage[] = [];
-  const forceArch = projectConfig?.forceArchDesignAllLevels === true;
-
-  for (const stage of ALL_STAGES) {
-    if (stage === STAGE_IDS.UX_INTERACTION_DESIGN && !designNeeds.needsUxDesign) {
-      skippedStages.push({ stage, reason: designNeeds.uxDesignReason });
-      continue;
-    }
-
-    if (stage === STAGE_IDS.ARCHITECTURE_DESIGN && !designNeeds.needsArchDesign && !forceArch) {
-      skippedStages.push({ stage, reason: designNeeds.archDesignReason });
-      continue;
-    }
-
-    requiredStages.push(stage);
-  }
-
-  return { requiredStages, skippedStages };
-}
-
-function planL0(projectConfig?: Partial<ProjectConfig>): StagePlan {
-  const requiredStages: StageId[] = [];
-  const skippedStages: SkippedStage[] = [];
-  const forceArch = projectConfig?.forceArchDesignAllLevels === true;
-
-  for (const stage of ALL_STAGES) {
-    if (forceArch && stage === STAGE_IDS.ARCHITECTURE_DESIGN) {
-      requiredStages.push(stage);
-      continue;
-    }
-    if (L0_REQUIRED_STAGES.has(stage)) {
-      requiredStages.push(stage);
-    } else {
-      const reason = L0_SKIP_REASONS[stage];
-      if (reason) {
-        skippedStages.push({ stage, reason });
-      }
-    }
-  }
-
-  return { requiredStages, skippedStages };
+function planStages(): StagePlan['requiredStages'] {
+  return [...ALL_STAGES];
 }
 
 // ── Validation ──────────────────────────────────────────────────

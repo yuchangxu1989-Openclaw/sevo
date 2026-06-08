@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { buildTaskPrompt, getStageMapping } from '../task-mapper.js';
-import { queueActiveStagesForFr19, QUICKSTART_STAGES, TIER2_STAGES, CANONICAL_14_STAGES, LIGHTWEIGHT_BASE_STAGES, FULL_PIPELINE_STAGES, buildPipelineStagePlan, insertDesignStages, areDesignStagesSatisfied, assertImplementPromptReferencesDesign } from '../index.js';
+import { queueActiveStagesForFr19, FULL_PIPELINE_STAGES, buildPipelineStagePlan, areDesignStagesSatisfied, assertImplementPromptReferencesDesign } from '../index.js';
 
 describe('FR-02d / FR-02e task mapper integration', () => {
   const state = {
@@ -245,65 +245,21 @@ describe('FR-02d / FR-02e task mapper integration', () => {
     expect(result.missing).toContain('ux-interaction-design');
   });
 
-  it('keeps design stages out of the lightweight base and inserts them dynamically via designRouting', () => {
-    // FR-D05/D06: the lightweight base no longer hardcodes design stages.
-    // They are inserted on demand based on the design routing decision.
-    expect(QUICKSTART_STAGES).toContain('ux-interaction-design');
-    expect(QUICKSTART_STAGES).toContain('architecture-design');
-    expect(TIER2_STAGES).not.toContain('ux-interaction-design');
-    expect(TIER2_STAGES).not.toContain('architecture-design');
+  it('builds the single canonical full-pipeline stage chain', () => {
+    // 「全阶段无条件存在」：没有 lightweight/full 分档，也没有 design routing。
+    // buildPipelineStagePlan 始终返回完整链，且不接受 scale/designRouting 参数。
+    const plan = buildPipelineStagePlan();
 
-    // When routing requires them, insertDesignStages places them before implement.
-    const withDesign = insertDesignStages(
-      [...TIER2_STAGES],
-      { needsUxDesign: true, needsArchitectureDesign: true },
-      'lightweight',
-    );
-    expect(withDesign).toContain('ux-interaction-design');
-    expect(withDesign).toContain('architecture-design');
-    expect(withDesign.indexOf('ux-interaction-design')).toBeLessThan(withDesign.indexOf('implement'));
-    expect(withDesign.indexOf('architecture-design')).toBeLessThan(withDesign.indexOf('implement'));
-  });
-
-  it('keeps every full-pipeline stage required regardless of design routing', () => {
-    const plan = buildPipelineStagePlan({
-      scale: 'full',
-      designRouting: {
-        needsUxDesign: false,
-        needsArchitectureDesign: false,
-        reason: 'LLM says no dedicated design work is needed',
-        source: 'llm',
-      },
-    });
-
-    expect(plan.designRouting).toMatchObject({
-      needsUxDesign: false,
-      needsArchitectureDesign: false,
-      source: 'llm',
-    });
     expect(plan.requiredStages).toEqual(FULL_PIPELINE_STAGES);
-    expect(plan.requiredStages).toContain('ux-interaction-design');
-    expect(plan.requiredStages).toContain('architecture-design');
+    expect(plan.skippedStages).toEqual([]);
+    expect(plan.endgamePolicy.includeDeploy).toBe(true);
   });
 
-  it('preserves lightweight base behavior when design routing says no design stages are needed', () => {
-    const plan = buildPipelineStagePlan({
-      scale: 'lightweight',
-      designRouting: {
-        needsUxDesign: false,
-        needsArchitectureDesign: false,
-        reason: 'LLM says no dedicated design work is needed',
-        source: 'llm',
-      },
-    });
-
-    expect(plan.requiredStages).toEqual(LIGHTWEIGHT_BASE_STAGES);
-    expect(plan.requiredStages).not.toContain('ux-interaction-design');
-    expect(plan.requiredStages).not.toContain('architecture-design');
-  });
-
-  it('keeps new design stages in canonical stage sequence', () => {
-    expect(CANONICAL_14_STAGES).toContain('ux-interaction-design');
-    expect(CANONICAL_14_STAGES).toContain('architecture-design');
+  it('keeps design stages unconditionally in the canonical chain', () => {
+    expect(FULL_PIPELINE_STAGES).toContain('ux-interaction-design');
+    expect(FULL_PIPELINE_STAGES).toContain('architecture-design');
+    // Design stages precede implement.
+    expect(FULL_PIPELINE_STAGES.indexOf('ux-interaction-design')).toBeLessThan(FULL_PIPELINE_STAGES.indexOf('implement'));
+    expect(FULL_PIPELINE_STAGES.indexOf('architecture-design')).toBeLessThan(FULL_PIPELINE_STAGES.indexOf('implement'));
   });
 });

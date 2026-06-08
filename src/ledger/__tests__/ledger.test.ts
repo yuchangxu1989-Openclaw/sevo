@@ -15,7 +15,6 @@ import type {
   StageId,
   StageRecord,
   ArtifactRef,
-  SkippedStage,
 } from '../../types/index.js';
 
 // ─── Fixtures ───
@@ -46,7 +45,6 @@ function makePipelineState(overrides: Partial<PipelineState> = {}): PipelineStat
     taskId: 'task-001',
     level: 'L2+',
     requiredStages,
-    skippedStages: [],
     stages,
     currentStage: null,
     createdAt: '2026-01-01T00:00:00.000Z',

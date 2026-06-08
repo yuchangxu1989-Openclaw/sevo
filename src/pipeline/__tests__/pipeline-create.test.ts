@@ -204,7 +204,6 @@ describe('createPipelineInstance', () => {
         taskId: 'old-task',
         level: 'L0',
         requiredStages: ['implement'],
-        skippedStages: [],
         matchedRules: [],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
       },
@@ -240,7 +239,7 @@ describe('createPipelineInstance', () => {
         status,
         routingResult: {
           taskId: 'old', level: 'L0', requiredStages: ['implement'],
-          skippedStages: [], matchedRules: [],
+          matchedRules: [],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
         },
         directoryStructure: {
@@ -271,7 +270,7 @@ describe('createPipelineInstance', () => {
         status,
         routingResult: {
           taskId: 'old', level: 'L0', requiredStages: ['implement'],
-          skippedStages: [], matchedRules: [],
+          matchedRules: [],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
         },
         directoryStructure: {
@@ -330,11 +329,6 @@ describe('createPipelineInstance', () => {
     expect(rr.level).toBeDefined();
     expect(Array.isArray(rr.requiredStages)).toBe(true);
     expect(rr.requiredStages.length).toBeGreaterThan(0);
-    expect(Array.isArray(rr.skippedStages)).toBe(true);
-    // Every skipped stage has a reason
-    for (const skip of rr.skippedStages) {
-      expect(skip.reason).toBeTruthy();
-    }
   });
 
   it('L2+ task routes through all 19 stages (AC-4.59)', async () => {
@@ -358,7 +352,6 @@ describe('createPipelineInstance', () => {
 
     expect(result.value.routingResult.level).toBe('L2+');
     expect(result.value.routingResult.requiredStages).toHaveLength(ALL_STAGES.length);
-    expect(result.value.routingResult.skippedStages).toHaveLength(0);
   });
 
   it('rejects invalid project slug', async () => {

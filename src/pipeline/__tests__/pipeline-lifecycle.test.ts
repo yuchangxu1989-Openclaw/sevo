@@ -40,7 +40,6 @@ const L2_FULL_ROUTING: RoutingResult = {
     'contract', 'contract-review-gate', 'implement', 'review',
     'regression', 'publish-generalization-gate', 'deploy', 'verify', 'ledger',
   ],
-  skippedStages: [],
   matchedRules: ['new-module'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
 };
@@ -49,12 +48,6 @@ const L0_ROUTING: RoutingResult = {
   taskId: 'lifecycle-l0',
   level: 'L0',
   requiredStages: ['implement', 'review', 'regression', 'verify', 'ledger'],
-  skippedStages: [
-    { stage: 'spec', reason: 'L0' },
-    { stage: 'spec-review-gate', reason: 'L0' },
-    { stage: 'contract', reason: 'L0' },
-    { stage: 'contract-review-gate', reason: 'L0' },
-  ],
   matchedRules: [],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
 };
@@ -152,7 +145,7 @@ describe('Pipeline Lifecycle — L2+ full flow', () => {
     expect(types.filter(t => t === 'stage_completed')).toHaveLength(14);
   });
 
-  it('Test 4: gate blocking — implement blocked until test-case-authoring done', async () => {
+  it('Test 4: implement proceeds without blocking on test-case-authoring (always forward)', async () => {
     const state = engine.create(L2_FULL_ROUTING);
     const pid = state.pipelineId;
 
@@ -164,11 +157,11 @@ describe('Pipeline Lifecycle — L2+ full flow', () => {
     engine.advance(pid, { stageId: 'contract-review-gate', outcome: 'passed', artifacts: [] });
 
     let s = engine.load(pid);
-    expect(s.stages['implement'].status).toBe('blocked');
+    // 原则：流水线永远往前走。implement 不再被 test-case-authoring 阻断。
+    expect(s.stages['implement'].status).toBe('active');
 
-    // Now complete test-case-authoring → implement should unblock
+    // Completing the parallel branches keeps implement active.
     engine.advance(pid, { stageId: 'test-case-authoring', outcome: 'passed', artifacts: [] });
-    // Also complete the other parallel branches
     engine.advance(pid, { stageId: 'ux-acceptance-authoring', outcome: 'passed', artifacts: [] });
     engine.advance(pid, { stageId: 'commercial-acceptance-authoring', outcome: 'passed', artifacts: [] });
 
@@ -176,7 +169,7 @@ describe('Pipeline Lifecycle — L2+ full flow', () => {
     expect(s.stages['implement'].status).toBe('active');
   });
 
-  it('Test 5: failure and retry — stage fails then retries successfully', async () => {
+  it('Test 5: failure and retry — stage enters fix loop then retries successfully', async () => {
     const state = engine.create(L2_FULL_ROUTING);
     const pid = state.pipelineId;
 
@@ -187,7 +180,8 @@ describe('Pipeline Lifecycle — L2+ full flow', () => {
     });
 
     let s = engine.load(pid);
-    expect(s.stages['spec'].status).toBe('failed');
+    // 原则：流水线永远往前走。失败 → fix_pending 修复循环，而非 failed 终态。
+    expect(s.stages['spec'].status).toBe('fix_pending');
     expect(s.stages['spec'].failureReason).toBe('Missing acceptance criteria');
     expect(s.stages['spec-review-gate'].status).toBe('pending');
 
@@ -279,7 +273,8 @@ describe('Pipeline Lifecycle — L0 minimal flow', () => {
     engine.advance(pid, { stageId: 'review', outcome: 'failed', artifacts: [], failureReason: 'Code quality issues' });
 
     let s = engine.load(pid);
-    expect(s.stages['review'].status).toBe('failed');
+    // 原则：流水线永远往前走。失败 → fix_pending 修复循环，而非 failed 终态。
+    expect(s.stages['review'].status).toBe('fix_pending');
     expect(s.stages['regression'].status).toBe('pending');
     expect(engine.isComplete(pid)).toBe(false);
 

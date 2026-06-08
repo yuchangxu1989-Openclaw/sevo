@@ -1006,9 +1006,10 @@ describe('Full Pipeline E2E: Clarification Blocking → Recovery', () => {
     expect(records[0]!.blockingLevel).toBe(BlockingLevel.BLOCKING);
     expect(records[0]!.status).toBe(Status.OPEN);
 
-    // Verify pipeline is blocked
+    // Blocking clarification is tracked, but the stage is NOT frozen.
+    // 原则：流水线永远往前走——澄清记录照常 open/dispatch，stage 保持 active。
     expect(orchestrator.hasBlockingClarifications(run.runId)).toBe(true);
-    expect(stageRecords.get('spec')!.status).toBe('blocked');
+    expect(stageRecords.get('spec')!.status).toBe('active');
 
     // Adapter dispatched the clarification
     expect(adapter.dispatched).toHaveLength(1);
@@ -1026,12 +1027,12 @@ describe('Full Pipeline E2E: Clarification Blocking → Recovery', () => {
     const settled = coordinator.applyResolution(records[0]!.clarificationId);
     expect(settled).toHaveLength(1);
 
-    // Resume stage
+    // Resume stage — compatibility no-op now (stage was never frozen).
     const transition = coordinator.resumeStage('spec', records[0]!.clarificationId);
-    expect(transition.from).toBe('blocked');
+    expect(transition.from).toBe('active');
     expect(transition.to).toBe('active');
 
-    // Pipeline is no longer blocked
+    // No outstanding blocking clarifications after settlement; stage stays active.
     expect(orchestrator.hasBlockingClarifications(run.runId)).toBe(false);
     expect(stageRecords.get('spec')!.status).toBe('active');
 

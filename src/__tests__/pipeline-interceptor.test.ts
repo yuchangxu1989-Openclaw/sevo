@@ -56,7 +56,6 @@ function createActiveInstance(slug: string): PipelineInstance {
       taskId: 'test-task',
       level: 'L2+',
       requiredStages: ['spec', 'implement', 'review'],
-      skippedStages: [],
       matchedRules: ['user-explicit'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
     },

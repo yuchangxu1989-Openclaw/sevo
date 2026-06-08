@@ -44,7 +44,7 @@ function readEvents(tmpDir: string, pipelineId: string): PipelineEvent[] {
   return fs.readFileSync(fp, 'utf-8').trim().split('\n').map(l => JSON.parse(l));
 }
 
-// L1 routing — standard pipeline without smoke-test/ux-acceptance/pm-commercial-review
+// L1 routing — standard pipeline fixture
 const L1_ROUTING: RoutingResult = {
   taskId: 'e2e-l1-full',
   level: 'L1',
@@ -54,16 +54,6 @@ const L1_ROUTING: RoutingResult = {
     'regression',
     'publish-generalization-gate',
     'deploy', 'verify', 'ledger',
-  ],
-  skippedStages: [
-    { stage: 'test-case-authoring', reason: 'L1 standard' },
-    { stage: 'ux-acceptance-authoring', reason: 'L1 standard' },
-    { stage: 'commercial-acceptance-authoring', reason: 'L1 standard' },
-    { stage: 'contract', reason: 'L1 standard' },
-    { stage: 'contract-review-gate', reason: 'L1 standard' },
-    { stage: 'smoke-test', reason: 'L1 standard' },
-    { stage: 'ux-acceptance', reason: 'L1 standard' },
-    { stage: 'pm-commercial-review', reason: 'L1 standard' },
   ],
   matchedRules: ['user-explicit'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
@@ -82,7 +72,6 @@ const L2_FULL_ROUTING: RoutingResult = {
     'regression', 'publish-generalization-gate',
     'deploy', 'verify', 'ledger',
   ],
-  skippedStages: [],
   matchedRules: ['new-module', 'cross-domain'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
 };
@@ -313,7 +302,7 @@ describe('E2E Full Lifecycle — L2+ with parallel branches and gate blocking', 
     expect(types.filter(t => t === 'stage_completed').length).toBe(17);
   });
 
-  it('implement blocked by test-case-authoring, unblocks after completion', async () => {
+  it('implement proceeds without blocking on test-case-authoring (always forward)', async () => {
     const state = engine.create(L2_FULL_ROUTING);
     const pid = state.pipelineId;
 
@@ -327,16 +316,17 @@ describe('E2E Full Lifecycle — L2+ with parallel branches and gate blocking', 
     engine.advance(pid, { stageId: 'commercial-acceptance-authoring', outcome: 'passed', artifacts: [] });
 
     let s = engine.load(pid);
-    expect(s.stages['implement'].status).toBe('blocked');
-    expect(s.stages['implement'].blockReason).toContain('Test Case');
+    // 原则：流水线永远往前走。implement 不再被 test-case-authoring 阻断。
+    expect(s.stages['implement'].status).toBe('active');
+    expect(s.stages['implement'].blockReason).toBeUndefined();
 
-    // Complete test-case-authoring → implement unblocks
+    // Completing test-case-authoring leaves implement active.
     engine.advance(pid, { stageId: 'test-case-authoring', outcome: 'passed', artifacts: [makeArtifact('tc')] });
     s = engine.load(pid);
     expect(s.stages['implement'].status).toBe('active');
   });
 
-  it('review failure mid-pipeline blocks downstream, retry completes', async () => {
+  it('review failure mid-pipeline enters fix loop, retry completes', async () => {
     const state = engine.create(L2_FULL_ROUTING);
     const pid = state.pipelineId;
 
@@ -356,7 +346,8 @@ describe('E2E Full Lifecycle — L2+ with parallel branches and gate blocking', 
       failureReason: 'Security vulnerability in auth module',
     });
     let s = engine.load(pid);
-    expect(s.stages['review'].status).toBe('failed');
+    // 原则：流水线永远往前走。失败 → fix_pending 修复循环，而非 failed 终态。
+    expect(s.stages['review'].status).toBe('fix_pending');
     expect(s.stages['smoke-test'].status).toBe('pending');
     expect(engine.isComplete(pid)).toBe(false);
 

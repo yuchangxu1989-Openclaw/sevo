@@ -168,7 +168,9 @@ describe('SpecStage', () => {
     });
     expect(clarificationAdapter.requests).toHaveLength(1);
     expect(clarificationAdapter.requests[0]?.question).toContain('password reset');
-    expect(stageRecord.status).toBe('blocked');
+    // 原则：流水线永远往前走。BLOCKING 澄清不再冻结 stage——记录照常 open/dispatch，
+    // 但 stage 保持 active 继续推进，澄清作为 advisory backlog 由审计→修复循环消化。
+    expect(stageRecord.status).toBe('active');
   });
 
   it('opens blocking clarifications for missing concept-definition answers', async () => {
@@ -241,7 +243,8 @@ describe('SpecStage', () => {
       '概念「Draft」如何被使用或交互？',
       '概念「Draft」的适用边界是什么？什么情况下不适用？',
     ]);
-    expect(stageRecord.status).toBe('blocked');
+    // 原则：流水线永远往前走。BLOCKING 澄清不再冻结 stage，保持 active 继续推进。
+    expect(stageRecord.status).toBe('active');
   });
 
   it('supports incremental requirement augmentation', async () => {

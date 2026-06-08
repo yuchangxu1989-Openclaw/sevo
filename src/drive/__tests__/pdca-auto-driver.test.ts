@@ -46,7 +46,6 @@ function createPipeline(overrides?: Partial<PipelineInstance>): PipelineInstance
       taskId: 'task-1',
       level: 'L2+',
       requiredStages: ['spec', 'implement', 'review'],
-      skippedStages: [],
       matchedRules: ['new-module'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
     },

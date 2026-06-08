@@ -129,21 +129,12 @@ export class PipelineEngine {
         artifacts: [],
       };
     }
-    // Mark skipped stages
-    for (const skip of routing.skippedStages) {
-      stages[skip.stage] = {
-        stageId: skip.stage,
-        status: 'skipped',
-        artifacts: [],
-      };
-    }
 
     const state: PipelineState = {
       pipelineId,
       taskId: routing.taskId,
       level: routing.level,
       requiredStages: routing.requiredStages,
-      skippedStages: routing.skippedStages,
       stages,
       currentStage: null,
       createdAt: now,
@@ -357,20 +348,11 @@ export class PipelineEngine {
       return this.enterFixPending(state, pipelineId, stageId, record, artifacts, failureReason);
     }
 
-    assertTransition(record.status, 'failed');
-    record.status = 'failed';
-    record.completedAt = new Date().toISOString();
-    if (failureReason) record.failureReason = failureReason;
-    state.updatedAt = new Date().toISOString();
-
-    this.emitEvent(pipelineId, stageId, 'stage_failed', {
-      outcome: 'failed',
-      artifacts: artifacts.map((a: ArtifactRef) => a.id),
-      ...(failureReason ? { failureReason } : {}),
-    });
-
-    atomicWriteJson(statePath(this.basePath, pipelineId), state);
-    return { pipelineId, fromStage: stageId, toStage: stageId, status: record.status, artifacts, nextTriggered: false };
+    // 原则：SEVO 流水线永远往前走。stage 失败不是终态——不再写 'failed' 终结
+    // 该 stage，而是转入 fix_pending 修复循环（与 gate stage 的 enterFixPending
+    // 一致），使下一次 advance 重新选中它进入重试。唯一合法终态是 passed/skipped
+    // 或用户主动 cancel。
+    return this.enterFixPending(state, pipelineId, stageId, record, artifacts, failureReason);
   }
 
   /**
@@ -604,26 +586,22 @@ export class PipelineEngine {
   }
 
   /**
-   * If implement should be blocked (ADR-004), transition pending→active→blocked.
-   * Returns true if the stage was blocked (caller should skip normal activation).
+   * 原则：SEVO 流水线永远往前走。即使 test-case-authoring 尚未通过（ADR-004
+   * 历史阻断规则），也不再把 implement 冻结为 'blocked'。仅发一条 advisory
+   * 事件提示测试用例未就绪，由上层审计→修复循环消化；implement 照常激活推进。
+   * 始终返回 false，使 activateNext 正常激活该 stage。
    */
   private tryBlockImplement(state: PipelineState, sid: StageId): boolean {
     if (sid !== STAGE_IDS.IMPLEMENT || !shouldBlockImplement(state)) return false;
 
     const record = state.stages[sid];
-    if (record.status !== 'pending') return true;
+    if (record.status !== 'pending') return false;
 
-    assertTransition(record.status, 'active');
-    record.status = 'active';
-    record.startedAt = new Date().toISOString();
-    assertTransition(record.status, 'blocked');
-    record.status = 'blocked';
-    record.blockReason = BLOCK_REASONS.TEST_CASE;
-    state.updatedAt = new Date().toISOString();
-    this.emitEvent(state.pipelineId, sid, 'stage_blocked', {
-      reason: record.blockReason,
+    this.emitEvent(state.pipelineId, sid, 'advance_decision', {
+      reason: BLOCK_REASONS.TEST_CASE,
+      advisory: 'test-case-authoring not yet passed; implement proceeds (pipeline kept moving forward)',
     });
-    return true;
+    return false;
   }
 
   /** Activate a single stage record: pending → active. */
@@ -939,16 +917,12 @@ export class PipelineEngineFacade {
     for (const sid of routing.requiredStages) {
       stages[sid] = { stageId: sid, status: 'pending', artifacts: [] };
     }
-    for (const skip of routing.skippedStages) {
-      stages[skip.stage] = { stageId: skip.stage, status: 'skipped', artifacts: [] };
-    }
 
     const state: PipelineState = {
       pipelineId,
       taskId,
       level: routing.level,
       requiredStages: routing.requiredStages,
-      skippedStages: routing.skippedStages,
       stages,
       currentStage: null,
       createdAt: now,
@@ -1118,18 +1092,26 @@ export class PipelineEngineFacade {
 
       if (now - startedAt >= staleThresholdMs) {
         interrupted.push(pipelineId);
-        record.lifecycle = 'blocked';
+        // 原则：SEVO 流水线永远往前走。stale interrupted stage 不再冻结为
+        // 'blocked'，而是退回 fix_pending（canActivate 接受）让下一次 advance
+        // 重新激活它继续推进；pipeline lifecycle 保持 'running'（非 blocked 终态）。
+        record.lifecycle = 'running';
         record.updatedAt = new Date().toISOString();
         record.state.updatedAt = record.updatedAt;
-        stageRecord.status = 'blocked';
+        stageRecord.status = 'fix_pending';
+        stageRecord.fixAttempts = (stageRecord.fixAttempts ?? 0) + 1;
         stageRecord.blockReason = 'Recovered from interrupted state (stale active stage)';
 
         this.ledger.append(pipelineId, {
-          type: 'stage_blocked',
+          type: 'fix_attempt_initiated',
           stageId: currentStage,
-          detail: { reason: 'stale_interrupted', staleMs: now - startedAt },
+          detail: { reason: 'stale_interrupted', staleMs: now - startedAt, attempt: stageRecord.fixAttempts },
         });
-        this.ledger.append(pipelineId, { type: 'pipeline_blocked' });
+        this.ledger.append(pipelineId, {
+          type: 'pipeline_running',
+          stageId: currentStage,
+          detail: { advisory: 'stale interrupted stage re-queued for fix loop, pipeline kept running' },
+        });
       }
     }
 
@@ -1151,8 +1133,14 @@ export class PipelineEngineFacade {
     }
 
     if (outcome === 'failed') {
-      stageRecord.status = 'failed';
-      stageRecord.completedAt = new Date().toISOString();
+      // 原则：SEVO 流水线永远往前走。stage 失败不是终态——不再写
+      // lifecycle='failed' 终结整条 pipeline，而是转入 fix_pending 修复循环
+      // （与 applyFacadeGateVerdict 的 gate-reject 分支一致），pipeline 生命周期
+      // 保持 'running'，由上层 adapter/fix-loop 据 fix_pending 派发修复任务后复验。
+      // 唯一合法终态是 completed 或用户主动 cancel。
+      stageRecord.status = 'fix_pending';
+      stageRecord.completedAt = undefined;
+      stageRecord.fixAttempts = (stageRecord.fixAttempts ?? 0) + 1;
       if (failureReason) stageRecord.failureReason = failureReason;
       this.appendArtifacts(stageRecord, artifacts);
 
@@ -1161,16 +1149,19 @@ export class PipelineEngineFacade {
         stageId,
         detail: { failureReason },
       });
+      this.ledger.append(pipelineId, {
+        type: 'fix_attempt_initiated',
+        stageId,
+        detail: { attempt: stageRecord.fixAttempts, failureReason },
+      });
 
-      record.lifecycle = 'failed';
+      record.lifecycle = 'running';
       record.updatedAt = new Date().toISOString();
       record.state.updatedAt = record.updatedAt;
 
-      this.ledger.append(pipelineId, { type: 'pipeline_failed' });
-
       return {
-        transition: { pipelineId, fromStage: stageId, toStage: stageId, status: 'failed', artifacts },
-        lifecycle: 'failed',
+        transition: { pipelineId, fromStage: stageId, toStage: stageId, status: 'fix_pending', artifacts },
+        lifecycle: 'running',
         events: this.ledger.getHistory(pipelineId).slice(eventsBefore),
       };
     }
@@ -1215,15 +1206,32 @@ export class PipelineEngineFacade {
       return this.activateStage(record, stageId, nextStage, artifacts, eventsBefore);
     }
 
-    // No next stage but not all done — blocked (parallel branches or dependencies)
-    record.lifecycle = 'blocked';
+    // 原则：SEVO 流水线永远往前走。没有 pending stage 但 pipeline 未全完成时，
+    // 不再写 lifecycle='blocked' 静默卡死。先扫描任何可激活的非终态 stage
+    // （fix_pending / failed / blocked / clarification-blocked，见 canActivate），
+    // 找到就直接激活继续推进；这是 parallel 分支或依赖未就绪的正常恢复路径。
+    const recoverable = record.state.requiredStages.find(
+      (s) => canActivate(record.state.stages[s].status),
+    );
+    if (recoverable) {
+      return this.activateStage(record, stageId, recoverable, artifacts, eventsBefore);
+    }
+
+    // 确实没有可激活 stage（全部 active/in-flight）：保持 running 并写一条 advisory
+    // 诊断事件（非 pipeline_blocked 终态），由下一次 advance / 修复循环接管，
+    // 而不是把 pipeline 冻结在 blocked。
+    record.lifecycle = 'running';
     record.updatedAt = new Date().toISOString();
     record.state.updatedAt = record.updatedAt;
-    this.ledger.append(pipelineId, { type: 'pipeline_blocked' });
+    this.ledger.append(pipelineId, {
+      type: 'pipeline_running',
+      stageId,
+      detail: { advisory: 'no-next-pending: awaiting in-flight stages, pipeline kept running' },
+    });
 
     return {
       transition: { pipelineId, fromStage: stageId, toStage: stageId, status: 'passed', artifacts },
-      lifecycle: 'blocked',
+      lifecycle: 'running',
       events: this.ledger.getHistory(pipelineId).slice(eventsBefore),
     };
   }
@@ -1401,7 +1409,10 @@ export class PipelineEngineFacade {
       stageRecord.status = 'fix_pending';
       stageRecord.blockReason = gateVerdict.blockers.join('; ');
       stageRecord.fixAttempts = 1;
-      record.lifecycle = 'blocked';
+      // 原则：SEVO 流水线永远往前走。gate 未过 → stage 进 fix_pending 修复循环，
+      // pipeline lifecycle 保持 'running'（而非 'blocked' 静默卡死），由上层
+      // 据 fix_pending 派发修复任务后复验。
+      record.lifecycle = 'running';
       record.updatedAt = new Date().toISOString();
       record.state.updatedAt = record.updatedAt;
 
@@ -1424,7 +1435,7 @@ export class PipelineEngineFacade {
           status: 'fix_pending',
           artifacts: stageRecord.artifacts,
         },
-        lifecycle: 'blocked',
+        lifecycle: 'running',
         gateVerdict,
         events: this.ledger.getHistory(record.pipelineId).slice(eventsBefore),
       };

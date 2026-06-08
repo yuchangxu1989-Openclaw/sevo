@@ -123,16 +123,12 @@ function createStateFromInstance(instance: PipelineInstance, now: string): Pipel
   for (const stageId of instance.routingResult.requiredStages) {
     stages[stageId] = createStageRecord(stageId, 'pending');
   }
-  for (const skipped of instance.routingResult.skippedStages) {
-    stages[skipped.stage] = createStageRecord(skipped.stage, 'skipped');
-  }
 
   return {
     pipelineId: instance.instanceId,
     taskId: instance.routingResult.taskId,
     level: instance.routingResult.level,
     requiredStages: instance.routingResult.requiredStages,
-    skippedStages: instance.routingResult.skippedStages,
     stages,
     currentStage: null,
     createdAt: instance.createdAt ?? now,

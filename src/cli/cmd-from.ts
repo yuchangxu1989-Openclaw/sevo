@@ -121,13 +121,11 @@ export function registerFrom(program: Command): void {
       const instance = result.value;
       console.log(`Pipeline created from stage "${stage}" for project "${slug}".`);
       console.log(`  Instance ID: ${instance.instanceId}`);
-      console.log(`  Skipped stages: ${instance.routingResult.skippedStages.length}`);
       console.log(`  Required stages: ${instance.routingResult.requiredStages.length}`);
       printJson({
         instanceId: instance.instanceId,
         projectSlug: instance.projectSlug,
         entryStage: stage,
-        skippedStages: instance.routingResult.skippedStages,
         requiredStages: instance.routingResult.requiredStages,
       });
     });

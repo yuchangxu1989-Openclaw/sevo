@@ -262,7 +262,6 @@ describe('LedgerEngine — OKR/PDCA evidence (AC-18.14)', () => {
       taskId: 'task-001',
       level: 'L2+',
       requiredStages,
-      skippedStages: [],
       stages,
       currentStage: null,
       createdAt: '2026-01-01T00:00:00Z',

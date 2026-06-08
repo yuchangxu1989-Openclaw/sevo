@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { route } from '../router.js';
 import { classifyLevel } from '../level-classifier.js';
 import { DEFAULT_SDD_GRAPH } from '../stage-graph.js';
-import { ALL_STAGES, L0_REQUIRED_STAGES, L0_SKIP_REASONS } from '../../constants.js';
+import { ALL_STAGES } from '../../constants.js';
 import type { PipelineTask, TaskScope } from '../../types/index.js';
 
 // ── helpers ─────────────────────────────────────────────────────
@@ -132,7 +132,7 @@ describe('route', () => {
   });
 
   describe('L0 routing', () => {
-    it('returns 5 required stages for L0 (with userExplicitL0)', async () => {
+    it('returns the full stage chain for L0 (with userExplicitL0)', async () => {
       const result = await route(
         makeTask({ userExplicitL0: true, estimatedFiles: 1, estimatedLines: 10 }),
       );
@@ -140,71 +140,27 @@ describe('route', () => {
       if (!result.ok) return;
 
       expect(result.value.level).toBe('L0');
-      expect(result.value.requiredStages).toEqual([
-        'implement',
-        'review',
-        'regression',
-        'verify',
-        'ledger',
-      ]);
-    });
-
-    it('skips 16 stages for L0 with reasons', async () => {
-      const result = await route(
-        makeTask({ userExplicitL0: true, estimatedFiles: 1, estimatedLines: 10 }),
-      );
-      if (!result.ok) return;
-
-      expect(result.value.skippedStages).toHaveLength(16);
-      const skippedIds = result.value.skippedStages.map((s) => s.stage);
-      expect(skippedIds).toEqual([
-        'spec',
-        'spec-review-gate',
-        'test-case-authoring',
-        'ux-acceptance-authoring',
-        'commercial-acceptance-authoring',
-        'ux-interaction-design',
-        'architecture-design',
-        'contract',
-        'contract-review-gate',
-        'smoke-test',
-        'ux-acceptance',
-        'pm-commercial-review',
-        'publish-generalization-gate',
-        'deploy',
-        'post-release-validation',
-        'clean-install-verification',
-      ]);
-      // Every skipped stage has a non-empty reason
-      for (const s of result.value.skippedStages) {
-        expect(s.reason.length).toBeGreaterThan(0);
-      }
+      expect(result.value.requiredStages).toEqual(ALL_STAGES);
     });
   });
 
   describe('L1 routing', () => {
-    it('returns selected design-aware stages for L1', async () => {
+    it('returns the full stage chain for L1', async () => {
       const result = await route(makeTask({ estimatedFiles: 3, estimatedLines: 100 }));
       if (!result.ok) return;
 
       expect(result.value.level).toBe('L1');
-      expect(result.value.requiredStages).toHaveLength(ALL_STAGES.length - 1);
-      expect(result.value.requiredStages).toContain('ux-interaction-design');
-      expect(result.value.skippedStages).toHaveLength(1);
-      expect(result.value.skippedStages[0]?.stage).toBe('architecture-design');
+      expect(result.value.requiredStages).toEqual(ALL_STAGES);
     });
   });
 
   describe('L2+ routing', () => {
-    it('returns selected design-aware stages for L2+', async () => {
+    it('returns the full stage chain for L2+', async () => {
       const result = await route(makeTask({ isNewModule: true, estimatedLines: 800 }));
       if (!result.ok) return;
 
       expect(result.value.level).toBe('L2+');
-      expect(result.value.requiredStages).toHaveLength(ALL_STAGES.length);
-      expect(result.value.requiredStages).toContain('ux-interaction-design');
-      expect(result.value.requiredStages).toContain('architecture-design');
-      expect(result.value.skippedStages).toHaveLength(0);
+      expect(result.value.requiredStages).toEqual(ALL_STAGES);
       expect(result.value.matchedRules.length).toBeGreaterThan(0);
     });
 
@@ -231,7 +187,7 @@ describe('route', () => {
   });
 
   describe('traceability (AC-3.2, AC-3.3)', () => {
-    it('every task gets a stage list and skip reasons', async () => {
+    it('every task gets the same full stage list', async () => {
       const levels: TaskScope[] = [
         { userExplicitL0: true, estimatedFiles: 1, estimatedLines: 10 },
         { estimatedFiles: 5, estimatedLines: 200 },
@@ -241,15 +197,7 @@ describe('route', () => {
         const result = await route(makeTask(scope));
         expect(result.ok).toBe(true);
         if (!result.ok) continue;
-        expect(result.value.requiredStages.length).toBeGreaterThan(0);
-        // required + skipped = all stages
-        const total =
-          result.value.requiredStages.length + result.value.skippedStages.length;
-        expect(total).toBe(
-          result.value.level === 'L0'
-            ? L0_REQUIRED_STAGES.size + Object.keys(L0_SKIP_REASONS).length
-            : ALL_STAGES.length,
-        );
+        expect(result.value.requiredStages).toEqual(ALL_STAGES);
       }
     });
   });

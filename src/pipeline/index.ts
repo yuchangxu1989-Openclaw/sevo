@@ -47,7 +47,6 @@ export {
   isGateStage,
   parseFromLabel,
   parseSevoFromCommand,
-  computeSkippedStages,
   VALID_ENTRY_STAGES,
   GATE_STAGES,
   AUXILIARY_STAGES,

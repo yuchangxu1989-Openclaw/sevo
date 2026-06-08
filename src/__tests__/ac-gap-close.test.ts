@@ -38,7 +38,6 @@ function makeInstance(overrides?: Partial<PipelineInstance>): PipelineInstance {
       taskId: 'task-1',
       level: 'L2+',
       requiredStages: ['spec', 'implement', 'review', 'ledger'],
-      skippedStages: [],
       matchedRules: ['new-module'],
       needsUxDesign: false, uxDesignReason: '', needsArchDesign: false, archDesignReason: '',
     },

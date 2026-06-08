@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-08T02:38:17.446Z","pipelineId":"e94341b8-efb5-4aed-b25b-d37e73265dd5","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-stage-skipping-mq4lpshi","level":"L1"}}
+{"timestamp":"2026-06-08T02:38:17.447Z","pipelineId":"e94341b8-efb5-4aed-b25b-d37e73265dd5","stage":"spec","eventType":"stage_activated","payload":{}}

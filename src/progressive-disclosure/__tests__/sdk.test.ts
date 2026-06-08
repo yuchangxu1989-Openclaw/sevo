@@ -98,7 +98,7 @@ describe('SevoSDK (L3 Progressive Disclosure)', () => {
       expect(['running', 'completed']).toContain(result.lifecycle);
     });
 
-    it('marks pipeline as failed when stage fails', async () => {
+    it('routes a failed stage into the fix loop and keeps the pipeline running', async () => {
       const created = await sdk.createPipeline({ slug: 'proj', description: 'test', level: 'L0' });
       sdk.advanceStage(created.pipelineId);
 
@@ -111,7 +111,9 @@ describe('SevoSDK (L3 Progressive Disclosure)', () => {
         failureReason: 'tests failed',
       });
 
-      expect(result.lifecycle).toBe('failed');
+      // 原则：流水线永远往前走。失败转入 fix_pending 修复循环，lifecycle 保持 running。
+      expect(result.lifecycle).toBe('running');
+      expect(result.transition!.status).toBe('fix_pending');
     });
   });
 
