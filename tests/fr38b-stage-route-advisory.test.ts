@@ -370,4 +370,60 @@ describe('FR-38b Stage Route Advisory + Clarification Gate', () => {
     expect(advisory.routeOptions.flatMap((o: any) => o.missingInputs).join(' ')).toContain('review');
     expect(advisory.routeOptions.map((o: any) => o.whyThisStage).join(' ')).toContain('复用当前 pipeline');
   });
+
+  // 2026-06-08: classifier 不可用时静默放行「纯语义占位」advisory（消除主会话 token 膨胀 + 无意义 handshake）。
+  it('AC-38b.12 suppresses semantic-uncertain advisory when LLM classifier is unavailable', () => {
+    const advisory = buildStageRouteAdvisory38b({
+      projectSlug: 'sevo',
+      requestedEntry: 'sevo:implement',
+      requestedStage: 'implement',
+      pipelineId: 'pipe-semantic',
+      state: makeState({ currentStage: 'implement', completedThrough: 'contract-review-gate' }),
+      specCoverageStatus: 'unknown',
+      routeAnalysis: { status: 'unknown', reason: 'llm-unavailable', confidence: 0 },
+    });
+    // 单元层：coverage=unknown + analysis.status=unknown 命中语义不确定分支，打上 semantic-uncertain 标签。
+    expect(advisory.advisoryType).toBe('clarification-required');
+    expect(advisory.routeBasis).toBe('semantic-uncertain');
+  });
+
+  it('AC-38b.12 keeps structural advisory basis tags distinct from semantic-uncertain', () => {
+    const multi = buildStageRouteAdvisory38b({
+      projectSlug: 'sevo',
+      requestedEntry: 'sevo:review',
+      requestedStage: 'review',
+      state: makeState({ currentStage: 'review', completedThrough: 'implement' }),
+      specCoverageStatus: 'covered',
+      candidatePipelines: [
+        { pipelineId: 'pipe-a', currentStage: 'implement', recentTaskSummary: 'FR-A', matchBasis: 'same projectSlug' },
+        { pipelineId: 'pipe-b', currentStage: 'review', recentTaskSummary: 'FR-B', matchBasis: 'same projectSlug' },
+      ],
+      routeAnalysis: { status: 'ambiguous', reason: 'multiple candidates', confidence: 0.5 },
+    });
+    // 结构性事实（多候选）不依赖 LLM，basis 必须区别于 semantic-uncertain，因此不会被静默放行。
+    expect(multi.routeBasis).toBe('multi-candidate');
+
+    const missing = buildStageRouteAdvisory38b({
+      projectSlug: 'sevo',
+      requestedEntry: 'sevo:implement',
+      requestedStage: 'implement',
+      pipelineId: 'pipe-missing',
+      state: makeState({ currentStage: 'implement', completedThrough: 'contract-review-gate' }),
+      specCoverageStatus: 'missing',
+    });
+    expect(missing.routeBasis).toBe('spec-missing');
+  });
+
+  it('AC-38b.12 reports llmAvailable=false from the route classifier when no LLM is configured', async () => {
+    const analysis = await mod.runStageRouteSemanticCheck38b({
+      requestedEntry: 'sevo:implement',
+      requestedStage: 'implement',
+      taskDescription: 'implement something',
+      projectSlug: 'sevo',
+      pipelineSummary: { currentStage: 'implement', completedStages: [], pendingStages: [] },
+    });
+    // 测试环境无 LLM 配置 ⇒ callLlmClassification 返回 fallback ⇒ llmAvailable=false。
+    expect(analysis.llmAvailable).toBe(false);
+    expect(analysis.status).toBe('unknown');
+  });
 });
