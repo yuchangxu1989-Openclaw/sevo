@@ -8,7 +8,6 @@ export { loadStageStandards, getStageStandard, formatStageStandardForPrompt } fr
 export type { LoadStageStandardsOptions, StageStandard, StageStandards } from './stage-standards-loader.js';
 export {
   PipelineEngine as CliPipelineEngine,
-  CANONICAL_14_STAGES,
   listStageBindings,
 } from './pipeline-engine.js';
 export type {

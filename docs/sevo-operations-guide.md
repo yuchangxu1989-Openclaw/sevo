@@ -1,27 +1,26 @@
 # SEVO 流水线操作说明文档
 
-OpenClaw（主会话）2026-06-07
+OpenClaw（主会话）2026-06-08
 
 本文档是 SEVO 流水线的操作手册，主 Agent 在派发阶段任务前、收到 completion 后、处理失败或推进终局前按需读取；本文档优先级高于主 Agent 对代码行为的临场理解。
 
 ## 阶段总览
 
-SEVO 的 full pipeline 主链按以下顺序推进：
+SEVO 只有一条完整阶段链，所有入口统一使用同一阶段队列。入口层不得按任务规模、成本、路径、设计需求或交付类型减少主链阶段；阶段是否需要深度产出，由该阶段的专业 Agent 在阶段内判断。若某阶段对本轮没有实质工作，仍必须产出 pass-no-change 或 pass-not-applicable 证据，而不是让状态机缺少该阶段。
 
-spec -> spec-review-gate -> ux-interaction-design -> architecture-design -> contract -> contract-review-gate -> implement -> review -> smoke-test -> ux-acceptance -> regression -> publish-generalization-gate -> deploy -> verify -> post-release-validation -> ledger。
+当前代码中的 ALL_STAGES 主链阶段顺序为：
 
-当前入口还会按场景启用这些阶段：
+spec -> spec-review-gate -> test-case-authoring -> ux-acceptance-authoring -> commercial-acceptance-authoring -> ux-interaction-design -> architecture-design -> contract -> contract-review-gate -> implement -> review -> smoke-test -> ux-acceptance -> pm-commercial-review -> regression -> publish-generalization-gate -> deploy -> verify -> readme -> post-release-validation -> clean-install-verification -> ledger。
 
-- test-case-authoring：spec-review-gate 通过后与 contract、设计阶段并行；implement 必须等测试用例通过后才能真正放行。
-- ux-acceptance-authoring、commercial-acceptance-authoring：登记在阶段常量中，作为验收用例或商用验收编写阶段；收到 advance prompt 时按条件阶段执行。
-- pm-commercial-review：smoke-test 后与 ux-acceptance 并行，regression 等两者都通过后再继续。
-- readme-update：终局链阶段，通常插在 verify 与 publish-generalization-gate 附近；收到 advance prompt 时必须执行 README 同步判断。
-- clean-install-verification：发布后干净环境验收阶段；若被路由或 post-release 链路触发，ledger 前必须通过。
-- e2e-verification、convergence-gap-analysis：按项目配置或终局差距扫描触发；收到 advance prompt 时视为正式阶段，不当作可选建议。
+阶段说明：
+
+- `publish-generalization-gate` 是主链中的发布通用化门禁，同时负责通用化检查与发布分流；不得拆成代码不可解析的独立阶段。
+- `readme` 由终局链补齐，位置在 verify 之后、post-release-validation 之前；若 README 无需变更，也必须写出不变更理由和证据。
+- ALL_STAGES 中的阶段必须按上述名称和顺序执行；设计审计、review-fix loop、e2e 验证和 convergence gap 扫描是派生/辅助处理规则，不得写入主链阶段总览。
 - 设计审计衍生阶段：ux-interaction-design-design-review-*、architecture-design-*-design-review-* 以及对应 fix 阶段，由设计产物完成后自动排队；它们是 implement 的准入门禁。
 - review-fix loop 衍生阶段：*-rfl-fix-*、*-rfl-reval-*，由审计阻断项触发；修复和复验闭环完成前不得继续下游。
 
-Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、ledger。被裁剪的重量级阶段必须留下 skipped 原因；只要 SEVO advance prompt 要求某阶段，主 Agent 直接执行，不二次判断。
+只要 SEVO advance prompt 要求某阶段，主 Agent 直接执行，不二次判断阶段是否应存在。
 
 ## 通用操作约束
 
@@ -160,7 +159,7 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 准入条件：
 
 - spec-review-gate 已通过。
-- full pipeline 默认执行；lightweight pipeline 在设计路由判定需要 UX 时执行。
+- 所有入口都执行本阶段；由 UX Agent 在阶段内判断需要完整交互设计、pass-no-change 还是 pass-not-applicable。
 
 操作方法：
 
@@ -184,7 +183,7 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 准入条件：
 
 - spec-review-gate 已通过。
-- full pipeline 默认执行；lightweight pipeline 在设计路由判定需要架构时执行。
+- 所有入口都执行本阶段；由架构 Agent 在阶段内判断需要完整架构设计、pass-no-change 还是 pass-not-applicable。
 - 若已有 UX 设计，架构必须读取并承接用户操作数据流。
 
 操作方法：
@@ -232,7 +231,7 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 准入条件：
 
 - spec-review-gate 已通过。
-- full pipeline 默认执行；lightweight pipeline 若被裁剪，必须留下 skipped 原因。
+- 所有入口都执行本阶段；由架构 Agent 根据 spec、UX 设计、架构设计和评审结论决定产出深度。
 - 已读取可用的 UX 设计、架构设计和 spec-review-gate 结论。
 
 操作方法：
@@ -366,7 +365,7 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 
 - smoke-test 报告已落盘。
 - 核心路径通过，失败路径有可复现步骤。
-- 失败数为 0，或明确 skipped 且有不适用证据。
+- 失败数为 0；若某检查不适用于本轮，报告必须写明不适用证据并以 pass-not-applicable 结论放行。
 
 异常处理：
 
@@ -377,13 +376,13 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 准入条件：
 
 - smoke-test 已通过。
-- 项目存在 UI、Web 页面、可见交互或用户可操作界面；纯后端/纯 CLI 可声明 no UI 后跳过。
+- 项目存在 UI、Web 页面、可见交互或用户可操作界面；纯后端/纯 CLI 也执行阶段内不适用判定并输出 pass-not-applicable 证据。
 
 操作方法：
 
 - 派 UX 角色用 Playwright 或 agent-browser 操作真实页面。
 - 覆盖完整用户旅程、关键页面、可访问性、视觉质量、错误和空状态。
-- 必须附截图；没有公网 URL 时只能在报告里显式写 skipped (no public URL) 并说明原因。
+- 必须附截图；没有公网 URL 时只能在报告里显式写 pass-not-applicable (no public URL) 并说明原因。
 
 准出标准：
 
@@ -467,25 +466,25 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 准入条件：
 
 - regression 已通过。
-- README、配置、发布目标、项目边界和变更证据可读取。
+- README、配置、发布目标、项目边界、敏感信息边界和变更证据可读取。
 
 操作方法：
 
-- 派架构或审计角色检查通用化和发布分流。
-- 检查硬编码路径/端口/agent/provider、宿主绑定、单 Agent 最小运行路径、README 初始化与错误指引。
+- 派架构或审计角色执行发布通用化门禁。
+- 检查硬编码路径/端口/agent/provider、宿主绑定、单 Agent 可运行路径、README 初始化与错误指引。
 - 同时检查 README 命令示例是否与源码实际解析一致。
-- 若阶段要求机器可读结果，分别输出 generalize 和 publish 结果块。
+- 分类 publicArtifacts、localMainConfig、blockedSensitiveItems、noPublishItems，说明哪些进入 npm/GitHub/ClawHub/独立仓库，哪些只留本地配置，哪些因敏感信息禁止发布。
+- 输出 `[SEVO_PUBLISH_GENERALIZATION_GATE_RESULT]` 机器可读结果块，结论覆盖 passed、pass-not-applicable-with-evidence 或 blocked，并记录发布分流证据。
 
 准出标准：
 
-- 通用化评审报告已落盘。
-- 不存在阻断级硬编码、发布目标不清、README 示例不可执行或第三方无法初始化的问题。
-- 发布分流清楚：哪些进入 npm/GitHub/ClawHub/独立仓库，哪些只留本地配置，哪些因敏感信息禁止发布。
+- publish-generalization-gate 评审报告已落盘。
+- 不存在阻断级硬编码、README 示例不可执行、第三方无法初始化或发布分流不完整的问题。
+- 通用化结论与发布分流均有证据支撑，可供 deploy 阶段读取。
 
 异常处理：
 
-- 通用化失败：回到 implement 或 readme-update 修复。
-- 发布分流不完整：阻断 deploy。
+- 门禁失败：回到 implement 或 readme 修复；发布分流不完整时阻断 deploy。
 
 ## deploy
 
@@ -503,7 +502,7 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 准出标准：
 
 - deploy 结果报告或状态记录已落盘。
-- 所有声明发布目标有明确 passed / skipped-with-evidence / blocked 结果。
+- 所有声明发布目标有明确 passed / pass-not-applicable-with-evidence / blocked 结果。
 - 成功发布后产物可供 verify 阶段访问。
 
 异常处理：
@@ -535,7 +534,7 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 - FR 未覆盖或运行态不可用：回到 implement/review/deploy 对应阶段修复。
 - 只证明代码存在、没有证明功能在跑：verify 失败。
 
-## readme-update
+## readme
 
 准入条件：
 
@@ -545,12 +544,12 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 操作方法：
 
 - 派 PM 角色判断 README 是否需要更新。
-- 需要更新时直接编辑 README，并同步独立仓库规则；不需要更新时不改文件，但写明跳过理由。
+- 需要更新时直接编辑 README，并同步独立仓库规则；不需要更新时不改文件，但写明 pass-no-change 理由。
 - README 不得出现面向用户无意义的 FR/AC/NFR/内部术语。
 
 准出标准：
 
-- readme-update 报告已落盘。
+- readme 报告已落盘。
 - README 与实际代码、命令、发布状态一致。
 - 独立仓库同步状态已记录。
 
@@ -596,7 +595,7 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 准出标准：
 
 - clean-install 报告已落盘。
-- L1/L2/L3 检查均通过，且报告非空、有结构化结果。
+- 安装、入口、运行验证检查均通过，且报告非空、有结构化结果。
 
 异常处理：
 
@@ -628,7 +627,7 @@ Lightweight pipeline 仍然必须至少走 spec、implement、review、verify、
 
 准入条件：
 
-- 所有 required stages 已 passed 或有证据充分的 skipped。
+- 所有主链阶段已 passed；不适用场景必须由对应阶段产出 pass-not-applicable 证据，不得缺阶段记录。
 - review-fix loop、design-review loop、post-release gap、clean-install 阻断项全部关闭。
 
 操作方法：

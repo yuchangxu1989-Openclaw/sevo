@@ -6,10 +6,9 @@ import * as path from 'node:path';
 import { buildStageHandlers } from '../../cli/cmd-advance.js';
 import {
   PipelineEngine,
-  CANONICAL_14_STAGES,
   listStageBindings,
 } from '../pipeline-engine.js';
-import { STAGE_IDS } from '../../constants.js';
+import { ALL_STAGES, STAGE_IDS } from '../../constants.js';
 
 describe('CLI PipelineEngine (engine/pipeline-engine.ts)', () => {
   const tmpDirs: string[] = [];
@@ -28,13 +27,14 @@ describe('CLI PipelineEngine (engine/pipeline-engine.ts)', () => {
     }
   });
 
-  it('create() writes state.json with all 14 canonical stages', () => {
+  it('create() writes state.json with the complete canonical stage chain', () => {
     const base = makeBase();
     const engine = new PipelineEngine(base);
     const state = engine.create('p1');
 
     expect(state.pipelineId).toBe('p1');
-    expect(state.requiredStages).toHaveLength(14);
+    expect(state.requiredStages).toHaveLength(ALL_STAGES.length);
+    expect(state.requiredStages).toEqual(ALL_STAGES);
     expect(state.status).toBe('created');
     expect(state.currentStage).toBe(STAGE_IDS.SPEC);
     expect(state.description).toBeUndefined();
@@ -42,7 +42,7 @@ describe('CLI PipelineEngine (engine/pipeline-engine.ts)', () => {
     const fp = path.join(base, 'p1', 'state.json');
     expect(fs.existsSync(fp)).toBe(true);
     const persisted = JSON.parse(fs.readFileSync(fp, 'utf-8'));
-    expect(persisted.requiredStages).toEqual(CANONICAL_14_STAGES);
+    expect(persisted.requiredStages).toEqual(ALL_STAGES);
   });
 
   it('advanceAsync() runs the next stage, writes artifact, transitions state', async () => {
@@ -87,13 +87,16 @@ describe('CLI PipelineEngine (engine/pipeline-engine.ts)', () => {
     const demoState = engine.load('demo');
     expect(demoState.status).toBe('blocked');
     expect(demoState.currentStage).toBe(STAGE_IDS.README);
-    expect(demoState.history).toHaveLength(CANONICAL_14_STAGES.length - 1);
+    const readmeStageIndex = ALL_STAGES.indexOf(STAGE_IDS.README);
+    expect(demoState.history).toHaveLength(readmeStageIndex + 1);
     expect(demoState.description).toBe('测试描述');
-    for (const sid of CANONICAL_14_STAGES.filter((stageId) => stageId !== STAGE_IDS.README && stageId !== STAGE_IDS.LEDGER)) {
+    for (const sid of ALL_STAGES.slice(0, readmeStageIndex)) {
       expect(demoState.stages[sid]?.status).toBe('passed');
     }
     expect(demoState.stages[STAGE_IDS.README]?.status).toBe('gate_blocked');
-    expect(demoState.stages[STAGE_IDS.LEDGER]?.status).toBe('pending');
+    for (const sid of ALL_STAGES.slice(readmeStageIndex + 1)) {
+      expect(demoState.stages[sid]?.status).toBe('pending');
+    }
 
     const demoSpec = fs.readFileSync(path.join(base, 'demo', 'docs', 'product-requirements.md'), 'utf-8');
     const demo2Spec = fs.readFileSync(path.join(base, 'demo2', 'docs', 'product-requirements.md'), 'utf-8');

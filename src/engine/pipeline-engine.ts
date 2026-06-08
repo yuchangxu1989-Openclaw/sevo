@@ -1,6 +1,6 @@
 /**
  * SEVO Pipeline Engine — CLI-facing engine that drives a pipeline through
- * its 14 stages by invoking each stage's handler in turn.
+ * its complete stage chain by invoking each stage's handler in turn.
  *
  * This is intentionally separate from `src/pipeline/pipeline-engine.ts` (the
  * in-memory engine consumed by tests and the OpenClaw plugin adapter). The
@@ -116,7 +116,7 @@ export interface EnginePipelineState {
 export interface CreatePipelineOptions {
   /** Optional task description recorded on the state. */
   description?: string;
-  /** Override required stage list. Default: full 14-stage canonical sequence. */
+  /** Override required stage list. Default: complete canonical sequence. */
   requiredStages?: StageId[];
 }
 
@@ -156,31 +156,6 @@ export interface StageHandlerResult {
 }
 
 export type StageHandler = (ctx: StageHandlerContext) => Promise<StageHandlerResult>;
-
-// ─── Canonical 14-stage sequence (spec FR-13/FR-14, arc42 §6.1) ───
-//
-// The full canonical sequence in src/constants.ts ALL_STAGES has 21 entries
-// because it includes parallel-branch authoring stages and a few P0 add-ons.
-// The CLI engine drives the linear 14 main stages by default; parallel
-// authoring stages are folded into their parent. Tests/adapters can override
-// the list.
-
-export const CANONICAL_14_STAGES: StageId[] = [
-  STAGE_IDS.SPEC,
-  STAGE_IDS.SPEC_REVIEW_GATE,
-  STAGE_IDS.CONTRACT,
-  STAGE_IDS.CONTRACT_REVIEW_GATE,
-  STAGE_IDS.IMPLEMENT,
-  STAGE_IDS.REVIEW,
-  STAGE_IDS.SMOKE_TEST,
-  STAGE_IDS.UX_ACCEPTANCE,
-  STAGE_IDS.REGRESSION,
-  STAGE_IDS.PUBLISH_GENERALIZATION_GATE,
-  STAGE_IDS.DEPLOY,
-  STAGE_IDS.VERIFY,
-  STAGE_IDS.README,
-  STAGE_IDS.LEDGER,
-];
 
 // ─── Persistence helpers (atomic write, append-only events) ──────
 
@@ -258,11 +233,9 @@ const STAGE_BINDINGS: StageBinding[] = [
   { stageId: STAGE_IDS.LEDGER, stageClass: LedgerStage },
 ];
 
-// Touch CommercializationGate so the import is referenced even if the
-// canonical 14-stage list does not include the explicit commercialization
-// gate stage id (folded into pm-commercial-review).
+// Touch CommercializationGate so the import remains referenced even though
+// pm-commercial-review is currently wired to CommercialAcceptanceStage.
 void CommercializationGate;
-void ALL_STAGES;
 
 const STAGE_BINDING_BY_ID: Record<string, StageBinding> =
   Object.fromEntries(STAGE_BINDINGS.map((b) => [b.stageId, b]));
@@ -341,7 +314,7 @@ export class PipelineEngine {
 
   /** Create a new pipeline state and persist it to disk. */
   create(pipelineId: string, options: CreatePipelineOptions = {}): EnginePipelineState {
-    const stagesList = options.requiredStages ?? CANONICAL_14_STAGES;
+    const stagesList = options.requiredStages ?? [...ALL_STAGES];
     const now = this.now();
 
     const stages: Record<string, EngineStageRecord> = {};
