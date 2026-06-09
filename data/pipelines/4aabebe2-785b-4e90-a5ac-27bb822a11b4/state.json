@@ -1,7 +1,7 @@
 {
-  "pipelineId": "0575b640-9440-49f3-aaef-fbf2ebd03d50",
-  "taskId": "task-fr-50-mq5iddql",
-  "level": "L1",
+  "pipelineId": "4aabebe2-785b-4e90-a5ac-27bb822a11b4",
+  "taskId": "task-entry-mq682rl0",
+  "level": "L2+",
   "requiredStages": [
     "spec",
     "spec-review-gate",
@@ -22,18 +22,13 @@
     "post-release-validation",
     "ledger"
   ],
-  "skippedStages": [
-    {
-      "stage": "architecture-design",
-      "reason": "未配置 LLM，按安全默认值触发条件性设计阶段；范围未显示多域、数据模型或多文件复杂变更，暂不触发 Architecture Design"
-    }
-  ],
+  "skippedStages": [],
   "stages": {
     "spec": {
       "stageId": "spec",
       "status": "active",
       "artifacts": [],
-      "startedAt": "2026-06-08T17:52:19.155Z"
+      "startedAt": "2026-06-09T05:51:53.910Z"
     },
     "spec-review-gate": {
       "stageId": "spec-review-gate",
@@ -57,6 +52,11 @@
     },
     "ux-interaction-design": {
       "stageId": "ux-interaction-design",
+      "status": "pending",
+      "artifacts": []
+    },
+    "architecture-design": {
+      "stageId": "architecture-design",
       "status": "pending",
       "artifacts": []
     },
@@ -135,11 +135,6 @@
       "status": "pending",
       "artifacts": []
     },
-    "architecture-design": {
-      "stageId": "architecture-design",
-      "status": "skipped",
-      "artifacts": []
-    },
     "generalize": {
       "status": "pending"
     },
@@ -150,9 +145,9 @@
       "status": "pending"
     }
   },
-  "currentStage": "cancelled",
-  "createdAt": "2026-06-08T17:52:19.154Z",
-  "updatedAt": "2026-06-08T17:52:19.155Z",
+  "currentStage": "spec",
+  "createdAt": "2026-06-09T05:51:53.909Z",
+  "updatedAt": "2026-06-09T05:51:53.910Z",
   "stagePlan": {
     "requiredStages": [
       "spec",
@@ -194,10 +189,6 @@
   ],
   "scaleReason": "single full pipeline",
   "advancePromptCounts": {
-    "sevo:fr-50:spec:1": 6
-  },
-  "completedAt": "2026-06-09T00:00:00Z",
-  "cancelReason": "fix-entry-bug-misfire",
-  "status": "cancelled",
-  "cancelledAt": "2026-06-09T02:51:20.439Z"
+    "sevo:entry:spec:1": 6
+  }
 }

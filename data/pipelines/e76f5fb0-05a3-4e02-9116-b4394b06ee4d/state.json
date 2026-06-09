@@ -1,6 +1,6 @@
 {
-  "pipelineId": "0575b640-9440-49f3-aaef-fbf2ebd03d50",
-  "taskId": "task-fr-50-mq5iddql",
+  "pipelineId": "e76f5fb0-05a3-4e02-9116-b4394b06ee4d",
+  "taskId": "task-sevo-mq6d832b",
   "level": "L1",
   "requiredStages": [
     "spec",
@@ -33,7 +33,9 @@
       "stageId": "spec",
       "status": "active",
       "artifacts": [],
-      "startedAt": "2026-06-08T17:52:19.155Z"
+      "startedAt": "2026-06-09T08:16:00.135Z",
+      "needsPassNoChangeReview": true,
+      "artifactExistsAt": "2026-06-09T08:16:00.135Z"
     },
     "spec-review-gate": {
       "stageId": "spec-review-gate",
@@ -150,9 +152,9 @@
       "status": "pending"
     }
   },
-  "currentStage": "cancelled",
-  "createdAt": "2026-06-08T17:52:19.154Z",
-  "updatedAt": "2026-06-08T17:52:19.155Z",
+  "currentStage": "spec",
+  "createdAt": "2026-06-09T08:16:00.133Z",
+  "updatedAt": "2026-06-09T08:16:00.135Z",
   "stagePlan": {
     "requiredStages": [
       "spec",
@@ -194,10 +196,6 @@
   ],
   "scaleReason": "single full pipeline",
   "advancePromptCounts": {
-    "sevo:fr-50:spec:1": 6
-  },
-  "completedAt": "2026-06-09T00:00:00Z",
-  "cancelReason": "fix-entry-bug-misfire",
-  "status": "cancelled",
-  "cancelledAt": "2026-06-09T02:51:20.439Z"
+    "sevo:sevo:spec:1": 6
+  }
 }

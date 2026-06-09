@@ -246,7 +246,7 @@
     }
   ],
   "advancePromptCounts": {
-    "sevo:sevo:spec:1": 4
+    "sevo:sevo:spec:1": 6
   },
   "completedAt": "2026-06-09T00:00:00Z",
   "cancelReason": "fix-entry-bug-misfire",

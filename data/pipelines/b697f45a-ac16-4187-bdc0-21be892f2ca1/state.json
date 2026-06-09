@@ -1,6 +1,6 @@
 {
-  "pipelineId": "0575b640-9440-49f3-aaef-fbf2ebd03d50",
-  "taskId": "task-fr-50-mq5iddql",
+  "pipelineId": "b697f45a-ac16-4187-bdc0-21be892f2ca1",
+  "taskId": "task-sevo-mq66en89",
   "level": "L1",
   "requiredStages": [
     "spec",
@@ -31,14 +31,20 @@
   "stages": {
     "spec": {
       "stageId": "spec",
-      "status": "active",
+      "status": "passed",
       "artifacts": [],
-      "startedAt": "2026-06-08T17:52:19.155Z"
+      "startedAt": "2026-06-09T05:05:08.893Z",
+      "needsPassNoChangeReview": true,
+      "artifactExistsAt": "2026-06-09T05:05:08.894Z",
+      "passReason": "fix-entry-passthrough",
+      "completedAt": "2026-06-09T05:05:08.908Z"
     },
     "spec-review-gate": {
       "stageId": "spec-review-gate",
-      "status": "pending",
-      "artifacts": []
+      "status": "passed",
+      "artifacts": [],
+      "passReason": "fix-entry-passthrough",
+      "completedAt": "2026-06-09T05:05:08.908Z"
     },
     "test-case-authoring": {
       "stageId": "test-case-authoring",
@@ -57,23 +63,30 @@
     },
     "ux-interaction-design": {
       "stageId": "ux-interaction-design",
-      "status": "pending",
-      "artifacts": []
+      "status": "passed",
+      "artifacts": [],
+      "passReason": "fix-entry-passthrough",
+      "completedAt": "2026-06-09T05:05:08.908Z"
     },
     "contract": {
       "stageId": "contract",
-      "status": "pending",
-      "artifacts": []
+      "status": "passed",
+      "artifacts": [],
+      "passReason": "fix-entry-passthrough",
+      "completedAt": "2026-06-09T05:05:08.908Z"
     },
     "contract-review-gate": {
       "stageId": "contract-review-gate",
-      "status": "pending",
-      "artifacts": []
+      "status": "passed",
+      "artifacts": [],
+      "passReason": "fix-entry-passthrough",
+      "completedAt": "2026-06-09T05:05:08.908Z"
     },
     "implement": {
       "stageId": "implement",
-      "status": "pending",
-      "artifacts": []
+      "status": "active",
+      "artifacts": [],
+      "startedAt": "2026-06-09T05:05:08.908Z"
     },
     "review": {
       "stageId": "review",
@@ -137,8 +150,10 @@
     },
     "architecture-design": {
       "stageId": "architecture-design",
-      "status": "skipped",
-      "artifacts": []
+      "status": "passed",
+      "artifacts": [],
+      "passReason": "fix-entry-passthrough",
+      "completedAt": "2026-06-09T05:05:08.908Z"
     },
     "generalize": {
       "status": "pending"
@@ -150,9 +165,9 @@
       "status": "pending"
     }
   },
-  "currentStage": "cancelled",
-  "createdAt": "2026-06-08T17:52:19.154Z",
-  "updatedAt": "2026-06-08T17:52:19.155Z",
+  "currentStage": "spec",
+  "createdAt": "2026-06-09T05:05:08.892Z",
+  "updatedAt": "2026-06-09T05:05:08.907Z",
   "stagePlan": {
     "requiredStages": [
       "spec",
@@ -193,11 +208,12 @@
     "readme-update"
   ],
   "scaleReason": "single full pipeline",
+  "requestedStage": "implement",
+  "entryStage": "spec",
   "advancePromptCounts": {
-    "sevo:fr-50:spec:1": 6
+    "sevo:sevo:implement:1": 4
   },
-  "completedAt": "2026-06-09T00:00:00Z",
-  "cancelReason": "fix-entry-bug-misfire",
   "status": "cancelled",
-  "cancelledAt": "2026-06-09T02:51:20.439Z"
+  "cancelledAt": "2026-06-09T05:27:57.557Z",
+  "cancelReason": "止血: 误创建pipeline消除advance噪音"
 }

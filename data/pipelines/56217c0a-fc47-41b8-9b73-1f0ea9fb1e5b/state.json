@@ -199,7 +199,7 @@
   "requestedStage": "implement",
   "entryStage": "spec",
   "advancePromptCounts": {
-    "sevo:kivo:spec-review-gate:1": 1
+    "sevo:kivo:spec-review-gate:1": 6
   },
   "status": "cancelled",
   "cancelReason": "fix-entry-bug-misfire",

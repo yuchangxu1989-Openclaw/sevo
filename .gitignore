@@ -9,6 +9,14 @@ state/
 !scripts/**/*.js
 !web/**/*.js
 !skill/**/*.js
+!src/run-store.js
+!src/label-protocol.js
+!src/completion-handler.js
+!src/prompt-injector.js
+!src/pipeline-commands.js
+!src/index.js
+!index.js
+!data/v2-enabled
 
 # 内部运行态
 .env
