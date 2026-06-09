@@ -457,6 +457,7 @@ Why：SEVO 没有主会话拥有的实时上下文。若 SEVO 自己派任务，
   - AC-4.24h：评审报告、问题清单、修复任务状态、复验结果的全链路状态在驾驶舱实时可见。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.24i：修复→复验循环有最大轮次上限（默认 3 轮），超限后升级为人工介入，防止无限循环。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
   - AC-4.24j：P2/P3 问题记录为待办项，不阻断当前门禁放行，但纳入后续迭代的输入。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-4.24k：记录任务到 TASKS.md 时，不许因精简字数而曲解用户原本的意图，必须带上用户原话。 验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件、状态字段或 TASKS.md 记录片段之一），缺少证据、字段值不符、未包含用户原话或无法复现均判定为 `fail`。
 
 ### FR-06f 流水线审计阶段自动闭环
 
@@ -2644,3 +2645,30 @@ Why：只在选错后拦截，会让主会话看到规则却看不到路径，�
 - AC-38c.10：提示内容应短而可执行，单项目注入正文不超过 300 字；结构化字段可完整记录在注入事件中。验收时检查实际 prompt 注入文本，超过 300 字且不是多项目确认场景即 fail。
 - AC-38c.11：当同一 `projectSlug` 下存在多条 active 或 recent pipeline，且用户消息或任务描述无法唯一定位 `pipelineId` 时，SEVO 不得默认选择任一 pipeline 注入单一推荐；注入内容必须列出每条候选 pipeline 的 `pipelineId`、`currentStage`、`lastActivityAt` 和匹配依据，并提示主会话先选择 pipeline。验收时构造同一项目多条 active pipeline 的消息，缺少候选列表、缺少任一候选 pipeline 的 ID/当前阶段/最后活动时间，或默认选择最近 pipeline，即 fail。
 - AC-38c.12：当目标 pipeline 已到终局且 `pendingStages=[]`、所有必需阶段已完成时，注入内容必须明确提示“所有阶段已完成，无需新的阶段推进”，`recommendedNextStage` 不得推荐任何普通阶段；可提示主会话判断结束当前 pipeline、创建新 pipeline，或按新增范围重入。验收时构造 completed pipeline 的项目消息，注入内容若重复推荐 review、ux、publish、ledger 等旧阶段，或未明确说明无需阶段推进，即 fail。
+
+### FR-50 向量化路由分类器（替代 LLM 语义分类）
+
+OpenClaw（pm-01 子Agent）2026-06-09
+
+- **定位**：SEVO 语义分类与路由判断的基础能力。用于判断任务是否进入流水线、从哪个阶段进入，以及低置信度场景的兜底判定。该 FR 将高频路由判断从 LLM 主判定改为 embedding + cosine similarity 主判定；LLM 只在向量置信度不足时作为 fallback。
+- **服务原则**：原则 1（任意入口全自动走到终局）、原则 2（任意入口先核实 Spec）、原则 3（一致性闭环校验）、原则 7（语义路由优先）。
+- **触发时机**：用户消息、主会话派发任务、SEVO 入口命令、阶段推进建议、completion 后续动作等需要判断是否纳入 SEVO 或从哪个阶段继续推进的场景。
+- **输入**：用户原始意图、任务上下文、当前项目与流水线状态、路由场景样本库、embedding provider 配置、低置信度 fallback 所需的语义判断上下文。
+- **处理**：
+  1. 对高频、可样本化的路由判断使用 embedding cosine similarity 匹配，以语义相似度识别任务是否进入流水线以及应进入的阶段。
+  1. 对置信度足够高的判断直接给出路由结果，避免每次调用 LLM。
+  1. 对置信度处于灰区的判断调用 LLM fallback，并记录 fallback 原因、耗时、结果和是否超时。
+  1. 对置信度明显不足的判断走默认路径，并留下可复核的判定证据。
+  1. spec-gap 检测保留 LLM，因为它需要跨上下文理解需求、现有 Spec 与交付边界之间的真实缺口；LLM 不可用时必须降级为明确的“无法完成深度判断”结果，而不是静默跳过。
+- **输出**：结构化路由结果，至少包含场景、命中样本、cosine 分数、置信度区间、最终路由、是否 fallback、fallback 结果或降级原因。
+- **边界**：本 FR 只约束 sevo-pipeline 插件的分类逻辑，不改变 Pipeline 状态机，不改变阶段定义，不改变 advance prompt 生成规则，不把 spec-gap 检测改成纯向量判断。
+- **Why**：当前依赖 LLM classifier 的语义路由在真实运行中频繁超时或限频，已观测到 42 次 `llm-unavailable`、1 次成功，实际贡献接近零。路由判断属于高频、低延迟、可样本化任务，向量匹配可把常见意图判断控制在 200ms 内，并且不受 LLM 调用限频影响。LLM 应用于灰区和深度语义判断，而不是承担每次入口路由的主路径。
+- **用户视角验证准则**：用户发出研发相关任务后，系统能稳定、快速判断是否进入 SEVO，并给出正确阶段入口；即使 LLM classifier 超时或限频，常见任务也不会因此失去流水线路由。
+- **验收标准**：
+  - AC-50.1：任务是否进入流水线的路由判断必须使用 embedding cosine similarity 作为主路径；高置信度命中时不得调用 LLM。验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-50.2：阶段路由判断必须使用 embedding cosine similarity 作为主路径，能够区分从 Spec、Plan、Implement、Review、Fix、Publish、Verify 等阶段进入或继续推进的常见意图。验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-50.3：spec-gap 检测必须保留 LLM 深度语义判断；LLM 超时或不可用时，结果必须降级为明确的 `degraded` 或等价状态，并记录超时、不可用原因和后续默认处理，不得静默当作无缺口。验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-50.4：向量库样本必须按路由场景管理，每个路由场景至少包含 10 条正向样本，并支持增量更新；新增样本后无需重写全部样本库即可参与后续匹配。验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-50.5：置信度阈值采用建议值：cosine > 0.85 直接路由；0.6-0.85 调用 LLM fallback；< 0.6 走默认路径。实现时可根据审计数据调整阈值，但每次调整必须留下阈值、样本集、命中率和误判率依据。验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-50.6：embedding provider 必须从 OpenClaw 配置读取；当前环境可使用 `volcengine-ark / doubao-embedding-vision-251215`，但 SEVO 不得把 provider、model 或维度写死成不可替换常量。验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。
+  - AC-50.7：路由向量库必须持久化到 SEVO 项目可审计的数据目录，例如 `projects/sevo/data/route-vectors.json`；持久化内容至少包含场景、样本文本、向量、模型标识、更新时间和版本信息。验收验证：审计时按本条描述执行或复现对应操作，记录结构化结果 `{ acId, status, evidence, reason }`；`status` 必须为 `pass`，`evidence` 必须包含可观测输出（文件路径、CLI 输出、API 响应、页面截图、审计事件或状态字段之一），缺少证据、字段值不符或无法复现均判定为 `fail`。

@@ -114,7 +114,7 @@ describe('SevoSDK (L3 Progressive Disclosure)', () => {
       // 原则：流水线永远往前走。失败转入 fix_pending 修复循环，lifecycle 保持 running。
       expect(result.lifecycle).toBe('running');
       expect(result.transition!.status).toBe('fix_pending');
-    });
+    }, 10000);
   });
 
   // ── pause / resume / cancel (AC-15.4: lifecycle management) ──

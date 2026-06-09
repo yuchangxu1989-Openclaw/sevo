@@ -1,0 +1,248 @@
+{
+  "pipelineId": "5caf4165-ccfd-4f5a-b5d3-ce96039bc57e",
+  "taskId": "task-kivo-mq5hy61k",
+  "level": "L1",
+  "requiredStages": [
+    "spec",
+    "spec-review-gate",
+    "ux-interaction-design",
+    "architecture-design",
+    "contract",
+    "contract-review-gate",
+    "implement",
+    "review",
+    "smoke-test",
+    "ux-acceptance",
+    "regression",
+    "generalize",
+    "publish",
+    "deploy",
+    "verify",
+    "readme-update",
+    "post-release-validation",
+    "ledger"
+  ],
+  "skippedStages": [
+    {
+      "stage": "architecture-design",
+      "reason": "未配置 LLM，按安全默认值触发条件性设计阶段；范围未显示多域、数据模型或多文件复杂变更，暂不触发 Architecture Design"
+    }
+  ],
+  "stages": {
+    "spec": {
+      "stageId": "spec",
+      "status": "active",
+      "artifacts": [],
+      "startedAt": "2026-06-08T17:40:29.357Z"
+    },
+    "spec-review-gate": {
+      "stageId": "spec-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "test-case-authoring": {
+      "stageId": "test-case-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance-authoring": {
+      "stageId": "ux-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "commercial-acceptance-authoring": {
+      "stageId": "commercial-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-interaction-design": {
+      "stageId": "ux-interaction-design",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract": {
+      "stageId": "contract",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract-review-gate": {
+      "stageId": "contract-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "implement": {
+      "stageId": "implement",
+      "status": "pending",
+      "artifacts": []
+    },
+    "review": {
+      "stageId": "review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "smoke-test": {
+      "stageId": "smoke-test",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance": {
+      "stageId": "ux-acceptance",
+      "status": "pending",
+      "artifacts": []
+    },
+    "pm-commercial-review": {
+      "stageId": "pm-commercial-review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "regression": {
+      "stageId": "regression",
+      "status": "pending",
+      "artifacts": []
+    },
+    "publish-generalization-gate": {
+      "stageId": "publish-generalization-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "deploy": {
+      "stageId": "deploy",
+      "status": "pending",
+      "artifacts": []
+    },
+    "verify": {
+      "stageId": "verify",
+      "status": "pending",
+      "artifacts": []
+    },
+    "readme": {
+      "stageId": "readme",
+      "status": "pending",
+      "artifacts": []
+    },
+    "post-release-validation": {
+      "stageId": "post-release-validation",
+      "status": "pending",
+      "artifacts": []
+    },
+    "clean-install-verification": {
+      "stageId": "clean-install-verification",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ledger": {
+      "stageId": "ledger",
+      "status": "pending",
+      "artifacts": []
+    },
+    "architecture-design": {
+      "stageId": "architecture-design",
+      "status": "skipped",
+      "artifacts": []
+    },
+    "generalize": {
+      "status": "pending"
+    },
+    "publish": {
+      "status": "pending"
+    },
+    "readme-update": {
+      "status": "pending"
+    }
+  },
+  "currentStage": "cancelled",
+  "createdAt": "2026-06-08T17:40:29.355Z",
+  "updatedAt": "2026-06-08T17:40:42.277Z",
+  "stagePlan": {
+    "requiredStages": [
+      "spec",
+      "spec-review-gate",
+      "ux-interaction-design",
+      "architecture-design",
+      "contract",
+      "contract-review-gate",
+      "implement",
+      "review",
+      "smoke-test",
+      "ux-acceptance",
+      "regression",
+      "generalize",
+      "publish",
+      "deploy",
+      "verify",
+      "readme-update",
+      "post-release-validation",
+      "ledger"
+    ],
+    "skippedStages": [],
+    "endgamePolicy": {
+      "recoverSkippedEndgameBeforeCompletion": true,
+      "includeDeploy": true
+    }
+  },
+  "tier": 3,
+  "fr19EndgameChain": [
+    "implement",
+    "review",
+    "smoke-test",
+    "regression",
+    "generalize",
+    "publish",
+    "deploy",
+    "verify",
+    "readme-update"
+  ],
+  "scaleReason": "single full pipeline",
+  "requestedStage": "implement",
+  "entryStage": "spec",
+  "specGapAdvisories38a": [
+    {
+      "projectSlug": "kivo",
+      "taskId": "task-kivo-mq5hy61k",
+      "status": "skipped",
+      "isPureBugFix": false,
+      "introducedConcepts": [],
+      "matchedFrAc": [],
+      "gapSummary": "",
+      "recommendedSpecPatch": "",
+      "severity": "low",
+      "confidence": 0,
+      "reason": "llm-timeout",
+      "createdAt": "2026-06-08T17:40:42.274Z",
+      "model": null,
+      "requestId": null,
+      "detectionMethod": "llm-semantic",
+      "inputSummary": "[Tue 2026-06-09 01:40 GMT+8] <<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>>\nOpenClaw runtime context (internal):\nThis context is runtime-generated, not user-authored. Keep internal details private.\n\n[Internal task completion event]\nsource: subagent\nsession_key: agent:opencode:acp:a0240f89-f088-4617-8686-fabbb37a8662\nsession_id: ec89ebb8-b760-4c3c-b1fc-085286da61fe\ntype: subagent task\ntask: sevo:fix KIVO We",
+      "asyncRetryScheduled": true
+    },
+    {
+      "projectSlug": "kivo",
+      "taskId": "task-kivo-mq5hy61k",
+      "status": "advisory",
+      "isPureBugFix": false,
+      "introducedConcepts": [
+        "KIVO Web 在非根路径 basePath 部署时，前端 fetch/API 调用必须自动补齐 basePath",
+        "withBasePath 作为前端请求路径规范化边界"
+      ],
+      "matchedFrAc": [],
+      "gapSummary": "任务修复了 Web basePath 部署下裸 fetch 路径错误，但当前规格未定义 KIVO Web 的 basePath 部署支持、请求路径拼接规则或验收边界。",
+      "recommendedSpecPatch": "在域 Z 或域 W 增加 FR/AC：KIVO Web 支持宿主环境配置的 basePath；所有前端发起的站内 API 请求必须通过统一路径构造方法补齐 basePath；在 basePath=/xxx 场景下，页面导航、fetch 请求、错误页重试、活动页和治理页数据加载均不得请求根路径裸 URL，并应提供 grep/集成测试验收。",
+      "severity": "medium",
+      "confidence": 0.86,
+      "reason": "规格中虽有页面路由和工程质量约束，但没有 FR/AC 明确 basePath 部署语义、fetch 路径边界或 withBasePath 行为，因此该修复引入了未定义的部署/请求路径语义。",
+      "createdAt": "2026-06-08T17:40:58.811Z",
+      "model": "gpt-5.5",
+      "requestId": "resp_046c341376007476016a26fe9afa208198ba5ab7e704a3d656",
+      "detectionMethod": "llm-semantic",
+      "inputSummary": "[Tue 2026-06-09 01:40 GMT+8] <<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>>\nOpenClaw runtime context (internal):\nThis context is runtime-generated, not user-authored. Keep internal details private.\n\n[Internal task completion event]\nsource: subagent\nsession_key: agent:opencode:acp:a0240f89-f088-4617-8686-fabbb37a8662\nsession_id: ec89ebb8-b760-4c3c-b1fc-085286da61fe\ntype: subagent task\ntask: sevo:fix KIVO We",
+      "asyncRetry": true
+    }
+  ],
+  "advancePromptCounts": {
+    "sevo:kivo:spec:1": 1
+  },
+  "completedAt": "2026-06-09T00:00:00Z",
+  "cancelReason": "fix-entry-bug-misfire",
+  "status": "cancelled",
+  "cancelledAt": "2026-06-09T02:51:20.434Z"
+}

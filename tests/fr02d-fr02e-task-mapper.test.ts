@@ -94,8 +94,8 @@ describe('FR-02d / FR-02e task mapper integration', () => {
     expect(prompt).toContain('If an Architecture Design artifact exists, it is a mandatory input');
   });
 
-  it('blocks implement when architecture design is not passed', () => {
-    const blockedState = {
+  it('records design advisory and keeps implement active when architecture design is not passed', () => {
+    const advisoryState = {
       requiredStages: ['ux-interaction-design', 'architecture-design', 'implement'],
       stages: {
         implement: { status: 'active' },
@@ -104,15 +104,17 @@ describe('FR-02d / FR-02e task mapper integration', () => {
       },
     };
 
-    const activeStages = queueActiveStagesForFr19('pipe-design-blocked', blockedState);
+    const activeStages = queueActiveStagesForFr19('pipe-design-advisory', advisoryState);
 
-    expect(blockedState.stages.implement.status).toBe('blocked');
-    expect(blockedState.stages.implement.blockReason).toContain('architecture-design');
-    expect(activeStages).toEqual(['architecture-design']);
+    expect(advisoryState.stages.implement.status).toBe('active');
+    expect(advisoryState.stages.implement.blockReason).toBeUndefined();
+    expect(advisoryState.stages.implement.designGateAdvisory).toBeDefined();
+    expect(JSON.stringify(advisoryState.stages.implement.designGateAdvisory)).toContain('architecture-design');
+    expect(activeStages).toEqual(['architecture-design', 'implement']);
   });
 
-  it('blocks implement when UX PM review is not passed', () => {
-    const blockedState = {
+  it('records design advisory and keeps implement active when UX PM review is not passed', () => {
+    const advisoryState = {
       requiredStages: ['ux-interaction-design', 'architecture-design', 'implement'],
       stages: {
         implement: { status: 'active' },
@@ -121,12 +123,15 @@ describe('FR-02d / FR-02e task mapper integration', () => {
       },
     };
 
-    const activeStages = queueActiveStagesForFr19('pipe-ux-review-blocked', blockedState);
+    const activeStages = queueActiveStagesForFr19('pipe-ux-review-advisory', advisoryState);
 
-    expect(blockedState.stages.implement.status).toBe('blocked');
-    expect(blockedState.stages.implement.blockReason).toContain('ux-interaction-design(pmReviewStatus)');
-    expect(activeStages).toEqual([]);
+    expect(advisoryState.stages.implement.status).toBe('active');
+    expect(advisoryState.stages.implement.blockReason).toBeUndefined();
+    expect(advisoryState.stages.implement.designGateAdvisory).toBeDefined();
+    expect(JSON.stringify(advisoryState.stages.implement.designGateAdvisory)).toContain('ux-interaction-design(pmReviewStatus)');
+    expect(activeStages).toEqual(['implement']);
   });
+
 
   it('allows implement when UX stage is absent from required stages', () => {
     const blockedState = {
@@ -151,10 +156,11 @@ describe('FR-02d / FR-02e task mapper integration', () => {
     expect(activeStages).toEqual(['implement']);
   });
 
-  it('AC-4.8n: blocks implement when a passed design stage has empty/missing artifacts', () => {
+  it('AC-4.8n: records design advisory and keeps implement active when a passed design stage has empty/missing artifacts', () => {
     // UX stage status=passed and pmReviewStatus=passed but artifacts=[] →
-    // the design document is not on disk, so Implement must be blocked.
-    const blockedState = {
+    // the design document is not on disk, so Implement records an advisory
+    // while the pipeline keeps moving forward.
+    const advisoryState = {
       requiredStages: ['ux-interaction-design', 'implement'],
       stages: {
         implement: { status: 'active' },
@@ -166,18 +172,20 @@ describe('FR-02d / FR-02e task mapper integration', () => {
       },
     };
 
-    const gate = areDesignStagesSatisfied(blockedState);
+    const gate = areDesignStagesSatisfied(advisoryState);
     expect(gate.satisfied).toBe(false);
     expect(gate.blockers).toContain('ux-interaction-design(artifact-missing)');
 
-    const activeStages = queueActiveStagesForFr19('pipe-ux-empty-artifact', blockedState);
-    expect(blockedState.stages.implement.status).toBe('blocked');
-    expect(blockedState.stages.implement.blockReason).toContain('ux-interaction-design(artifact-missing)');
-    expect(activeStages).toEqual([]);
+    const activeStages = queueActiveStagesForFr19('pipe-ux-empty-artifact', advisoryState);
+    expect(advisoryState.stages.implement.status).toBe('active');
+    expect(advisoryState.stages.implement.blockReason).toBeUndefined();
+    expect(advisoryState.stages.implement.designGateAdvisory).toBeDefined();
+    expect(JSON.stringify(advisoryState.stages.implement.designGateAdvisory)).toContain('ux-interaction-design(artifact-missing)');
+    expect(activeStages).toEqual(['implement']);
   });
 
-  it('AC-4.8n: blocks implement when a passed design artifact path points at a non-existent file', () => {
-    const blockedState = {
+  it('AC-4.8n: records design advisory and keeps implement active when a passed design artifact path points at a non-existent file', () => {
+    const advisoryState = {
       requiredStages: ['architecture-design', 'implement'],
       stages: {
         implement: { status: 'active' },
@@ -188,12 +196,16 @@ describe('FR-02d / FR-02e task mapper integration', () => {
       },
     };
 
-    const gate = areDesignStagesSatisfied(blockedState);
+    const gate = areDesignStagesSatisfied(advisoryState);
     expect(gate.satisfied).toBe(false);
     expect(gate.blockers).toContain('architecture-design(artifact-unreadable)');
 
-    queueActiveStagesForFr19('pipe-arch-unreadable', blockedState);
-    expect(blockedState.stages.implement.status).toBe('blocked');
+    const activeStages = queueActiveStagesForFr19('pipe-arch-unreadable', advisoryState);
+    expect(advisoryState.stages.implement.status).toBe('active');
+    expect(advisoryState.stages.implement.blockReason).toBeUndefined();
+    expect(advisoryState.stages.implement.designGateAdvisory).toBeDefined();
+    expect(JSON.stringify(advisoryState.stages.implement.designGateAdvisory)).toContain('architecture-design(artifact-unreadable)');
+    expect(activeStages).toEqual(['implement']);
   });
 
   it('AC-4.8n: allows implement when a passed design artifact exists and is non-empty', () => {

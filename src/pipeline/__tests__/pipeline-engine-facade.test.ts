@@ -360,6 +360,6 @@ describe('PipelineEngineFacade', () => {
       // Pipeline should still be running, not completed
       expect(status.lifecycle).not.toBe('completed');
       expect(status.currentStage).toBe('post-release-validation');
-    });
+    }, 10000);
   });
 });

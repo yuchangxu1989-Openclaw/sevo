@@ -1,0 +1,255 @@
+{
+  "pipelineId": "b7e35da5-02f9-4d44-a1f1-decad1215db1",
+  "taskId": "task-sevo-mq5ivrvy",
+  "level": "L1",
+  "requiredStages": [
+    "spec",
+    "spec-review-gate",
+    "ux-interaction-design",
+    "architecture-design",
+    "contract",
+    "contract-review-gate",
+    "implement",
+    "review",
+    "smoke-test",
+    "ux-acceptance",
+    "regression",
+    "generalize",
+    "publish",
+    "deploy",
+    "verify",
+    "readme-update",
+    "post-release-validation",
+    "ledger"
+  ],
+  "skippedStages": [
+    {
+      "stage": "architecture-design",
+      "reason": "未配置 LLM，按安全默认值触发条件性设计阶段；范围未显示多域、数据模型或多文件复杂变更，暂不触发 Architecture Design"
+    }
+  ],
+  "stages": {
+    "spec": {
+      "stageId": "spec",
+      "status": "active",
+      "artifacts": [],
+      "startedAt": "2026-06-08T18:06:37.301Z"
+    },
+    "spec-review-gate": {
+      "stageId": "spec-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "test-case-authoring": {
+      "stageId": "test-case-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance-authoring": {
+      "stageId": "ux-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "commercial-acceptance-authoring": {
+      "stageId": "commercial-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-interaction-design": {
+      "stageId": "ux-interaction-design",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract": {
+      "stageId": "contract",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract-review-gate": {
+      "stageId": "contract-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "implement": {
+      "stageId": "implement",
+      "status": "pending",
+      "artifacts": []
+    },
+    "review": {
+      "stageId": "review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "smoke-test": {
+      "stageId": "smoke-test",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance": {
+      "stageId": "ux-acceptance",
+      "status": "pending",
+      "artifacts": []
+    },
+    "pm-commercial-review": {
+      "stageId": "pm-commercial-review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "regression": {
+      "stageId": "regression",
+      "status": "pending",
+      "artifacts": []
+    },
+    "publish-generalization-gate": {
+      "stageId": "publish-generalization-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "deploy": {
+      "stageId": "deploy",
+      "status": "pending",
+      "artifacts": []
+    },
+    "verify": {
+      "stageId": "verify",
+      "status": "pending",
+      "artifacts": []
+    },
+    "readme": {
+      "stageId": "readme",
+      "status": "pending",
+      "artifacts": []
+    },
+    "post-release-validation": {
+      "stageId": "post-release-validation",
+      "status": "pending",
+      "artifacts": []
+    },
+    "clean-install-verification": {
+      "stageId": "clean-install-verification",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ledger": {
+      "stageId": "ledger",
+      "status": "pending",
+      "artifacts": []
+    },
+    "architecture-design": {
+      "stageId": "architecture-design",
+      "status": "skipped",
+      "artifacts": []
+    },
+    "generalize": {
+      "status": "pending"
+    },
+    "publish": {
+      "status": "pending"
+    },
+    "readme-update": {
+      "status": "pending"
+    }
+  },
+  "currentStage": "cancelled",
+  "createdAt": "2026-06-08T18:06:37.300Z",
+  "updatedAt": "2026-06-08T18:06:59.223Z",
+  "stagePlan": {
+    "requiredStages": [
+      "spec",
+      "spec-review-gate",
+      "ux-interaction-design",
+      "architecture-design",
+      "contract",
+      "contract-review-gate",
+      "implement",
+      "review",
+      "smoke-test",
+      "ux-acceptance",
+      "regression",
+      "generalize",
+      "publish",
+      "deploy",
+      "verify",
+      "readme-update",
+      "post-release-validation",
+      "ledger"
+    ],
+    "skippedStages": [],
+    "endgamePolicy": {
+      "recoverSkippedEndgameBeforeCompletion": true,
+      "includeDeploy": true
+    }
+  },
+  "tier": 3,
+  "fr19EndgameChain": [
+    "implement",
+    "review",
+    "smoke-test",
+    "regression",
+    "generalize",
+    "publish",
+    "deploy",
+    "verify",
+    "readme-update"
+  ],
+  "scaleReason": "single full pipeline",
+  "requestedStage": "implement",
+  "entryStage": "spec",
+  "specGapAdvisories38a": [
+    {
+      "projectSlug": "sevo",
+      "taskId": "task-sevo-mq5ivrvy",
+      "status": "skipped",
+      "isPureBugFix": false,
+      "introducedConcepts": [],
+      "matchedFrAc": [],
+      "gapSummary": "",
+      "recommendedSpecPatch": "",
+      "severity": "low",
+      "confidence": 0,
+      "reason": "llm-timeout",
+      "createdAt": "2026-06-08T18:06:59.219Z",
+      "model": null,
+      "requestId": null,
+      "detectionMethod": "llm-semantic",
+      "inputSummary": "[Tue 2026-06-09 02:06 GMT+8] <<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>>\nOpenClaw runtime context (internal):\nThis context is runtime-generated, not user-authored. Keep internal details private.\n\n[Internal task completion event]\nsource: subagent\nsession_key: agent:omp:acp:9afaf203-9ac0-4b87-bcec-e7004c96c9aa\nsession_id: 30dd84ad-9f3c-4968-830c-e7ebaf6782b1\ntype: subagent task\ntask: sevo:fix SEVO测试文件bloc",
+      "asyncRetryScheduled": true
+    },
+    {
+      "projectSlug": "sevo",
+      "taskId": "task-sevo-mq5ivrvy",
+      "status": "advisory",
+      "isPureBugFix": false,
+      "introducedConcepts": [
+        "designGateAdvisory field on the implement stage",
+        "advisory-plus-continue behavior where Implement remains active when required UX or architecture design inputs are missing, unreadable, or not PM-reviewed",
+        "removal of implement.blockReason for design-gate failures",
+        "active stage queue continuing to include implement despite unresolved design-gate prerequisites"
+      ],
+      "matchedFrAc": [
+        "FR-02d",
+        "AC-4.8n",
+        "AC-4.8o",
+        "AC-4.8p2"
+      ],
+      "gapSummary": "The spec defines UX design as a mandatory Implement input after PM review, but does not define a non-blocking designGateAdvisory state or advisory continuation semantics for missing or failed design prerequisites.",
+      "recommendedSpecPatch": "Add or amend an FR/AC to explicitly define design-gate advisory semantics: when UX/architecture design artifacts are missing, unreadable, or unreviewed, whether Implement must be blocked or may remain active; if advisory is allowed, define the designGateAdvisory data shape, user-visible status wording, event behavior, active-stage queue behavior, and the boundary between advisory and hard blocker.",
+      "severity": "high",
+      "confidence": 0.92,
+      "reason": "Existing FR-02d acceptance criteria make UX design and PM review mandatory inputs to Implement, while the task changes expected behavior from blocked to active with a new advisory field; that is a new product state-machine behavior not covered by the supplied FR/AC.",
+      "createdAt": "2026-06-08T18:07:17.188Z",
+      "model": "gpt-5.5",
+      "requestId": "resp_0d4a1eac5f649b7b016a2704c437648199bb37f109ee7bb857",
+      "detectionMethod": "llm-semantic",
+      "inputSummary": "[Tue 2026-06-09 02:06 GMT+8] <<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>>\nOpenClaw runtime context (internal):\nThis context is runtime-generated, not user-authored. Keep internal details private.\n\n[Internal task completion event]\nsource: subagent\nsession_key: agent:omp:acp:9afaf203-9ac0-4b87-bcec-e7004c96c9aa\nsession_id: 30dd84ad-9f3c-4968-830c-e7ebaf6782b1\ntype: subagent task\ntask: sevo:fix SEVO测试文件bloc",
+      "asyncRetry": true
+    }
+  ],
+  "advancePromptCounts": {
+    "sevo:sevo:spec:1": 4
+  },
+  "completedAt": "2026-06-09T00:00:00Z",
+  "cancelReason": "fix-entry-bug-misfire",
+  "status": "cancelled",
+  "cancelledAt": "2026-06-09T02:51:20.439Z"
+}

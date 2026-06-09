@@ -1,0 +1,1664 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-08T17:33:45.025Z",
+  "providerId": null,
+  "model": "__seed__",
+  "thresholds": {
+    "direct": 0.85,
+    "fallback": 0.6
+  },
+  "samples": [
+    {
+      "id": "trigger-01",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 2
+      },
+      "text": "Build a new capability and carry it through specification, implementation, review, and release evidence.",
+      "vector": [
+        0.133,
+        -0.223,
+        0.846,
+        -0.232,
+        -0.085,
+        -0.813,
+        0.764,
+        0.818
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-02",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 2
+      },
+      "text": "Create or modify project files so the requested behavior is delivered and verified.",
+      "vector": [
+        0.658,
+        -0.518,
+        0.483,
+        -0.151,
+        -0.6,
+        -0.388,
+        0.721,
+        0.531
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-03",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 2
+      },
+      "text": "Add a feature with acceptance criteria, tests, code changes, and an audit trail.",
+      "vector": [
+        -0.817,
+        -0.813,
+        0.824,
+        -0.07,
+        0.181,
+        0.037,
+        -0.618,
+        0.244
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-04",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 2
+      },
+      "text": "Refactor a workflow across multiple modules and prove the resulting behavior still works.",
+      "vector": [
+        -0.292,
+        0.892,
+        -0.835,
+        0.011,
+        -0.334,
+        -0.242,
+        -0.661,
+        -0.043
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-05",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 2
+      },
+      "text": "Update product requirements and then implement the corresponding delivery changes.",
+      "vector": [
+        0.233,
+        0.597,
+        0.802,
+        0.796,
+        -0.849,
+        0.183,
+        0,
+        -0.33
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-06",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 2
+      },
+      "text": "Fix a production-impacting defect with code, regression checks, and independent review.",
+      "vector": [
+        0.758,
+        0.302,
+        -0.857,
+        0.877,
+        -0.068,
+        0.608,
+        -0.043,
+        -0.617
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-07",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 2
+      },
+      "text": "Change routing, scheduling, governance, or quality gate behavior in the development system.",
+      "vector": [
+        -0.717,
+        0.007,
+        -0.516,
+        0.958,
+        -0.583,
+        -0.967,
+        0.618,
+        -0.904
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-08",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 2
+      },
+      "text": "Prepare a publishable change and collect evidence that a new user can run it.",
+      "vector": [
+        -0.192,
+        -0.288,
+        -0.879,
+        -0.961,
+        0.902,
+        0.754,
+        0.575,
+        0.809
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-09",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 1
+      },
+      "text": "Write tests first, implement the requested change, and verify the user-facing result.",
+      "vector": [
+        0.333,
+        -0.583,
+        -0.538,
+        -0.88,
+        -0.317,
+        -0.821,
+        -0.764,
+        0.522
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-10",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 1
+      },
+      "text": "Modify configuration or delivery scripts in a way that affects runtime behavior.",
+      "vector": [
+        -0.117,
+        0.335,
+        0.036,
+        0.902,
+        -0.575,
+        -0.991,
+        0.626,
+        0.8
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-11",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 1
+      },
+      "text": "Complete the requested implementation and update any required documentation or evidence.",
+      "vector": [
+        0.408,
+        0.04,
+        0.377,
+        -0.313,
+        0.91,
+        0.73,
+        0.583,
+        0.513
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "trigger-12",
+      "scenario": "pipeline-trigger",
+      "route": {
+        "shouldTrigger": true,
+        "level": 1
+      },
+      "text": "Make a behavior change that needs verification rather than a read-only inspection.",
+      "vector": [
+        0.933,
+        0.449,
+        0.718,
+        -0.232,
+        -0.309,
+        -0.845,
+        -0.756,
+        0.226
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-01",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Define the requirement, scope, boundaries, acceptance criteria, and user verification path.",
+      "vector": [
+        -0.789,
+        -0.865,
+        0.82,
+        0.854,
+        0.673,
+        -0.351,
+        -0.862,
+        -0.912
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-02",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Create the product requirements entry before any implementation work begins.",
+      "vector": [
+        -0.264,
+        0.84,
+        -0.839,
+        0.935,
+        0.158,
+        0.074,
+        -0.905,
+        0.801
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-03",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Clarify the requested behavior into FR and AC coverage.",
+      "vector": [
+        0.261,
+        0.545,
+        0.798,
+        -0.984,
+        -0.357,
+        -0.205,
+        -0.244,
+        0.514
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-04",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Add missing specification coverage for a new capability or boundary.",
+      "vector": [
+        0.786,
+        0.25,
+        -0.861,
+        -0.903,
+        0.424,
+        0.22,
+        -0.287,
+        -0.477
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-05",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Turn a vague request into a complete development specification.",
+      "vector": [
+        -0.689,
+        -0.045,
+        -0.52,
+        -0.822,
+        -0.091,
+        0.645,
+        0.374,
+        -0.764
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-06",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Update the requirements document with measurable acceptance criteria.",
+      "vector": [
+        -0.164,
+        0.364,
+        -0.179,
+        -0.741,
+        -0.606,
+        -0.93,
+        0.331,
+        0.949
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-07",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Resolve product scope before design, code, or review starts.",
+      "vector": [
+        0.361,
+        0.069,
+        -0.542,
+        -0.66,
+        0.175,
+        0.791,
+        0.288,
+        0.662
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-08",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Capture the expected user workflow and pass conditions in the spec.",
+      "vector": [
+        0.886,
+        -0.226,
+        -0.201,
+        -0.579,
+        -0.34,
+        -0.784,
+        0.949,
+        0.375
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-09",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Fill the requirement gap found by audit before continuing downstream.",
+      "vector": [
+        -0.589,
+        -0.521,
+        0.14,
+        -0.498,
+        -0.855,
+        -0.359,
+        0.906,
+        0.088
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-spec-10",
+      "scenario": "stage:spec",
+      "route": {
+        "stage": "spec"
+      },
+      "text": "Write the missing FR, AC, non-goals, and verification evidence requirements.",
+      "vector": [
+        0.961,
+        0.397,
+        0.714,
+        -0.012,
+        0.183,
+        0.767,
+        -1,
+        0.366
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-01",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Plan the architecture and interaction approach before implementation.",
+      "vector": [
+        -0.331,
+        0.257,
+        -0.562,
+        -0.008,
+        -0.773,
+        0.995,
+        -0.436,
+        -0.286
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-02",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Design the system shape, data flow, integration boundary, and rollout approach.",
+      "vector": [
+        0.194,
+        -0.038,
+        -0.221,
+        0.073,
+        0.712,
+        -0.58,
+        -0.479,
+        -0.573
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-03",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Evaluate technical feasibility and produce a design decision.",
+      "vector": [
+        0.719,
+        -0.333,
+        0.12,
+        0.154,
+        -0.507,
+        -0.859,
+        -0.522,
+        -0.86
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-04",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Prepare the implementation plan, risks, dependencies, and architecture notes.",
+      "vector": [
+        -0.756,
+        -0.628,
+        -0.243,
+        0.235,
+        0.978,
+        -0.434,
+        0.139,
+        0.853
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-05",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Decide how components should interact before code is changed.",
+      "vector": [
+        -0.231,
+        -0.923,
+        0.098,
+        0.316,
+        0.463,
+        -0.009,
+        0.096,
+        0.566
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-06",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Create the technical design and confirm the user flow is implementable.",
+      "vector": [
+        0.294,
+        0.782,
+        0.439,
+        0.397,
+        -0.756,
+        0.416,
+        0.757,
+        0.279
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-07",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Assess whether existing architecture can support the requested behavior.",
+      "vector": [
+        0.819,
+        0.487,
+        0.78,
+        0.478,
+        0.729,
+        0.137,
+        0.714,
+        -0.008
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-08",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Document the planned module boundaries and quality risks.",
+      "vector": [
+        -0.656,
+        0.896,
+        0.417,
+        0.559,
+        0.214,
+        0.562,
+        -0.625,
+        -0.295
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-09",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Produce a design artifact for a multi-step product change.",
+      "vector": [
+        -0.131,
+        0.601,
+        0.758,
+        0.64,
+        0.995,
+        0.987,
+        -0.668,
+        0.714
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.026Z"
+    },
+    {
+      "id": "stage-plan-10",
+      "scenario": "stage:plan",
+      "route": {
+        "stage": "architecture-design"
+      },
+      "text": "Review the proposed approach before handing work to implementation.",
+      "vector": [
+        -0.581,
+        -0.481,
+        -0.668,
+        -0.874,
+        0.737,
+        0.113,
+        -0.574,
+        -0.304
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-01",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Implement the approved change in code and keep edits within the requested scope.",
+      "vector": [
+        0.041,
+        0.821,
+        -0.174,
+        0.876,
+        0.671,
+        0.583,
+        -0.224,
+        -0.49
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-02",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Write the tests and production code needed to satisfy the acceptance criteria.",
+      "vector": [
+        0.566,
+        -0.77,
+        -0.537,
+        0.957,
+        0.156,
+        -0.992,
+        -0.267,
+        -0.777
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-03",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Modify the application behavior and verify the implementation locally.",
+      "vector": [
+        -0.909,
+        0.935,
+        -0.196,
+        -0.962,
+        -0.359,
+        0.729,
+        -0.31,
+        0.936
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-04",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Patch the defect and update the affected source files.",
+      "vector": [
+        -0.384,
+        0.64,
+        0.145,
+        -0.881,
+        0.422,
+        -0.846,
+        0.351,
+        0.649
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-05",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Build the requested feature after spec and design are ready.",
+      "vector": [
+        0.141,
+        0.345,
+        -0.218,
+        -0.8,
+        -0.093,
+        -0.421,
+        0.308,
+        0.362
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-06",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Apply the smallest code change that makes the failing behavior pass.",
+      "vector": [
+        0.666,
+        0.05,
+        0.123,
+        -0.719,
+        -0.608,
+        0.004,
+        0.969,
+        0.075
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-07",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Update implementation files and run focused verification.",
+      "vector": [
+        -0.809,
+        -0.245,
+        0.464,
+        0.066,
+        0.173,
+        -0.275,
+        0.926,
+        -0.212
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-08",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Complete the coding task and provide coverage evidence.",
+      "vector": [
+        -0.284,
+        -0.54,
+        0.101,
+        0.147,
+        -0.342,
+        0.15,
+        -0.413,
+        -0.499
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-09",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Change runtime logic according to the accepted plan.",
+      "vector": [
+        0.241,
+        -0.835,
+        0.442,
+        0.228,
+        -0.857,
+        0.575,
+        -0.456,
+        0.51
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-implement-10",
+      "scenario": "stage:implement",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Finish the implementation slice and report which criteria are covered.",
+      "vector": [
+        -0.209,
+        0.083,
+        -0.984,
+        0.01,
+        0.181,
+        -0.299,
+        0.934,
+        -0.508
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-01",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Review the completed implementation for correctness, security, and spec coverage.",
+      "vector": [
+        -0.878,
+        0.33,
+        0.419,
+        0.361,
+        0.824,
+        0.668,
+        0.417,
+        0.467
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-02",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Audit the code changes and identify blocking issues before release.",
+      "vector": [
+        -0.353,
+        0.035,
+        0.76,
+        0.442,
+        0.309,
+        -0.907,
+        -0.922,
+        0.18
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-03",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Perform independent review after the developer reports completion.",
+      "vector": [
+        0.172,
+        -0.26,
+        -0.899,
+        0.523,
+        -0.206,
+        -0.482,
+        -0.965,
+        -0.107
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-04",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Check whether the implementation satisfies every acceptance criterion.",
+      "vector": [
+        0.697,
+        -0.555,
+        0.738,
+        0.604,
+        0.575,
+        -0.761,
+        0.992,
+        -0.394
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-05",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Validate the diff for regressions, missing tests, and unsafe behavior.",
+      "vector": [
+        -0.778,
+        -0.85,
+        -0.921,
+        0.685,
+        0.06,
+        -0.336,
+        -0.347,
+        -0.681
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-06",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Assess the delivered change and produce a pass or fail verdict.",
+      "vector": [
+        -0.253,
+        0.855,
+        -0.58,
+        0.766,
+        -0.455,
+        0.089,
+        -0.39,
+        -0.968
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-07",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Run the review gate and list any required fixes.",
+      "vector": [
+        0.272,
+        0.56,
+        -0.943,
+        0.847,
+        0.326,
+        0.514,
+        0.271,
+        0.745
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-08",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Inspect the implementation evidence before allowing downstream stages.",
+      "vector": [
+        0.797,
+        0.265,
+        -0.602,
+        0.928,
+        -0.189,
+        0.235,
+        0.228,
+        0.458
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-09",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Confirm the submitted work is maintainable and meets the spec.",
+      "vector": [
+        -0.678,
+        -0.03,
+        -0.261,
+        -0.991,
+        -0.704,
+        0.66,
+        0.889,
+        -0.533
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-review-10",
+      "scenario": "stage:review",
+      "route": {
+        "stage": "review"
+      },
+      "text": "Produce an audit verdict for the completed stage.",
+      "vector": [
+        0.872,
+        0.888,
+        0.313,
+        -0.505,
+        0.334,
+        0.49,
+        0.279,
+        0.449
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-01",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Fix the blockers found by review and return the work for revalidation.",
+      "vector": [
+        0.959,
+        -0.285,
+        0.312,
+        -0.07,
+        -0.123,
+        0.469,
+        0.134,
+        0.228
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-02",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Address the failed audit items in the implementation.",
+      "vector": [
+        -0.516,
+        -0.58,
+        -0.051,
+        0.011,
+        0.658,
+        0.894,
+        0.795,
+        -0.059
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-03",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Repair the regression and keep the correction inside the approved scope.",
+      "vector": [
+        0.009,
+        -0.875,
+        0.29,
+        0.092,
+        0.143,
+        -0.681,
+        0.752,
+        -0.346
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-04",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Apply a follow-up patch for the review findings.",
+      "vector": [
+        0.534,
+        0.83,
+        0.631,
+        0.173,
+        -0.372,
+        -0.256,
+        -0.587,
+        -0.633
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-05",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Resolve P0 and P1 issues from the previous gate.",
+      "vector": [
+        -0.941,
+        0.535,
+        0.268,
+        0.254,
+        0.409,
+        -0.535,
+        -0.63,
+        -0.92
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-06",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Correct the implementation defect and prepare for another review.",
+      "vector": [
+        -0.416,
+        0.24,
+        0.609,
+        0.335,
+        -0.106,
+        -0.11,
+        0.031,
+        0.793
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-07",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Make the minimum fix needed for the failed check.",
+      "vector": [
+        0.109,
+        -0.055,
+        0.95,
+        0.416,
+        -0.621,
+        0.315,
+        -0.012,
+        -0.198
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-08",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Close the audit blockers and rerun relevant tests.",
+      "vector": [
+        0.634,
+        -0.35,
+        -0.709,
+        0.497,
+        0.16,
+        0.74,
+        -0.055,
+        -0.485
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-09",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Patch the broken behavior identified during validation.",
+      "vector": [
+        -0.841,
+        -0.645,
+        0.928,
+        0.578,
+        -0.355,
+        0.461,
+        0.606,
+        -0.772
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-fix-10",
+      "scenario": "stage:fix",
+      "route": {
+        "stage": "implement"
+      },
+      "text": "Implement the review fix loop item and preserve traceability.",
+      "vector": [
+        0.709,
+        0.273,
+        -0.498,
+        -0.936,
+        -0.613,
+        0.291,
+        -0.004,
+        -0.494
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-01",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Publish the verified package or delivery artifact to the configured target.",
+      "vector": [
+        -0.915,
+        -0.903,
+        0.918,
+        0.768,
+        -0.333,
+        0.587,
+        -0.06,
+        0.042
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-02",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Prepare release notes, versioning, artifact routing, and publish evidence.",
+      "vector": [
+        -0.39,
+        0.802,
+        -0.741,
+        0.849,
+        0.448,
+        -0.988,
+        -0.103,
+        -0.245
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-03",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Release the completed change after review and regression pass.",
+      "vector": [
+        0.135,
+        0.507,
+        0.896,
+        0.93,
+        -0.067,
+        -0.563,
+        0.558,
+        -0.532
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-04",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Push the deliverable to its external distribution target.",
+      "vector": [
+        0.66,
+        0.212,
+        -0.763,
+        -0.989,
+        -0.582,
+        -0.842,
+        0.515,
+        -0.819
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-05",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Run the publish stage and collect version or commit evidence.",
+      "vector": [
+        -0.815,
+        0.621,
+        -0.422,
+        -0.908,
+        0.199,
+        -0.417,
+        0.472,
+        0.894
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-06",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Finalize release artifacts and record where users can obtain them.",
+      "vector": [
+        -0.29,
+        0.326,
+        -0.081,
+        -0.827,
+        -0.316,
+        0.008,
+        -0.867,
+        -0.097
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-07",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Complete package publication after all quality gates pass.",
+      "vector": [
+        0.235,
+        0.031,
+        -0.444,
+        -0.746,
+        -0.831,
+        0.433,
+        -0.91,
+        -0.384
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-08",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Create a release and document the published artifact location.",
+      "vector": [
+        0.76,
+        -0.264,
+        -0.103,
+        -0.665,
+        -0.05,
+        0.154,
+        -0.249,
+        -0.671
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-09",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Ship the approved build and preserve release evidence.",
+      "vector": [
+        -0.715,
+        -0.559,
+        0.238,
+        -0.584,
+        -0.565,
+        0.579,
+        -0.292,
+        -0.958
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-publish-10",
+      "scenario": "stage:publish",
+      "route": {
+        "stage": "publish"
+      },
+      "text": "Publish only the generalized deliverables and keep local state out of release.",
+      "vector": [
+        0.835,
+        0.359,
+        0.812,
+        -0.098,
+        -0.823,
+        0.409,
+        -0.198,
+        -0.68
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-01",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Verify the released or deployed result from a user perspective.",
+      "vector": [
+        -0.683,
+        -0.463,
+        -0.482,
+        -0.2,
+        0.827,
+        -0.109,
+        -0.996,
+        0.434
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-02",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Run post-release validation and prove the core workflow produces a useful result.",
+      "vector": [
+        -0.158,
+        -0.054,
+        -0.141,
+        -0.119,
+        0.312,
+        0.316,
+        0.961,
+        0.147
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-03",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Check the final deliverable in a clean environment.",
+      "vector": [
+        0.367,
+        -0.349,
+        -0.504,
+        -0.038,
+        -0.907,
+        0.741,
+        -0.378,
+        -0.14
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-04",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Confirm a new user can install, run, and observe the intended outcome.",
+      "vector": [
+        0.892,
+        -0.644,
+        -0.163,
+        0.043,
+        0.578,
+        -0.834,
+        -0.421,
+        -0.427
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-05",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Validate the end-to-end workflow after deployment.",
+      "vector": [
+        -0.583,
+        -0.939,
+        0.178,
+        0.828,
+        0.063,
+        0.887,
+        0.24,
+        0.582
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-06",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Collect final acceptance evidence before ledger closure.",
+      "vector": [
+        -0.058,
+        0.766,
+        -0.185,
+        0.909,
+        0.844,
+        -0.688,
+        0.197,
+        0.295
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-07",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Perform smoke and real-data checks on the delivered capability.",
+      "vector": [
+        0.467,
+        0.471,
+        0.156,
+        0.99,
+        0.329,
+        -0.263,
+        0.858,
+        0.008
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-08",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Prove the shipped change works without relying on internal setup knowledge.",
+      "vector": [
+        0.992,
+        0.176,
+        0.497,
+        -0.929,
+        -0.186,
+        0.162,
+        0.815,
+        -0.279
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-09",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Run final verification against the user-facing acceptance criteria.",
+      "vector": [
+        -0.483,
+        -0.119,
+        0.134,
+        -0.848,
+        0.595,
+        -0.117,
+        0.772,
+        -0.566
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    },
+    {
+      "id": "stage-verify-10",
+      "scenario": "stage:verify",
+      "route": {
+        "stage": "verify"
+      },
+      "text": "Check runtime behavior and record the verification result.",
+      "vector": [
+        -0.933,
+        0.799,
+        0.708,
+        0.934,
+        0.337,
+        -0.287,
+        0.866,
+        -0.288
+      ],
+      "model": "__seed__",
+      "updatedAt": "2026-06-08T17:33:45.028Z"
+    }
+  ]
+}

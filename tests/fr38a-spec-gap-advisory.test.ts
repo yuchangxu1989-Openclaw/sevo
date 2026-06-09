@@ -185,14 +185,14 @@ describe('FR-38a runSpecGapAdvisoryCheck (semantic detection)', () => {
     expect(rec.matchedFrAc).toContain('FR-39');
   });
 
-  it('AC-38a.7: records status=skipped reason=llm-unavailable when the model errors', async () => {
+  it('AC-50.3: records status=degraded reason=llm-unavailable when the model errors', async () => {
     globalThis.fetch = vi.fn(async () => fakeChatResponse('', { ok: false, status: 500 }) as any);
     const rec = await mod.runSpecGapAdvisoryCheck(base);
-    expect(rec.status).toBe('skipped');
+    expect(rec.status).toBe('degraded');
     expect(rec.reason).toBe('llm-unavailable');
   });
 
-  it('AC-38a.7: a slow model is bounded by the sync timeout and recorded as skipped', async () => {
+  it('AC-50.3: a slow model is bounded by the sync timeout and recorded as degraded', async () => {
     globalThis.fetch = vi.fn((_url: any, opts: any) => new Promise((resolve, reject) => {
       // Resolve far later than the budget; honor the AbortController so the race
       // resolves to a timeout sentinel quickly.
@@ -206,15 +206,15 @@ describe('FR-38a runSpecGapAdvisoryCheck (semantic detection)', () => {
     const start = Date.now();
     const rec = await mod.runSpecGapAdvisoryCheck({ ...base, timeoutMs: 200 });
     const elapsed = Date.now() - start;
-    expect(rec.status).toBe('skipped');
+    expect(rec.status).toBe('degraded');
     expect(rec.reason).toBe('llm-timeout');
     expect(elapsed).toBeLessThan(2000);
   });
 
-  it('returns skipped when the spec file is unavailable', async () => {
+  it('returns degraded when the spec file is unavailable', async () => {
     globalThis.fetch = vi.fn(async () => fakeChatResponse('{}') as any);
     const rec = await mod.runSpecGapAdvisoryCheck({ ...base, projectSlug: 'no-such-project-xyz', projectRoot: 'projects/no-such-project-xyz' });
-    expect(rec.status).toBe('skipped');
+    expect(rec.status).toBe('degraded');
     expect(rec.reason).toMatch(/spec-unavailable/);
   });
 });
@@ -237,10 +237,10 @@ describe('FR-38a applySpecGapAdvisory38a (non-blocking entry hook)', () => {
     expect(rec.introducedConcepts).toContain('ux prefix');
   });
 
-  it('schedules an async retry when the sync check is skipped (AC-38a.7)', async () => {
+  it('schedules an async retry when the sync check is degraded (AC-50.3)', async () => {
     globalThis.fetch = vi.fn(async () => fakeChatResponse('', { ok: false, status: 503 }) as any);
     const rec = await mod.applySpecGapAdvisory38a(base);
-    expect(rec.status).toBe('skipped');
+    expect(rec.status).toBe('degraded');
     expect(rec.asyncRetryScheduled).toBe(true);
   });
 });
@@ -367,7 +367,7 @@ describe('FR-38a detection event log completeness (AC-38a.4)', () => {
 describe('FR-38a sync timeout is exactly the budget (AC-38a.7)', () => {
   const base = { projectSlug: 'sevo', taskId: 't-budget', projectRoot: '.', taskDescription: 'slow task' };
 
-  it('a hung fetch resolves to skipped within the budget, with no grace overrun', async () => {
+  it('a hung fetch resolves to degraded within the budget, with no grace overrun', async () => {
     globalThis.fetch = vi.fn((_url: any, opts: any) => new Promise((resolve, reject) => {
       // Never resolves on its own and ignores the abort signal, forcing the
       // outer wall-clock race (not the AbortController) to be the bound.
@@ -378,7 +378,7 @@ describe('FR-38a sync timeout is exactly the budget (AC-38a.7)', () => {
     const start = Date.now();
     const rec = await mod.runSpecGapAdvisoryCheck({ ...base, timeoutMs });
     const elapsed = Date.now() - start;
-    expect(rec.status).toBe('skipped');
+    expect(rec.status).toBe('degraded');
     expect(rec.reason).toBe('llm-timeout');
     // No +50ms grace: the race fires at exactly timeoutMs. Allow a small
     // scheduler tolerance but assert it is well under the old timeoutMs+50 path.

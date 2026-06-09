@@ -1,0 +1,254 @@
+{
+  "pipelineId": "962bbefe-bf40-4d8b-a63d-f6badcbc2a90",
+  "taskId": "task-sevo-mq5i6n2q",
+  "level": "L1",
+  "requiredStages": [
+    "spec",
+    "spec-review-gate",
+    "ux-interaction-design",
+    "architecture-design",
+    "contract",
+    "contract-review-gate",
+    "implement",
+    "review",
+    "smoke-test",
+    "ux-acceptance",
+    "regression",
+    "generalize",
+    "publish",
+    "deploy",
+    "verify",
+    "readme-update",
+    "post-release-validation",
+    "ledger"
+  ],
+  "skippedStages": [
+    {
+      "stage": "architecture-design",
+      "reason": "未配置 LLM，按安全默认值触发条件性设计阶段；范围未显示多域、数据模型或多文件复杂变更，暂不触发 Architecture Design"
+    }
+  ],
+  "stages": {
+    "spec": {
+      "stageId": "spec",
+      "status": "active",
+      "artifacts": [],
+      "startedAt": "2026-06-08T17:47:04.662Z"
+    },
+    "spec-review-gate": {
+      "stageId": "spec-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "test-case-authoring": {
+      "stageId": "test-case-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance-authoring": {
+      "stageId": "ux-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "commercial-acceptance-authoring": {
+      "stageId": "commercial-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-interaction-design": {
+      "stageId": "ux-interaction-design",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract": {
+      "stageId": "contract",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract-review-gate": {
+      "stageId": "contract-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "implement": {
+      "stageId": "implement",
+      "status": "pending",
+      "artifacts": []
+    },
+    "review": {
+      "stageId": "review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "smoke-test": {
+      "stageId": "smoke-test",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance": {
+      "stageId": "ux-acceptance",
+      "status": "pending",
+      "artifacts": []
+    },
+    "pm-commercial-review": {
+      "stageId": "pm-commercial-review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "regression": {
+      "stageId": "regression",
+      "status": "pending",
+      "artifacts": []
+    },
+    "publish-generalization-gate": {
+      "stageId": "publish-generalization-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "deploy": {
+      "stageId": "deploy",
+      "status": "pending",
+      "artifacts": []
+    },
+    "verify": {
+      "stageId": "verify",
+      "status": "pending",
+      "artifacts": []
+    },
+    "readme": {
+      "stageId": "readme",
+      "status": "pending",
+      "artifacts": []
+    },
+    "post-release-validation": {
+      "stageId": "post-release-validation",
+      "status": "pending",
+      "artifacts": []
+    },
+    "clean-install-verification": {
+      "stageId": "clean-install-verification",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ledger": {
+      "stageId": "ledger",
+      "status": "pending",
+      "artifacts": []
+    },
+    "architecture-design": {
+      "stageId": "architecture-design",
+      "status": "skipped",
+      "artifacts": []
+    },
+    "generalize": {
+      "status": "pending"
+    },
+    "publish": {
+      "status": "pending"
+    },
+    "readme-update": {
+      "status": "pending"
+    }
+  },
+  "currentStage": "cancelled",
+  "createdAt": "2026-06-08T17:47:04.661Z",
+  "updatedAt": "2026-06-08T17:47:30.551Z",
+  "stagePlan": {
+    "requiredStages": [
+      "spec",
+      "spec-review-gate",
+      "ux-interaction-design",
+      "architecture-design",
+      "contract",
+      "contract-review-gate",
+      "implement",
+      "review",
+      "smoke-test",
+      "ux-acceptance",
+      "regression",
+      "generalize",
+      "publish",
+      "deploy",
+      "verify",
+      "readme-update",
+      "post-release-validation",
+      "ledger"
+    ],
+    "skippedStages": [],
+    "endgamePolicy": {
+      "recoverSkippedEndgameBeforeCompletion": true,
+      "includeDeploy": true
+    }
+  },
+  "tier": 3,
+  "fr19EndgameChain": [
+    "implement",
+    "review",
+    "smoke-test",
+    "regression",
+    "generalize",
+    "publish",
+    "deploy",
+    "verify",
+    "readme-update"
+  ],
+  "scaleReason": "single full pipeline",
+  "requestedStage": "implement",
+  "entryStage": "spec",
+  "specGapAdvisories38a": [
+    {
+      "projectSlug": "sevo",
+      "taskId": "task-sevo-mq5i6n2q",
+      "status": "skipped",
+      "isPureBugFix": false,
+      "introducedConcepts": [],
+      "matchedFrAc": [],
+      "gapSummary": "",
+      "recommendedSpecPatch": "",
+      "severity": "low",
+      "confidence": 0,
+      "reason": "llm-timeout",
+      "createdAt": "2026-06-08T17:47:30.549Z",
+      "model": null,
+      "requestId": null,
+      "detectionMethod": "llm-semantic",
+      "inputSummary": "[Tue 2026-06-09 01:44 GMT+8] <<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>>\nOpenClaw runtime context (internal):\nThis context is runtime-generated, not user-authored. Keep internal details private.\n\n[Internal task completion event]\nsource: subagent\nsession_key: agent:omp:acp:6efe5573-39ad-439f-bba6-93ac2a0450c6\nsession_id: fc637d6a-bb72-424b-8419-aa0d5799431e\ntype: subagent task\ntask: sevo:fix SEVO complet",
+      "asyncRetryScheduled": true
+    },
+    {
+      "projectSlug": "sevo",
+      "taskId": "task-sevo-mq5i6n2q",
+      "status": "advisory",
+      "isPureBugFix": false,
+      "introducedConcepts": [
+        "completion hook label recovery via targetSessionKey/childSessionKey lookup",
+        "spawn map as a completion-to-task correlation data source",
+        "subagent-task-board.json as a completion-to-task correlation data source",
+        "specific runtime audit events for completion early-return branches",
+        "canonical SEVO completion/advance/prompt event-name scheme",
+        "duplicate plugin id / unified plugin entry behavior for sevo-pipeline"
+      ],
+      "matchedFrAc": [
+        "Principle 11"
+      ],
+      "gapSummary": "The spec defines that the main Agent receives completion and backfills SEVO, but it does not define how completion events are correlated to SEVO labels, what audit events must be emitted on early return, or which runtime event names/plugin entry are canonical.",
+      "recommendedSpecPatch": "Add an FR/AC for SEVO completion handling that defines the canonical completion and advance event names, the required correlation sources and precedence when ended events lack labels, mandatory audit output for every completion-hook exit path, and the single authoritative sevo-pipeline plugin entry/id behavior.",
+      "severity": "high",
+      "confidence": 0.86,
+      "reason": "The defect-fix portion aligns with the existing SEVO responsibility to receive completion and backfill pipeline state, but the proposed fixes introduce new runtime correlation entities, observable audit behavior, and event/plugin naming boundaries not specified by an FR with verifiable AC.",
+      "createdAt": "2026-06-08T17:48:04.405Z",
+      "model": "gpt-5.5",
+      "requestId": "resp_0fb252f1f5026fe5016a2700337318819bbf25307c6927cf52",
+      "detectionMethod": "llm-semantic",
+      "inputSummary": "[Tue 2026-06-09 01:44 GMT+8] <<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>>\nOpenClaw runtime context (internal):\nThis context is runtime-generated, not user-authored. Keep internal details private.\n\n[Internal task completion event]\nsource: subagent\nsession_key: agent:omp:acp:6efe5573-39ad-439f-bba6-93ac2a0450c6\nsession_id: fc637d6a-bb72-424b-8419-aa0d5799431e\ntype: subagent task\ntask: sevo:fix SEVO complet",
+      "asyncRetry": true
+    }
+  ],
+  "advancePromptCounts": {
+    "sevo:sevo:spec:1": 1
+  },
+  "completedAt": "2026-06-09T00:00:00Z",
+  "cancelReason": "fix-entry-bug-misfire",
+  "status": "cancelled",
+  "cancelledAt": "2026-06-09T02:51:20.438Z"
+}

@@ -1144,19 +1144,25 @@ function gateRulesFor(stages: StageId[]): GateRuleConfigView[] {
     }));
 }
 
+const SETTINGS_DEFAULT_STAGES: StageId[] = ['spec', 'spec-review-gate', 'implement', 'review', 'smoke-test', 'regression', 'publish', 'verify', 'ledger'];
+
 export function getSettings(): SettingsView {
   const pipelines = getPipelines();
   const projects: ProjectConfigView[] = getProjects().map((project) => {
     const projectPipelines = pipelines.filter((pi) => pi.projectSlug === project.projectSlug);
-    const stages = [...new Set(projectPipelines.flatMap((pi) => pi.routingResult.requiredStages))];
+    const stages = [...new Set(projectPipelines.flatMap((pi) => [
+      ...pi.routingResult.requiredStages,
+      ...pi.stages.map((stage) => stage.stageId),
+    ]))];
+    const configStages = stages.length > 0 ? stages : SETTINGS_DEFAULT_STAGES;
     return {
       projectSlug: project.projectSlug,
       projectName: project.projectName,
       adapter: 'openclaw',
       specPath: `projects/${project.projectSlug}/docs/product-requirements.md`,
       arcPath: `projects/${project.projectSlug}/docs/architecture/arc42-architecture.md`,
-      stages: buildStageConfigs(stages),
-      rules: gateRulesFor(stages),
+      stages: buildStageConfigs(configStages),
+      rules: gateRulesFor(configStages),
       principles: PRINCIPLES,
     };
   });

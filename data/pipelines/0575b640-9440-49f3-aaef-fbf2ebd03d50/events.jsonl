@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-08T17:52:19.154Z","pipelineId":"0575b640-9440-49f3-aaef-fbf2ebd03d50","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-fr-50-mq5iddql","level":"L1"}}
+{"timestamp":"2026-06-08T17:52:19.155Z","pipelineId":"0575b640-9440-49f3-aaef-fbf2ebd03d50","stage":"spec","eventType":"stage_activated","payload":{}}

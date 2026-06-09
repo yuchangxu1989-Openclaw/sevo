@@ -1,0 +1,207 @@
+{
+  "pipelineId": "56217c0a-fc47-41b8-9b73-1f0ea9fb1e5b",
+  "taskId": "task-kivo-mq5yrnvv",
+  "level": "L1",
+  "requiredStages": [
+    "spec",
+    "spec-review-gate",
+    "ux-interaction-design",
+    "architecture-design",
+    "contract",
+    "contract-review-gate",
+    "implement",
+    "review",
+    "smoke-test",
+    "ux-acceptance",
+    "regression",
+    "generalize",
+    "publish",
+    "deploy",
+    "verify",
+    "readme-update",
+    "post-release-validation",
+    "ledger"
+  ],
+  "skippedStages": [
+    {
+      "stage": "architecture-design",
+      "reason": "未配置 LLM，按安全默认值触发条件性设计阶段；范围未显示多域、数据模型或多文件复杂变更，暂不触发 Architecture Design"
+    }
+  ],
+  "stages": {
+    "spec": {
+      "stageId": "spec",
+      "status": "completed",
+      "artifacts": [],
+      "startedAt": "2026-06-09T01:31:19.348Z",
+      "skipReason": "artifact-exists",
+      "completedAt": "2026-06-09T01:31:19.348Z"
+    },
+    "spec-review-gate": {
+      "stageId": "spec-review-gate",
+      "status": "active",
+      "artifacts": [],
+      "startedAt": "2026-06-09T01:31:19.349Z"
+    },
+    "test-case-authoring": {
+      "stageId": "test-case-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance-authoring": {
+      "stageId": "ux-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "commercial-acceptance-authoring": {
+      "stageId": "commercial-acceptance-authoring",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-interaction-design": {
+      "stageId": "ux-interaction-design",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract": {
+      "stageId": "contract",
+      "status": "pending",
+      "artifacts": []
+    },
+    "contract-review-gate": {
+      "stageId": "contract-review-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "implement": {
+      "stageId": "implement",
+      "status": "pending",
+      "artifacts": []
+    },
+    "review": {
+      "stageId": "review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "smoke-test": {
+      "stageId": "smoke-test",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ux-acceptance": {
+      "stageId": "ux-acceptance",
+      "status": "pending",
+      "artifacts": []
+    },
+    "pm-commercial-review": {
+      "stageId": "pm-commercial-review",
+      "status": "pending",
+      "artifacts": []
+    },
+    "regression": {
+      "stageId": "regression",
+      "status": "pending",
+      "artifacts": []
+    },
+    "publish-generalization-gate": {
+      "stageId": "publish-generalization-gate",
+      "status": "pending",
+      "artifacts": []
+    },
+    "deploy": {
+      "stageId": "deploy",
+      "status": "pending",
+      "artifacts": []
+    },
+    "verify": {
+      "stageId": "verify",
+      "status": "pending",
+      "artifacts": []
+    },
+    "readme": {
+      "stageId": "readme",
+      "status": "pending",
+      "artifacts": []
+    },
+    "post-release-validation": {
+      "stageId": "post-release-validation",
+      "status": "pending",
+      "artifacts": []
+    },
+    "clean-install-verification": {
+      "stageId": "clean-install-verification",
+      "status": "pending",
+      "artifacts": []
+    },
+    "ledger": {
+      "stageId": "ledger",
+      "status": "pending",
+      "artifacts": []
+    },
+    "architecture-design": {
+      "stageId": "architecture-design",
+      "status": "skipped",
+      "artifacts": []
+    },
+    "generalize": {
+      "status": "pending"
+    },
+    "publish": {
+      "status": "pending"
+    },
+    "readme-update": {
+      "status": "pending"
+    }
+  },
+  "currentStage": "spec",
+  "createdAt": "2026-06-09T01:31:19.345Z",
+  "updatedAt": "2026-06-09T01:31:19.365Z",
+  "stagePlan": {
+    "requiredStages": [
+      "spec",
+      "spec-review-gate",
+      "ux-interaction-design",
+      "architecture-design",
+      "contract",
+      "contract-review-gate",
+      "implement",
+      "review",
+      "smoke-test",
+      "ux-acceptance",
+      "regression",
+      "generalize",
+      "publish",
+      "deploy",
+      "verify",
+      "readme-update",
+      "post-release-validation",
+      "ledger"
+    ],
+    "skippedStages": [],
+    "endgamePolicy": {
+      "recoverSkippedEndgameBeforeCompletion": true,
+      "includeDeploy": true
+    }
+  },
+  "tier": 3,
+  "fr19EndgameChain": [
+    "implement",
+    "review",
+    "smoke-test",
+    "regression",
+    "generalize",
+    "publish",
+    "deploy",
+    "verify",
+    "readme-update"
+  ],
+  "scaleReason": "single full pipeline",
+  "requestedStage": "implement",
+  "entryStage": "spec",
+  "advancePromptCounts": {
+    "sevo:kivo:spec-review-gate:1": 1
+  },
+  "status": "cancelled",
+  "cancelReason": "fix-entry-bug-misfire",
+  "cancelledAt": "2026-06-09T02:51:20.440Z"
+}
