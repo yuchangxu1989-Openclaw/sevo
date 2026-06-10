@@ -1,0 +1,3 @@
+{"timestamp":"2026-06-09T10:44:31.190Z","pipelineId":"3c194d3e-ea9a-49e2-a6cb-5e0daccaf0a3","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-kivo-mq6ij2vm","level":"L1"}}
+{"timestamp":"2026-06-09T10:44:31.191Z","pipelineId":"3c194d3e-ea9a-49e2-a6cb-5e0daccaf0a3","stage":"spec","eventType":"stage_activated","payload":{}}
+{"timestamp":"2026-06-09T11:49:56.329Z","pipelineId":"3c194d3e-ea9a-49e2-a6cb-5e0daccaf0a3","stage":"implement","eventType":"stage_failed","payload":{"outcome":"failed","artifacts":[],"failureReason":"Task failed"}}

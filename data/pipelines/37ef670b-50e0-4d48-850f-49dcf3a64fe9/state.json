@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "37ef670b-50e0-4d48-850f-49dcf3a64fe9",
+  "projectSlug": "e2e-cycle",
+  "projectRoot": "projects/e2e-cycle",
+  "goal": "测试 review-fix 循环",
+  "scopeFingerprint": "sha256:32a388e84448bf9bde76f1f9228843064be72659c351b73a05aebaa5af6350f2",
+  "status": "running",
+  "entryType": "create",
+  "lifecycle": {
+    "createdAt": "2026-06-09T16:10:00.566Z",
+    "startedAt": "2026-06-09T16:10:00.566Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "lastActivityAt": "2026-06-09T16:10:00.568Z",
+    "staleDetectedAt": null,
+    "terminalReason": null
+  },
+  "stagePlan": {
+    "ordered": [
+      "implement",
+      "review",
+      "fix",
+      "deploy"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "review",
+  "stages": {
+    "implement": {
+      "status": "passed",
+      "startedAt": "2026-06-09T16:10:00.566Z",
+      "completedAt": "2026-06-09T16:10:00.567Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "failed",
+      "startedAt": "2026-06-09T16:10:00.567Z",
+      "completedAt": "2026-06-09T16:10:00.568Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "fix": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null
+  }
+}

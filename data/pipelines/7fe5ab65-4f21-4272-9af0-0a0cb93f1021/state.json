@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "7fe5ab65-4f21-4272-9af0-0a0cb93f1021",
+  "projectSlug": "e2e-exhaust",
+  "projectRoot": "projects/e2e-exhaust",
+  "goal": "测试循环耗尽",
+  "scopeFingerprint": "sha256:acdea36f4a0094edce1230474a75ce4d5da00030dd96b0e838d92eedb55baf42",
+  "status": "cancelled",
+  "entryType": "create",
+  "lifecycle": {
+    "createdAt": "2026-06-09T16:10:33.708Z",
+    "startedAt": "2026-06-09T16:10:33.708Z",
+    "completedAt": null,
+    "cancelledAt": "2026-06-09T16:10:33.713Z",
+    "lastActivityAt": "2026-06-09T16:10:33.713Z",
+    "staleDetectedAt": null,
+    "terminalReason": "e2e test cleanup"
+  },
+  "stagePlan": {
+    "ordered": [
+      "implement",
+      "review",
+      "fix",
+      "deploy"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "review",
+  "stages": {
+    "implement": {
+      "status": "passed",
+      "startedAt": "2026-06-09T16:10:33.708Z",
+      "completedAt": "2026-06-09T16:10:33.709Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "failed",
+      "startedAt": "2026-06-09T16:10:33.712Z",
+      "completedAt": "2026-06-09T16:10:33.713Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 2
+    },
+    "fix": {
+      "status": "active",
+      "startedAt": "2026-06-09T16:10:33.711Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 5
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null
+  }
+}

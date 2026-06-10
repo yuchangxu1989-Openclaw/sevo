@@ -210,9 +210,6 @@
   "scaleReason": "single full pipeline",
   "requestedStage": "implement",
   "entryStage": "spec",
-  "advancePromptCounts": {
-    "sevo:sevo:implement:1": 1
-  },
   "status": "cancelled",
   "cancelledAt": "2026-06-09T05:27:57.557Z",
   "cancelReason": "止血: 误创建pipeline消除advance噪音"

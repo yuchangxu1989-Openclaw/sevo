@@ -1,0 +1,2 @@
+{"timestamp":"2026-06-09T11:54:58.007Z","pipelineId":"6c36c7ec-e342-4967-b79c-e45b1481e05e","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-v2-completion-handler-auto-mq6l1ob5","level":"L1"}}
+{"timestamp":"2026-06-09T11:54:58.007Z","pipelineId":"6c36c7ec-e342-4967-b79c-e45b1481e05e","stage":"spec","eventType":"stage_activated","payload":{}}

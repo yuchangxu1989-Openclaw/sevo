@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "155b6d26-3306-46af-ab36-dac3aab02ed0",
+  "projectSlug": "e2e-test",
+  "projectRoot": "projects/e2e-test",
+  "goal": "E2E verification of V2 advance flow",
+  "scopeFingerprint": "sha256:48ab2b500f7b231f35f4e506aa2c0bc7b26b36a17974584b062574c1641e0d67",
+  "status": "cancelled",
+  "entryType": "create",
+  "lifecycle": {
+    "createdAt": "2026-06-09T16:10:00.537Z",
+    "startedAt": "2026-06-09T16:10:00.537Z",
+    "completedAt": null,
+    "cancelledAt": "2026-06-09T16:10:00.554Z",
+    "lastActivityAt": "2026-06-09T16:10:00.554Z",
+    "staleDetectedAt": null,
+    "terminalReason": "e2e test cleanup"
+  },
+  "stagePlan": {
+    "ordered": [
+      "spec",
+      "implement",
+      "review",
+      "deploy"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "review",
+  "stages": {
+    "spec": {
+      "status": "passed",
+      "startedAt": "2026-06-09T16:10:00.537Z",
+      "completedAt": "2026-06-09T16:10:00.545Z",
+      "dispatchId": null,
+      "artifacts": [
+        "spec.md"
+      ],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "passed",
+      "startedAt": "2026-06-09T16:10:00.545Z",
+      "completedAt": "2026-06-09T16:10:00.548Z",
+      "dispatchId": null,
+      "artifacts": [
+        "impl.ts"
+      ],
+      "attempt": 1
+    },
+    "review": {
+      "status": "active",
+      "startedAt": "2026-06-09T16:10:00.548Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null
+  }
+}

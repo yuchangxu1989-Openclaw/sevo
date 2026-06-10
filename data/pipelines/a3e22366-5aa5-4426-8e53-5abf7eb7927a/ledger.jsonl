@@ -1,0 +1,5 @@
+{"timestamp":"2026-06-09T16:10:33.696Z","type":"run-created","pipelineRunId":"a3e22366-5aa5-4426-8e53-5abf7eb7927a","data":{"projectSlug":"e2e-impl","currentStageId":"spec","entryType":"entry-implement"}}
+{"timestamp":"2026-06-09T16:10:33.696Z","type":"stage-advanced","pipelineRunId":"a3e22366-5aa5-4426-8e53-5abf7eb7927a","data":{"stageId":"spec","status":"passed"}}
+{"timestamp":"2026-06-09T16:10:33.697Z","type":"stage-advanced","pipelineRunId":"a3e22366-5aa5-4426-8e53-5abf7eb7927a","data":{"stageId":"spec-review-gate","status":"passed"}}
+{"timestamp":"2026-06-09T16:10:33.697Z","type":"stage-advanced","pipelineRunId":"a3e22366-5aa5-4426-8e53-5abf7eb7927a","data":{"stageId":"implement","status":"active"}}
+{"timestamp":"2026-06-09T16:10:33.698Z","type":"run-closed","pipelineRunId":"a3e22366-5aa5-4426-8e53-5abf7eb7927a","data":{"status":"cancelled","reason":"e2e test cleanup"}}

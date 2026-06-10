@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "ac408a17-8cae-4640-b0fb-f74a2248a4e9",
+  "projectSlug": "e2e-vague",
+  "projectRoot": "projects/e2e-vague",
+  "goal": "fix it",
+  "scopeFingerprint": "sha256:ab0d1307766ce08eadfdc7655cd528e2036bd93310e33aecf7aaa78fa5cb9429",
+  "status": "cancelled",
+  "entryType": "create",
+  "lifecycle": {
+    "createdAt": "2026-06-09T21:59:27.688Z",
+    "startedAt": "2026-06-09T21:59:27.688Z",
+    "completedAt": null,
+    "cancelledAt": "2026-06-09T21:59:27.690Z",
+    "lastActivityAt": "2026-06-09T21:59:27.690Z",
+    "staleDetectedAt": null,
+    "terminalReason": "e2e test cleanup"
+  },
+  "stagePlan": {
+    "ordered": [
+      "spec",
+      "implement",
+      "review"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "spec",
+  "stages": {
+    "spec": {
+      "status": "active",
+      "startedAt": "2026-06-09T21:59:27.688Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  }
+}

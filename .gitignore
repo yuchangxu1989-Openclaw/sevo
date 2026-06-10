@@ -15,6 +15,12 @@ state/
 !src/prompt-injector.js
 !src/pipeline-commands.js
 !src/index.js
+!src/evidence-contract.js
+!src/advance-prompt-contract.js
+!src/route-classifier.js
+!src/stage-policy.js
+!src/advisory-ledger.js
+!src/consistency-check-plan.js
 !index.js
 !data/v2-enabled
 

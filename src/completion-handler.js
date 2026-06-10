@@ -1,10 +1,18 @@
 import * as defaultRunStore from './run-store.js';
 import { decode, encode } from './label-protocol.js';
+import { validateCompletion } from './evidence-contract.js';
+import { append as appendAdvisory } from './advisory-ledger.js';
 import { renderAdvancePromptTemplate } from '../advance-prompt-templates.js';
 import { getStageMapping } from '../task-mapper.js';
 
+const REVIEW_FIX_CYCLE = Object.freeze({
+  review: 'fix',
+  fix: 'review',
+});
+
 const DEFAULT_MAX_ADVANCES_PER_RUN_ROUND = 3;
 const ADVANCE_TEMPLATE_NAME = 'autoAdvanceAction';
+const MAX_REVIEW_FIX_ATTEMPTS = 5;
 
 function noop() {}
 
@@ -65,6 +73,15 @@ function findRunFromDecodedLabel(decoded, runStore) {
 
   const activeRuns = runStore.listActiveRuns(decoded.projectSlug);
   const matches = activeRuns.filter((run) => run.pipelineRunId?.startsWith(decoded.pipelineRunIdShort));
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function findRunFromLegacyLabel(decoded, runStore) {
+  if (!decoded?.projectSlug || !decoded?.stageId) return null;
+  const activeRuns = runStore.listActiveRuns(decoded.projectSlug);
+  const matches = activeRuns.filter(
+    (run) => run.currentStageId === decoded.stageId && run.status === 'running',
+  );
   return matches.length === 1 ? matches[0] : null;
 }
 
@@ -212,6 +229,111 @@ function buildFailureAdvanceText(run, stageId, status, evt) {
   ].join('\n');
 }
 
+function buildCycleAdvanceText(run, fromStageId, toStageId, reason) {
+  const attempt = run.stages?.[toStageId]?.attempt || 1;
+  const lines = [
+    `[SEVO V2 advance — ${fromStageId}→${toStageId} cycle]`,
+    `Pipeline run ${run.pipelineRunId}: "${fromStageId}" triggered cycle to "${toStageId}".`,
+    `Project: ${run.projectSlug}`,
+    `Reason: ${reason}`,
+    `Attempt: ${attempt}/${MAX_REVIEW_FIX_ATTEMPTS}`,
+    '',
+  ];
+
+  if (toStageId === 'review') {
+    lines.push(
+      '## Dispatch: Audit Task',
+      '派发独立审计 agent 对上一轮 fix 产出进行代码审计：',
+      '- 审计范围：fix 阶段 artifacts + 相关变更文件',
+      '- 审计标准：功能正确性、安全性、spec 一致性',
+      '- 产出：audit report（PASS/FAIL + findings）',
+      `- 完成后以 label 报告结果（status=passed 表示审计通过，status=failed 表示需要修复）`,
+    );
+  } else if (toStageId === 'fix') {
+    lines.push(
+      '## Dispatch: Fix Task',
+      '派发修复 agent 处理审计发现的问题：',
+      `- 修复依据：review 阶段 findings（reason: ${reason}）`,
+      '- 修复范围：仅修复 findings 指出的问题，不做额外重构',
+      '- 产出：修复后的代码 + 修复说明',
+      '- 完成后以 label 报告结果（status=passed 表示修复完成）',
+    );
+  }
+
+  return lines.join('\n');
+}
+
+function handleReviewFixCycle(run, completedStageId, status, evt, deps) {
+  const runStore = deps.runStore || defaultRunStore;
+  const cycleTarget = REVIEW_FIX_CYCLE[completedStageId];
+  if (!cycleTarget) return null;
+  if (!run.stagePlan.ordered.includes(cycleTarget)) return null;
+
+  if (completedStageId === 'review' && status === 'failed') {
+    const currentAttempt = run.stages?.fix?.attempt || 0;
+    if (currentAttempt >= MAX_REVIEW_FIX_ATTEMPTS) {
+      return {
+        advanceText: [
+          `[SEVO V2 advance — review→fix cycle EXHAUSTED]`,
+          `Pipeline run ${run.pipelineRunId}: review→fix cycle reached max attempts (${MAX_REVIEW_FIX_ATTEMPTS}).`,
+          `Project: ${run.projectSlug}`,
+          'Action: pipeline blocked. Manual intervention required.',
+          'Use `sevo:diagnose` or `sevo:cancel` to proceed.',
+        ].join('\n'),
+        nextStageId: null,
+        runSnapshot: run,
+      };
+    }
+    const updatedRun = runStore.resetStageForRetry(run.pipelineRunId, 'fix');
+    const reason = evt?.result?.reason || evt?.reason || 'review found issues';
+    return computeCycleAdvance(updatedRun, 'review', 'fix', reason, deps);
+  }
+
+  if (completedStageId === 'fix' && status === 'passed') {
+    const updatedRun = runStore.resetStageForRetry(run.pipelineRunId, 'review');
+    return computeCycleAdvance(updatedRun, 'fix', 'review', 'fix completed, re-review required', deps);
+  }
+
+  return null;
+}
+
+function computeCycleAdvance(run, fromStageId, toStageId, reason, deps) {
+  const depth = trackAdvanceDepth(run.pipelineRunId, deps);
+  if (!depth.allowed) {
+    return { advanceText: null, nextStageId: toStageId, runSnapshot: run, recursionBlocked: true, reason: `advance-depth-limit:${depth.maxDepth}` };
+  }
+
+  const mapping = deps.getStageMapping ? deps.getStageMapping(toStageId) : getStageMapping(toStageId);
+  const label = encode({
+    projectSlug: run.projectSlug,
+    pipelineRunId: run.pipelineRunId,
+    stageId: toStageId,
+    attempt: run.stages?.[toStageId]?.attempt || 1,
+  });
+  const stagePromptTemplateRef =
+    typeof deps.getStagePromptTemplateRef === 'function'
+      ? deps.getStagePromptTemplateRef(toStageId, run)
+      : getStagePromptTemplateRef(toStageId);
+  const timeout = Number(mapping?.timeout || 1200);
+  const agentLine = mapping?.agentId
+    ? `Recommended agentId: ${mapping.agentId}`
+    : `Recommended agentId: auto (${mapping?.tier || 'stage mapping'} tier)`;
+  const taskDescription = buildStageTaskDescription(run, fromStageId, toStageId, stagePromptTemplateRef);
+  const cycleContext = buildCycleAdvanceText(run, fromStageId, toStageId, reason);
+  const renderer = deps.renderAdvancePromptTemplate || renderAdvancePromptTemplate;
+  const advanceText = renderer(ADVANCE_TEMPLATE_NAME, {
+    agentLine,
+    timeout,
+    label,
+    taskDescription: `${cycleContext}\n\n${taskDescription}`,
+    roleNavHint: '',
+    roleRelevantAgents: '',
+    commercializationGateBlock: '',
+  });
+
+  return { advanceText, nextStageId: toStageId, runSnapshot: run };
+}
+
 /**
  * Handle a V2 SEVO subagent completion event.
  *
@@ -222,21 +344,24 @@ function buildFailureAdvanceText(run, stageId, status, evt) {
  *
  * @param {object} evt subagent_ended event payload.
  * @param {{ logger?: object, runStore?: object, advanceDepthByRun?: Map<string, number>, maxAdvancesPerRunRound?: number, getStageMapping?: Function, renderAdvancePromptTemplate?: Function, getStagePromptTemplateRef?: Function }} [deps]
- * @returns {{ advanceText: string | null, nextStageId: string | null, runSnapshot: object } | null}
+ * @returns {{ advanceText: string | null, nextStageId: string | null, runSnapshot: object, advisories?: object[] } | null}
  */
 export function handleCompletion(evt, deps = {}) {
   const logger = getLogger(deps);
   const runStore = deps.runStore || defaultRunStore;
   const label = extractLabel(evt);
   const decoded = decode(label);
-  if (!decoded?.pipelineRunId || !decoded?.stageId) {
-    logger.debug?.('completion-handler skipped: non-V2 or invalid label', { label });
+  if (!decoded?.stageId) {
+    logger.debug?.('completion-handler skipped: no stageId in label', { label });
     return null;
   }
 
-  const run = findRunFromDecodedLabel(decoded, runStore);
+  let run = decoded.pipelineRunId ? findRunFromDecodedLabel(decoded, runStore) : null;
   if (!run) {
-    logger.warn?.('completion-handler skipped: run not found or ambiguous', { label, decoded });
+    run = findRunFromLegacyLabel(decoded, runStore);
+  }
+  if (!run) {
+    logger.debug?.('completion-handler skipped: no matching V2 run', { label, decoded });
     return null;
   }
 
@@ -257,11 +382,48 @@ export function handleCompletion(evt, deps = {}) {
     return null;
   }
 
+  const evidenceValidation = validateCompletion(decoded.stageId, evt);
+  const advisories = evidenceValidation.advisories;
+  if (advisories.length > 0) {
+    logger.warn?.('completion-handler evidence advisory', {
+      pipelineRunId: run.pipelineRunId,
+      stageId: decoded.stageId,
+      missing: evidenceValidation.missing,
+    });
+    for (const adv of advisories) {
+      appendAdvisory(run.pipelineRunId, {
+        stageId: adv.stageId,
+        type: adv.type,
+        severity: 'warn',
+        message: adv.message,
+        evidence: adv.missing || [],
+      }, { runStore });
+    }
+  }
+
   const updatedRun = runStore.advanceStage(run.pipelineRunId, decoded.stageId, {
     status,
     artifacts: extractArtifacts(evt),
     dispatchId: extractDispatchId(evt),
   });
+
+  // Review-fix cycle: review fails → fix, fix passes → review
+  const cycleResult = handleReviewFixCycle(updatedRun, decoded.stageId, status, evt, { ...deps, runStore });
+  if (cycleResult) {
+    if (cycleResult.recursionBlocked) {
+      logger.warn?.('completion-handler cycle advance blocked by recursion guard', {
+        pipelineRunId: run.pipelineRunId,
+        reason: cycleResult.reason,
+      });
+      return null;
+    }
+    return {
+      advanceText: cycleResult.advanceText,
+      nextStageId: cycleResult.nextStageId,
+      runSnapshot: cycleResult.runSnapshot,
+      advisories,
+    };
+  }
 
   if (status !== 'passed') {
     const failAdvanceText = buildFailureAdvanceText(updatedRun, decoded.stageId, status, evt);
@@ -269,6 +431,7 @@ export function handleCompletion(evt, deps = {}) {
       advanceText: failAdvanceText,
       nextStageId: null,
       runSnapshot: updatedRun,
+      advisories,
     };
   }
 
@@ -285,5 +448,6 @@ export function handleCompletion(evt, deps = {}) {
     advanceText: advance.advanceText,
     nextStageId: advance.nextStageId,
     runSnapshot: advance.runSnapshot,
+    advisories,
   };
 }

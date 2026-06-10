@@ -198,9 +198,6 @@
   "scaleReason": "single full pipeline",
   "requestedStage": "implement",
   "entryStage": "spec",
-  "advancePromptCounts": {
-    "sevo:unknown:spec-review-gate:1": 6
-  },
   "status": "cancelled",
   "cancelReason": "fix-entry-bug-misfire",
   "cancelledAt": "2026-06-09T02:51:20.440Z"

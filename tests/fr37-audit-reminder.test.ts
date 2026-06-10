@@ -92,7 +92,7 @@ describe('sevo FR-37 audit reminder helpers', () => {
     expect(mod.consumeFr37AuditRemindersForTests()).toHaveLength(0);
   });
 
-  it('auto-dispatches review for a sevo:fix completion through the real hook', async () => {
+  it('does not directly dispatch audit for a sevo:fix completion through the real hook in V2', async () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sevo-fr37-audit-'));
     fs.mkdirSync(path.join(tempRoot, 'scripts'), { recursive: true });
     fs.mkdirSync(path.join(tempRoot, 'logs'), { recursive: true });
@@ -123,14 +123,10 @@ describe('sevo FR-37 audit reminder helpers', () => {
       output: 'changed projects/kivo/web/app/wiki/page.tsx; tests passed',
     });
 
-    const payload = JSON.parse(fs.readFileSync(capturePath, 'utf8'));
-    expect(payload.agentId).toBe('audit-01');
-    expect(payload.title).toBe('sevo:review sevo:fix kivo 修复问题 [hook-fix-1]');
-    expect(payload.prompt).toContain('[SEVO-FR37 Auto-Audit]');
-    expect(payload.prompt).toContain('Completed task label: sevo:fix kivo 修复问题');
-    expect(payload.prompt).toContain('changed projects/kivo/web/app/wiki/page.tsx');
+    expect(fs.existsSync(capturePath)).toBe(false);
 
-    const events = fs.readFileSync(path.join(tempRoot, 'logs', 'sevo-pipeline-events.jsonl'), 'utf8');
-    expect(events).toContain('sevo_fr37_audit_dispatched');
+    const eventsPath = path.join(tempRoot, 'logs', 'sevo-pipeline-events.jsonl');
+    const events = fs.existsSync(eventsPath) ? fs.readFileSync(eventsPath, 'utf8') : '';
+    expect(events).not.toContain('sevo_fr37_audit_dispatched');
   });
 });

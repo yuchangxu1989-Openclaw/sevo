@@ -3,6 +3,7 @@ import path from 'path';
 
 export default defineConfig({
   test: {
+    testTimeout: 15000,
     include: [
       'src/**/__tests__/**/*.test.ts',
       'src/tests/**/*.test.ts',

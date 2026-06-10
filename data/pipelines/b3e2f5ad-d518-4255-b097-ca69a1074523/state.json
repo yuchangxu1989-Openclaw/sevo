@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "b3e2f5ad-d518-4255-b097-ca69a1074523",
+  "projectSlug": "e2e-fix",
+  "projectRoot": "projects/e2e-fix",
+  "goal": "修复登录页面 XSS 漏洞",
+  "scopeFingerprint": "sha256:eb078bcef4a3bf77fcf4d529f90e6251bc8b531be7e9b39a65beb1c2de97bcc5",
+  "status": "cancelled",
+  "entryType": "entry-fix",
+  "lifecycle": {
+    "createdAt": "2026-06-09T16:10:00.561Z",
+    "startedAt": "2026-06-09T16:10:00.561Z",
+    "completedAt": null,
+    "cancelledAt": "2026-06-09T16:10:00.565Z",
+    "lastActivityAt": "2026-06-09T16:10:00.565Z",
+    "staleDetectedAt": null,
+    "terminalReason": "e2e test cleanup"
+  },
+  "stagePlan": {
+    "ordered": [
+      "spec",
+      "spec-review-gate",
+      "implement",
+      "review",
+      "fix",
+      "deploy"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "fix",
+  "stages": {
+    "spec": {
+      "status": "passed",
+      "startedAt": "2026-06-09T16:10:00.561Z",
+      "completedAt": "2026-06-09T16:10:00.562Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "spec-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-09T16:10:00.562Z",
+      "completedAt": "2026-06-09T16:10:00.562Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "passed",
+      "startedAt": "2026-06-09T16:10:00.562Z",
+      "completedAt": "2026-06-09T16:10:00.563Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "passed",
+      "startedAt": "2026-06-09T16:10:00.563Z",
+      "completedAt": "2026-06-09T16:10:00.563Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "fix": {
+      "status": "active",
+      "startedAt": "2026-06-09T16:10:00.563Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null
+  }
+}

@@ -1,3 +1,9 @@
 {
-  "pipelines": {}
+  "pipelines": {
+    "37ef670b-50e0-4d48-850f-49dcf3a64fe9": {
+      "projectSlug": "e2e-cycle",
+      "status": "running",
+      "currentStageId": "review"
+    }
+  }
 }

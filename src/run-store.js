@@ -136,7 +136,7 @@ function isMaintenanceRun(projectSlug, projectRoot) {
  * @param {{ projectSlug: string, projectRoot: string, goal: string, entryType: string, stagePlan: { ordered: string[], skipped?: string[] } }} input
  * @returns {object} The complete PipelineRun snapshot.
  */
-export function createRun({ projectSlug, projectRoot, goal, entryType, stagePlan }) {
+export function createRun({ projectSlug, projectRoot, goal, entryType, stagePlan, routeDecision = null }) {
   if (!projectSlug || typeof projectSlug !== 'string') {
     throw new Error(`createRun: invalid projectSlug: ${projectSlug}`);
   }
@@ -180,6 +180,7 @@ export function createRun({ projectSlug, projectRoot, goal, entryType, stagePlan
       createdBy: 'user',
       maintenanceRun: isMaintenanceRun(projectSlug, projectRoot),
       parentRunId: null,
+      routeDecision,
     },
   };
 
@@ -191,6 +192,7 @@ export function createRun({ projectSlug, projectRoot, goal, entryType, stagePlan
     projectSlug,
     currentStageId,
     entryType: run.entryType,
+    routeDecision,
   });
   return run;
 }
@@ -228,7 +230,7 @@ export function listActiveRuns(projectSlug) {
  * @param {{ status: string, artifacts?: string[], dispatchId?: string }} update
  * @returns {object} The updated PipelineRun snapshot.
  */
-export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispatchId }) {
+export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispatchId, needsPassNoChangeReview, suppressAutoAdvance }) {
   if (!stageId || typeof stageId !== 'string') {
     throw new Error(`advanceStage: invalid stageId: ${stageId}`);
   }
@@ -254,12 +256,14 @@ export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispat
     dispatchId: dispatchId ?? previousStage.dispatchId ?? null,
     artifacts: artifacts ? [...artifacts] : [...(previousStage.artifacts || [])],
     attempt: previousStage.attempt || 1,
+    ...(needsPassNoChangeReview === undefined ? {} : { needsPassNoChangeReview }),
   };
   const stages = {
     ...run.stages,
     [stageId]: stage,
   };
-  const nextStageId = ['passed', 'skipped'].includes(status)
+  const shouldAutoAdvance = !suppressAutoAdvance && ['passed', 'skipped'].includes(status);
+  const nextStageId = shouldAutoAdvance
     ? nextOpenStage({ ...run, stages }, stageId)
     : null;
   const nextStage = nextStageId ? stages[nextStageId] : null;
@@ -287,7 +291,7 @@ export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispat
 
   writeJson(statePath(pipelineRunId), updatedRun);
   updateActiveIndex(updatedRun);
-  appendLedger(pipelineRunId, 'stage-advanced', { stageId, status, artifacts, dispatchId });
+  appendLedger(pipelineRunId, 'stage-advanced', { stageId, status, artifacts, dispatchId, needsPassNoChangeReview });
   return updatedRun;
 }
 
@@ -345,6 +349,49 @@ export function markStale(pipelineRunId) {
 }
 
 /**
+ * Reset a stage for retry: set status back to 'active', increment attempt,
+ * clear completedAt and artifacts from previous attempt, and update currentStageId.
+ *
+ * @param {string} pipelineRunId
+ * @param {string} stageId
+ * @returns {object} The updated PipelineRun snapshot.
+ */
+export function resetStageForRetry(pipelineRunId, stageId) {
+  if (!stageId || typeof stageId !== 'string') {
+    throw new Error(`resetStageForRetry: invalid stageId: ${stageId}`);
+  }
+  const run = requireRun(pipelineRunId);
+  const timestamp = nowIso();
+  const previousStage = run.stages?.[stageId] || {
+    status: 'pending',
+    startedAt: null,
+    completedAt: null,
+    dispatchId: null,
+    artifacts: [],
+    attempt: 1,
+  };
+  const stage = {
+    ...previousStage,
+    status: 'active',
+    startedAt: timestamp,
+    completedAt: null,
+    dispatchId: null,
+    artifacts: [],
+    attempt: (previousStage.attempt || 1) + 1,
+  };
+  const updatedRun = {
+    ...run,
+    currentStageId: stageId,
+    stages: { ...run.stages, [stageId]: stage },
+    lifecycle: { ...run.lifecycle, lastActivityAt: timestamp },
+  };
+  writeJson(statePath(pipelineRunId), updatedRun);
+  updateActiveIndex(updatedRun);
+  appendLedger(pipelineRunId, 'stage-reset-for-retry', { stageId, attempt: stage.attempt });
+  return updatedRun;
+}
+
+/**
  * Refresh PipelineRun lifecycle.lastActivityAt and active-index summary.
  *
  * @param {string} pipelineRunId
@@ -363,4 +410,28 @@ export function touch(pipelineRunId) {
   writeJson(statePath(pipelineRunId), updatedRun);
   updateActiveIndex(updatedRun);
   appendLedger(pipelineRunId, 'run-touched', {});
+}
+
+/**
+ * Additive patch of top-level fields on a run (e.g. openAdvisories).
+ *
+ * @param {string} pipelineRunId
+ * @param {object} patch - Fields to merge into the run state.
+ * @returns {object} The updated PipelineRun snapshot.
+ */
+export function patchRun(pipelineRunId, patch) {
+  const run = requireRun(pipelineRunId);
+  const timestamp = nowIso();
+  const updatedRun = {
+    ...run,
+    ...patch,
+    lifecycle: {
+      ...run.lifecycle,
+      lastActivityAt: timestamp,
+    },
+  };
+  writeJson(statePath(pipelineRunId), updatedRun);
+  updateActiveIndex(updatedRun);
+  appendLedger(pipelineRunId, 'run-patched', { fields: Object.keys(patch) });
+  return updatedRun;
 }

@@ -16,6 +16,13 @@ function setRuntimeForEmbeddingTests() {
       enableRouteEmbeddingInTests: true,
     };
   }
+  // Force DB refresh through mock by writing a stale model marker
+  if (fs.existsSync(mod.ROUTE_VECTOR_DB_PATH)) {
+    const db = JSON.parse(fs.readFileSync(mod.ROUTE_VECTOR_DB_PATH, 'utf8'));
+    db.model = '__test_stale__';
+    db.samples = db.samples.map((s: any) => ({ ...s, model: '__test_stale__', vector: [0] }));
+    fs.writeFileSync(mod.ROUTE_VECTOR_DB_PATH, JSON.stringify(db));
+  }
 }
 
 function restoreVectorFile() {
@@ -28,13 +35,17 @@ function restoreVectorFile() {
 
 function fakeEmbeddingFetch(matchTexts: string | string[]) {
   const matches = Array.isArray(matchTexts) ? matchTexts : [matchTexts];
+  const DIM = 2048;
   return vi.fn(async (_url: any, opts: any) => {
     const body = JSON.parse(String(opts?.body || '{}'));
     if (!Object.prototype.hasOwnProperty.call(body, 'input')) {
       throw new Error('LLM chat fallback should not be called for high-confidence embedding matches');
     }
-    const input = String(body.input || '');
-    const vector = matches.some(matchText => input.includes(matchText)) ? [1, 0, 0] : [0, 1, 0];
+    const input = Array.isArray(body.input) ? body.input.join(' ') : String(body.input || '');
+    const isMatch = matches.some(matchText => input.includes(matchText));
+    const vector = new Array(DIM).fill(0);
+    vector[0] = isMatch ? 1 : 0;
+    vector[1] = isMatch ? 0 : 1;
     return {
       ok: true,
       json: async () => ({ data: [{ embedding: vector }] }),
@@ -64,8 +75,8 @@ describe('FR-50 route vector classifier', () => {
       expect(counts.get(scenario)).toBeGreaterThanOrEqual(10);
     }
     expect(db.version).toBe(1);
-    expect(db.thresholds.direct).toBe(0.85);
-    expect(db.thresholds.fallback).toBe(0.6);
+    expect(db.thresholds.direct).toBe(0.45);
+    expect(db.thresholds.fallback).toBe(0.35);
   });
 
   it('AC-50.1 high-confidence trigger routing uses embedding without LLM fallback', async () => {
@@ -108,7 +119,7 @@ describe('FR-50 route vector classifier', () => {
   });
 
   it('AC-50.5 exposes the configured confidence bands', () => {
-    expect(mod.routeVectorThresholds()).toEqual({ direct: 0.85, fallback: 0.6 });
+    expect(mod.routeVectorThresholds()).toEqual({ direct: 0.45, fallback: 0.35 });
     expect(mod.cosineSimilarity([1, 0], [1, 0])).toBeCloseTo(1);
   });
 });

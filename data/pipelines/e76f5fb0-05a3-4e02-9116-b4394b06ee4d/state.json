@@ -194,8 +194,5 @@
     "verify",
     "readme-update"
   ],
-  "scaleReason": "single full pipeline",
-  "advancePromptCounts": {
-    "sevo:sevo:spec:1": 6
-  }
+  "scaleReason": "single full pipeline"
 }

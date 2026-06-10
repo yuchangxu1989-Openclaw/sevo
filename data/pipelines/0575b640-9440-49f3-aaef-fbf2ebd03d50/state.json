@@ -193,9 +193,6 @@
     "readme-update"
   ],
   "scaleReason": "single full pipeline",
-  "advancePromptCounts": {
-    "sevo:fr-50:spec:1": 6
-  },
   "completedAt": "2026-06-09T00:00:00Z",
   "cancelReason": "fix-entry-bug-misfire",
   "status": "cancelled",

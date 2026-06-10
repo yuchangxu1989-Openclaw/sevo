@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "85be67ec-f2cc-42ad-84ec-81be245113cc",
+  "projectSlug": "e2e-default",
+  "projectRoot": "projects/e2e-default",
+  "goal": "实现完整的 SEVO 流水线自检功能",
+  "scopeFingerprint": "sha256:0c87e8e05cbe392167170afc4df6502e4f495f75d2823a6b2bafd24027b31bdb",
+  "status": "cancelled",
+  "entryType": "create",
+  "lifecycle": {
+    "createdAt": "2026-06-09T16:10:00.565Z",
+    "startedAt": "2026-06-09T16:10:00.565Z",
+    "completedAt": null,
+    "cancelledAt": "2026-06-09T16:10:00.566Z",
+    "lastActivityAt": "2026-06-09T16:10:00.566Z",
+    "staleDetectedAt": null,
+    "terminalReason": "e2e test cleanup"
+  },
+  "stagePlan": {
+    "ordered": [
+      "spec",
+      "spec-review-gate",
+      "implement",
+      "review",
+      "fix",
+      "deploy"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "spec",
+  "stages": {
+    "spec": {
+      "status": "active",
+      "startedAt": "2026-06-09T16:10:00.565Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "spec-review-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "fix": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null
+  }
+}

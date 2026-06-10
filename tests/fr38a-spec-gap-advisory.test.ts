@@ -143,7 +143,7 @@ describe('FR-38a buildSpecGapAdvisory38aNotice (AC-38a.6 advisory framing)', () 
 describe('FR-38a runSpecGapAdvisoryCheck (semantic detection)', () => {
   const base = { projectSlug: 'sevo', taskId: 't-1', projectRoot: '.', taskDescription: 'expand prefix table to 8' };
 
-  it('AC-38a.1: returns an advisory when the model reports introduced concepts', async () => {
+  it('returns degraded when the dedicated semantic classifier is disabled', async () => {
     globalThis.fetch = vi.fn(async () => fakeChatResponse(JSON.stringify({
       status: 'advisory',
       introducedConcepts: ['specify', 'design', 'review', 'ux'],
@@ -152,27 +152,27 @@ describe('FR-38a runSpecGapAdvisoryCheck (semantic detection)', () => {
     })) as any);
 
     const rec = await mod.runSpecGapAdvisoryCheck(base);
-    expect(rec.status).toBe('advisory');
-    expect(rec.introducedConcepts).toContain('specify');
-    expect(rec.recommendedSpecPatch).not.toBe('');
-    // AC-38a.4: the decision came from an LLM call, recorded with detection method.
+    expect(rec.status).toBe('degraded');
+    expect(rec.reason).toBe('llm-unavailable');
+    expect(rec.introducedConcepts).toEqual([]);
     expect(rec.detectionMethod).toBe('llm-semantic');
-    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
-  it('AC-38a.2: returns skipped-pure-bugfix for a pure bug fix', async () => {
+  it('does not classify pure bug fixes while the dedicated classifier is disabled', async () => {
     globalThis.fetch = vi.fn(async () => fakeChatResponse(JSON.stringify({
       status: 'skipped-pure-bugfix', isPureBugFix: true, matchedFrAc: ['FR-7', 'AC-7.1'],
       introducedConcepts: [], reason: 'fixes FR-7 defect', confidence: 0.8,
     })) as any);
 
     const rec = await mod.runSpecGapAdvisoryCheck(base);
-    expect(rec.status).toBe('skipped-pure-bugfix');
+    expect(rec.status).toBe('degraded');
+    expect(rec.reason).toBe('llm-unavailable');
     expect(rec.introducedConcepts).toEqual([]);
-    expect(rec.matchedFrAc).toEqual(['FR-7', 'AC-7.1']);
+    expect(rec.matchedFrAc).toEqual([]);
   });
 
-  it('AC-38a.3: a mixed task yields advisory with both new concepts and covered FR/AC', async () => {
+  it('does not emit mixed-task conclusions while the dedicated classifier is disabled', async () => {
     globalThis.fetch = vi.fn(async () => fakeChatResponse(JSON.stringify({
       status: 'advisory', introducedConcepts: ['review prefix', 'ux prefix'],
       matchedFrAc: ['FR-39'], gapSummary: 'fix covered, new prefixes not', recommendedSpecPatch: 'add review/ux',
@@ -180,9 +180,10 @@ describe('FR-38a runSpecGapAdvisoryCheck (semantic detection)', () => {
     })) as any);
 
     const rec = await mod.runSpecGapAdvisoryCheck(base);
-    expect(rec.status).toBe('advisory');
-    expect(rec.introducedConcepts.length).toBeGreaterThan(0);
-    expect(rec.matchedFrAc).toContain('FR-39');
+    expect(rec.status).toBe('degraded');
+    expect(rec.reason).toBe('llm-unavailable');
+    expect(rec.introducedConcepts).toEqual([]);
+    expect(rec.matchedFrAc).toEqual([]);
   });
 
   it('AC-50.3: records status=degraded reason=llm-unavailable when the model errors', async () => {
@@ -192,7 +193,7 @@ describe('FR-38a runSpecGapAdvisoryCheck (semantic detection)', () => {
     expect(rec.reason).toBe('llm-unavailable');
   });
 
-  it('AC-50.3: a slow model is bounded by the sync timeout and recorded as degraded', async () => {
+  it('returns unavailable immediately before starting a slow model call when the classifier is disabled', async () => {
     globalThis.fetch = vi.fn((_url: any, opts: any) => new Promise((resolve, reject) => {
       // Resolve far later than the budget; honor the AbortController so the race
       // resolves to a timeout sentinel quickly.
@@ -207,8 +208,9 @@ describe('FR-38a runSpecGapAdvisoryCheck (semantic detection)', () => {
     const rec = await mod.runSpecGapAdvisoryCheck({ ...base, timeoutMs: 200 });
     const elapsed = Date.now() - start;
     expect(rec.status).toBe('degraded');
-    expect(rec.reason).toBe('llm-timeout');
-    expect(elapsed).toBeLessThan(2000);
+    expect(rec.reason).toBe('llm-unavailable');
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(elapsed).toBeLessThan(200);
   });
 
   it('returns degraded when the spec file is unavailable', async () => {
@@ -233,8 +235,9 @@ describe('FR-38a applySpecGapAdvisory38a (non-blocking entry hook)', () => {
 
     let rec: any;
     await expect((async () => { rec = await mod.applySpecGapAdvisory38a(base); })()).resolves.not.toThrow();
-    expect(rec.status).toBe('advisory');
-    expect(rec.introducedConcepts).toContain('ux prefix');
+    expect(rec.status).toBe('degraded');
+    expect(rec.reason).toBe('llm-unavailable');
+    expect(rec.asyncRetryScheduled).toBe(true);
   });
 
   it('schedules an async retry when the sync check is degraded (AC-50.3)', async () => {
@@ -276,12 +279,12 @@ describe('FR-38a scheduleSpecGapAdvisoryAsyncRetry (AC-38a.8)', () => {
     const retry = mod.scheduleSpecGapAdvisoryAsyncRetry({ ...base, taskId });
     await retry();
 
-    // Notice re-emitted because confidence >= SPEC_GAP_ADVISORY_HIGH_CONFIDENCE.
+    // The classifier is disabled, so the async retry stays degraded and does not
+    // re-emit a stale advisory.
     const notice = g.pendingNotices.find((n: string) => n.includes('建议先补 spec'));
-    expect(notice).toBeTruthy();
-    // The record is written to the spec-integrity ledger under the same taskId.
+    expect(notice).toBeFalsy();
     const records = g.specGapAdvisory38aRecords as any[];
-    expect(records.some((r) => r.taskId === taskId && r.asyncRetry === true)).toBe(true);
+    expect(records.some((r) => r.taskId === taskId && r.asyncRetry === true)).toBe(false);
   });
 
   it('does NOT re-emit a notice for a low-confidence async gap', async () => {
@@ -338,27 +341,27 @@ describe('FR-38a detection event log completeness (AC-38a.4)', () => {
       pipelineId: 'pl-evt-1', projectSlug: 'sevo', taskId: 't-evt-1',
       projectRoot: '.', taskDescription: 'route by stage prefix',
     });
-    expect(rec.status).toBe('advisory');
+    expect(rec.status).toBe('degraded');
+    expect(rec.reason).toBe('llm-unavailable');
 
     const events = readSpecGapEvents(eventsPath);
     expect(events.length).toBeGreaterThan(0);
     const ev = events[events.length - 1];
-    // model call ID
-    expect(ev.model).toBeTruthy();
-    expect(ev.requestId).toBe('chatcmpl-evt-1');
+    expect(ev.model).toBeFalsy();
+    expect(ev.requestId).toBeFalsy();
     // input summary
     expect(ev.inputSummary).toContain('stage prefix');
     // output conclusion
-    expect(ev.status).toBe('advisory');
-    expect(ev.introducedConcepts).toContain('stage-prefix routing');
-    expect(ev.matchedFrAc).toContain('FR-39');
-    expect(ev.gapSummary).toBe('prefix routing undefined');
-    expect(ev.recommendedSpecPatch).toBe('add a routing FR');
-    expect(ev.reason).toBe('spec has no routing concept');
+    expect(ev.status).toBe('degraded');
+    expect(ev.introducedConcepts).toEqual([]);
+    expect(ev.matchedFrAc).toEqual([]);
+    expect(ev.gapSummary).toBe('');
+    expect(ev.recommendedSpecPatch).toBe('');
+    expect(ev.reason).toBe('llm-unavailable');
     expect(ev.detectionMethod).toBe('llm-semantic');
     // confidence
-    expect(ev.confidence).toBe(0.91);
-    expect(ev.severity).toBe('high');
+    expect(ev.confidence).toBe(0);
+    expect(ev.severity).toBe('low');
   });
 });
 
@@ -367,7 +370,7 @@ describe('FR-38a detection event log completeness (AC-38a.4)', () => {
 describe('FR-38a sync timeout is exactly the budget (AC-38a.7)', () => {
   const base = { projectSlug: 'sevo', taskId: 't-budget', projectRoot: '.', taskDescription: 'slow task' };
 
-  it('a hung fetch resolves to degraded within the budget, with no grace overrun', async () => {
+  it('a disabled classifier resolves to degraded without waiting for the timeout budget', async () => {
     globalThis.fetch = vi.fn((_url: any, opts: any) => new Promise((resolve, reject) => {
       // Never resolves on its own and ignores the abort signal, forcing the
       // outer wall-clock race (not the AbortController) to be the bound.
@@ -379,9 +382,8 @@ describe('FR-38a sync timeout is exactly the budget (AC-38a.7)', () => {
     const rec = await mod.runSpecGapAdvisoryCheck({ ...base, timeoutMs });
     const elapsed = Date.now() - start;
     expect(rec.status).toBe('degraded');
-    expect(rec.reason).toBe('llm-timeout');
-    // No +50ms grace: the race fires at exactly timeoutMs. Allow a small
-    // scheduler tolerance but assert it is well under the old timeoutMs+50 path.
-    expect(elapsed).toBeLessThan(timeoutMs + 40);
+    expect(rec.reason).toBe('llm-unavailable');
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(elapsed).toBeLessThan(timeoutMs);
   });
 });

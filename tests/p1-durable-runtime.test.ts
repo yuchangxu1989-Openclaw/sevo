@@ -5,9 +5,9 @@ import * as mod from '../index.js';
 const GLOBAL_KEY = Symbol.for('openclaw.sevo-pipeline.instance');
 const g = () => (globalThis as any)[GLOBAL_KEY];
 
-// P1-5 + P1-1: pendingNotices / pendingAdvances and the injected-advance ack
-// ledger must survive a Gateway restart (persist to disk + hydrate) and an
-// injected advance must replay until its label appears as a board task.
+// V2 disables the old V1 durable replay queue. Pending runtime state may still be
+// persisted as an empty cleanup marker, but restart hydration must not resurrect
+// stale notices or advances from disk.
 describe('P1-5/P1-1 durable pending-runtime store + ack lifecycle', () => {
   beforeEach(() => {
     const state = g();
@@ -25,7 +25,7 @@ describe('P1-5/P1-1 durable pending-runtime store + ack lifecycle', () => {
     try { fs.unlinkSync(mod.PENDING_RUNTIME_PATH); } catch { /* best-effort */ }
   });
 
-  it('persists notices and advances to disk and hydrates them back after a restart', () => {
+  it('does not hydrate stale V1 notices or advances after a restart', () => {
     const state = g();
     state.pendingNotices.push('[SEVO 恢复] restart-survivor notice');
     state.pendingAdvances.set('pipe-restart', [{
@@ -46,10 +46,9 @@ describe('P1-5/P1-1 durable pending-runtime store + ack lifecycle', () => {
 
     mod.hydratePendingRuntimeState();
 
-    expect(g().pendingNotices).toContain('[SEVO 恢复] restart-survivor notice');
-    const advances = g().pendingAdvances.get('pipe-restart');
-    expect(advances).toHaveLength(1);
-    expect(advances[0].label).toBe('sevo:demo:implement:1');
+    expect(g().pendingNotices).toEqual([]);
+    expect(g().pendingAdvances.size).toBe(0);
+    expect(g().injectedAdvances.size).toBe(0);
   });
 
   it('consume moves advances into the injected ledger instead of dropping them', () => {

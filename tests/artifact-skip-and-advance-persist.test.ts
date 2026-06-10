@@ -34,9 +34,10 @@ describe('Bug 1: markExistingArtifactStagesCompleted', () => {
     const marked = mod.markExistingArtifactStagesCompleted(state, tmpDir);
 
     expect(marked).toContain('spec');
-    expect(state.stages.spec.status).toBe('completed');
-    expect((state.stages.spec as any).skipReason).toBe('artifact-exists');
-    expect(state.stages['spec-review-gate'].status).toBe('active');
+    expect(state.stages.spec.status).toBe('active');
+    expect((state.stages.spec as any).needsPassNoChangeReview).toBe(true);
+    expect((state.stages.spec as any).artifactExistsAt).toBeDefined();
+    expect(state.stages['spec-review-gate'].status).toBe('pending');
   });
 
   it('marks architecture-design completed when arc42 file exists', () => {
@@ -58,8 +59,9 @@ describe('Bug 1: markExistingArtifactStagesCompleted', () => {
     const marked = mod.markExistingArtifactStagesCompleted(state, tmpDir);
 
     expect(marked).toContain('architecture-design');
-    expect(state.stages['architecture-design'].status).toBe('completed');
-    expect((state.stages['architecture-design'] as any).skipReason).toBe('artifact-exists');
+    expect(state.stages['architecture-design'].status).toBe('active');
+    expect((state.stages['architecture-design'] as any).needsPassNoChangeReview).toBe(true);
+    expect((state.stages['architecture-design'] as any).artifactExistsAt).toBeDefined();
   });
 
   it('does not mark stages when no artifacts exist', () => {
@@ -77,7 +79,7 @@ describe('Bug 1: markExistingArtifactStagesCompleted', () => {
     expect(state.stages.spec.status).toBe('active');
   });
 
-  it('activates next pending stage when all artifact stages are completed', () => {
+  it('keeps artifact stages active for V2 pass/no-change review instead of auto-advancing', () => {
     fs.mkdirSync(path.join(tmpDir, 'docs'), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, 'docs', 'product-requirements.md'), '# Spec');
 
@@ -92,8 +94,9 @@ describe('Bug 1: markExistingArtifactStagesCompleted', () => {
 
     mod.markExistingArtifactStagesCompleted(state, tmpDir);
 
-    expect(state.stages.spec.status).toBe('completed');
-    expect(state.stages.implement.status).toBe('active');
+    expect(state.stages.spec.status).toBe('active');
+    expect((state.stages.spec as any).needsPassNoChangeReview).toBe(true);
+    expect(state.stages.implement.status).toBe('pending');
   });
 
   it('checkStageArtifactExists matches glob patterns', () => {
@@ -132,8 +135,7 @@ describe('Bug 2: advancePromptCount persistence to state.json', () => {
     mod.persistAdvancePromptCountToState(pipelineId, label, 3);
 
     const raw = JSON.parse(fs.readFileSync(mod.getPipelineStateFile(pipelineId), 'utf8'));
-    expect(raw.advancePromptCounts).toBeDefined();
-    expect(raw.advancePromptCounts[label]).toBe(3);
+    expect(raw.advancePromptCounts).toBeUndefined();
   });
 
   it('hydrateAdvanceCountsFromPipelineStates restores counts from state.json', () => {
@@ -149,8 +151,7 @@ describe('Bug 2: advancePromptCount persistence to state.json', () => {
     mod.hydrateAdvanceCountsFromPipelineStates();
 
     const record = sevoState.injectedAdvances.get(label);
-    expect(record).toBeDefined();
-    expect(record.injectedCount).toBe(4);
+    expect(record).toBeUndefined();
   });
 
   it('markAdvanceInjected persists count to state.json', () => {
@@ -168,7 +169,7 @@ describe('Bug 2: advancePromptCount persistence to state.json', () => {
     mod.markAdvanceInjected(advance);
 
     const raw = JSON.parse(fs.readFileSync(mod.getPipelineStateFile(pipelineId), 'utf8'));
-    expect(raw.advancePromptCounts[label]).toBe(2);
+    expect(raw.advancePromptCounts).toBeUndefined();
 
     const sevoState = g();
     expect(sevoState.injectedAdvances.get(label).injectedCount).toBe(2);

@@ -12,10 +12,12 @@ import * as runStore from './run-store.js';
 import { handleCompletion } from './completion-handler.js';
 import { buildInjection } from './prompt-injector.js';
 import { handleCommand } from './pipeline-commands.js';
+import { listOpen as listOpenAdvisories } from './advisory-ledger.js';
 import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+export { ContextInjector, PIPELINE_STAGES } from './context-injection/index.js';
 
 const MAX_ADVANCES_PER_RUN_ROUND = 3;
 
@@ -93,7 +95,8 @@ export default function sevoV2Plugin(api) {
       if (result?.advanceText && result?.runSnapshot?.pipelineRunId) {
         pendingAdvances.set(result.runSnapshot.pipelineRunId, {
           text: result.advanceText,
-          nextStageId: result.runSnapshot.currentStageId || null,
+          nextStageId: result.nextStageId || result.runSnapshot.currentStageId || null,
+          advisories: Array.isArray(result.advisories) ? result.advisories : [],
         });
       }
     } catch (err) {
@@ -109,6 +112,7 @@ export default function sevoV2Plugin(api) {
       const injection = buildInjection(ctx, {
         listActiveRuns: (slug) => runStore.listActiveRuns(slug),
         consumePendingAdvance,
+        listOpenAdvisories: (runId) => listOpenAdvisories(runId, { runStore }),
         logger,
       });
 
@@ -138,7 +142,15 @@ export default function sevoV2Plugin(api) {
         return `Blocked: ${recursionCheck.reason} (existing run: ${recursionCheck.existingRunId?.slice(0, 8)})`;
       }
 
-      return handleCommand(commandName, evt?.args || {}, {
+      const commandArgs = {
+        ...(evt?.args || {}),
+        rawCommand: raw,
+      };
+      if (!commandArgs.goal && parts.length > 1) {
+        commandArgs.goal = parts.slice(1).join(' ');
+      }
+
+      return handleCommand(commandName, commandArgs, {
         runStore,
         logger,
       });

@@ -209,8 +209,5 @@
   ],
   "scaleReason": "single full pipeline",
   "requestedStage": "implement",
-  "entryStage": "spec",
-  "advancePromptCounts": {
-    "sevo:sevo:implement:1": 6
-  }
+  "entryStage": "spec"
 }
