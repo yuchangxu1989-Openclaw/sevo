@@ -19,6 +19,7 @@ state/
 !src/advance-prompt-contract.js
 !src/route-classifier.js
 !src/stage-policy.js
+!src/stage-pipeline-config.js
 !src/advisory-ledger.js
 !src/consistency-check-plan.js
 !index.js

@@ -1,0 +1,8 @@
+{"timestamp":"2026-06-10T11:54:40.365Z","type":"run-created","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"projectSlug":"findings-test","currentStageId":"specify","entryType":"create","routeDecision":null}}
+{"timestamp":"2026-06-10T11:54:40.368Z","type":"run-patched","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-10T11:54:40.369Z","type":"stage-advanced","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"stageId":"specify","status":"passed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-10T11:54:40.370Z","type":"run-patched","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-10T11:54:40.371Z","type":"stage-advanced","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"stageId":"implement","status":"passed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-10T11:54:40.372Z","type":"run-patched","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-10T11:54:40.373Z","type":"stage-advanced","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"stageId":"review","status":"failed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-10T11:54:40.374Z","type":"stage-reset-for-retry","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"stageId":"fix","attempt":2}}

@@ -21,6 +21,31 @@ export { ContextInjector, PIPELINE_STAGES } from './context-injection/index.js';
 
 const MAX_ADVANCES_PER_RUN_ROUND = 3;
 
+function inferProjectSlugFromGoal(goal) {
+  if (!goal || typeof goal !== 'string') return null;
+  const activeRuns = runStore.listActiveRuns();
+  const knownSlugs = [...new Set(activeRuns.map((r) => r.projectSlug).filter(Boolean))];
+  for (const slug of knownSlugs) {
+    if (goal.toLowerCase().includes(slug.toLowerCase())) {
+      const matchedRun = activeRuns.find((r) => r.projectSlug === slug);
+      return { projectSlug: slug, projectRoot: matchedRun?.projectRoot || `projects/${slug}` };
+    }
+  }
+  const WORKSPACE_PROJECTS = [
+    { slug: 'agentos-site', projectRoot: 'projects/agentos-site', keywords: ['官网', 'agentos-site', 'site'] },
+    { slug: 'kivo', projectRoot: 'projects/kivo', keywords: ['kivo', 'KIVO'] },
+    { slug: 'sevo', projectRoot: 'projects/sevo', keywords: ['sevo', 'SEVO', '流水线'] },
+    { slug: 'aco', projectRoot: 'projects/aco', keywords: ['aco', 'ACO', '插件'] },
+    { slug: 'claw-design', projectRoot: 'projects/claw-design', keywords: ['claw-design', 'design', '设计引擎'] },
+  ];
+  for (const proj of WORKSPACE_PROJECTS) {
+    if (proj.keywords.some((kw) => goal.includes(kw))) {
+      return { projectSlug: proj.slug, projectRoot: proj.projectRoot };
+    }
+  }
+  return null;
+}
+
 /** Ephemeral pending advances — lives only within a single event loop cycle. */
 const pendingAdvances = new Map();
 
@@ -90,12 +115,19 @@ export default function sevoV2Plugin(api) {
         advanceDepthByRun,
         maxAdvancesPerRunRound: MAX_ADVANCES_PER_RUN_ROUND,
         logger,
+        inferProjectSlug: inferProjectSlugFromGoal,
       });
 
       if (result?.advanceText && result?.runSnapshot?.pipelineRunId) {
         pendingAdvances.set(result.runSnapshot.pipelineRunId, {
           text: result.advanceText,
           nextStageId: result.nextStageId || result.runSnapshot.currentStageId || null,
+          advisories: Array.isArray(result.advisories) ? result.advisories : [],
+        });
+      } else if (result?.advanceText && !result?.runSnapshot) {
+        pendingAdvances.set('__guidance__', {
+          text: result.advanceText,
+          nextStageId: null,
           advisories: Array.isArray(result.advisories) ? result.advisories : [],
         });
       }

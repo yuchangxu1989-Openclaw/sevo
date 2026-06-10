@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "d844dac1-750d-4d2a-8cb1-3e1e687af1a3",
+  "projectSlug": "failure-test",
+  "projectRoot": "projects/test",
+  "goal": "Test failure nextStageId",
+  "scopeFingerprint": "sha256:5a84d43804268de15c4c2822afd78bf96f33302683b0d62f439ad460b9c284f1",
+  "status": "running",
+  "entryType": "create",
+  "lifecycle": {
+    "createdAt": "2026-06-10T11:54:40.375Z",
+    "startedAt": "2026-06-10T11:54:40.375Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "lastActivityAt": "2026-06-10T11:54:40.377Z",
+    "staleDetectedAt": null,
+    "terminalReason": null
+  },
+  "stagePlan": {
+    "ordered": [
+      "specify",
+      "implement",
+      "review"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "implement",
+  "stages": {
+    "specify": {
+      "status": "passed",
+      "startedAt": "2026-06-10T11:54:40.375Z",
+      "completedAt": "2026-06-10T11:54:40.376Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "failed",
+      "startedAt": "2026-06-10T11:54:40.376Z",
+      "completedAt": "2026-06-10T11:54:40.377Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "812c6d06-bbf2-4f51-90a3-c41941a4bd36",
+      "runId": "d844dac1-750d-4d2a-8cb1-3e1e687af1a3",
+      "stageId": "specify",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"specify\".",
+      "evidence": [],
+      "createdAt": "2026-06-10T11:54:40.376Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "58a6fe28-6ff4-4e63-acad-829c7a70f20e",
+      "runId": "d844dac1-750d-4d2a-8cb1-3e1e687af1a3",
+      "stageId": "implement",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"implement\" is missing required evidence fields: codeChanges, testRun",
+      "evidence": [
+        "codeChanges",
+        "testRun"
+      ],
+      "createdAt": "2026-06-10T11:54:40.377Z",
+      "resolvedAt": null
+    }
+  ]
+}

@@ -4,6 +4,21 @@
       "projectSlug": "e2e-cycle",
       "status": "running",
       "currentStageId": "review"
+    },
+    "395d334a-034a-4cff-a16a-5d5d1309dc49": {
+      "projectSlug": "kivo",
+      "status": "running",
+      "currentStageId": "smoke-test"
+    },
+    "80e33035-3acf-42ea-8e6c-e2f8d56bf6ae": {
+      "projectSlug": "findings-test",
+      "status": "running",
+      "currentStageId": "fix"
+    },
+    "d844dac1-750d-4d2a-8cb1-3e1e687af1a3": {
+      "projectSlug": "failure-test",
+      "status": "running",
+      "currentStageId": "implement"
     }
   }
 }

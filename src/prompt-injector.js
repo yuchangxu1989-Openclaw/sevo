@@ -7,7 +7,7 @@
  * @module prompt-injector
  */
 
-import { encode } from './label-protocol.js';
+import { buildDispatchContract } from './stage-dispatch-contract.js';
 import { buildAdvancePrompt } from './advance-prompt-contract.js';
 
 const MAX_RUNS_INJECTED = 3;
@@ -86,7 +86,7 @@ function formatStatusReminder(run) {
 function formatInitialDispatch(run) {
   const stageId = run.currentStageId;
   const attempt = run.stages?.[stageId]?.attempt || 1;
-  const label = encode({
+  const { label } = buildDispatchContract({
     projectSlug: run.projectSlug,
     pipelineRunId: run.pipelineRunId,
     stageId,

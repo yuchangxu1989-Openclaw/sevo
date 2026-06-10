@@ -8,7 +8,7 @@ const g = () => (globalThis as any)[GLOBAL_KEY];
 // V2 disables the old V1 durable replay queue. Pending runtime state may still be
 // persisted as an empty cleanup marker, but restart hydration must not resurrect
 // stale notices or advances from disk.
-describe('P1-5/P1-1 durable pending-runtime store + ack lifecycle', () => {
+describe('V2 pending-runtime cleanup + injection ledger lifecycle', () => {
   beforeEach(() => {
     const state = g();
     state.pendingNotices = [];
@@ -69,31 +69,4 @@ describe('P1-5/P1-1 durable pending-runtime store + ack lifecycle', () => {
     expect(g().injectedAdvances.get('sevo:ackdemo:implement:1').injectedCount).toBe(1);
   });
 
-  it('replays an injected advance whose label is not yet on the board', () => {
-    const state = g();
-    state.injectedAdvances.set('sevo:replay:implement:1', {
-      entry: { pipelineId: 'pipe-replay', stageId: 'implement', label: 'sevo:replay:implement:1', taskDescription: 'b', timeout: 1200 },
-      injectedCount: 1,
-      lastInjectedAt: new Date().toISOString(),
-    });
-
-    const replay = mod.collectReplayableInjectedAdvances();
-    expect(replay.map((r: any) => r.label)).toContain('sevo:replay:implement:1');
-    // Still tracked (not acked) so it can replay again next build.
-    expect(g().injectedAdvances.has('sevo:replay:implement:1')).toBe(true);
-  });
-
-  it('stops replaying and emits a loud notice once the replay cap is exceeded', () => {
-    const state = g();
-    state.injectedAdvances.set('sevo:exhausted:implement:1', {
-      entry: { pipelineId: 'pipe-x', stageId: 'implement', label: 'sevo:exhausted:implement:1', taskDescription: 'b', timeout: 1200 },
-      injectedCount: mod.ADVANCE_REPLAY_CAP,
-      lastInjectedAt: new Date().toISOString(),
-    });
-
-    const replay = mod.collectReplayableInjectedAdvances();
-    expect(replay.map((r: any) => r.label)).not.toContain('sevo:exhausted:implement:1');
-    expect(g().injectedAdvances.has('sevo:exhausted:implement:1')).toBe(false);
-    expect(g().pendingNotices.some((n: string) => n.includes('sevo:exhausted:implement:1'))).toBe(true);
-  });
 });

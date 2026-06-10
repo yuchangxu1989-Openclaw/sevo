@@ -138,7 +138,7 @@ describe('Bug 2: advancePromptCount persistence to state.json', () => {
     expect(raw.advancePromptCounts).toBeUndefined();
   });
 
-  it('hydrateAdvanceCountsFromPipelineStates restores counts from state.json', () => {
+  it('hydrateAdvanceCountsFromPipelineStates ignores stale V1 counts from state.json', () => {
     const label = 'sevo:test-proj:implement:1';
     const statePath = mod.getPipelineStateFile(pipelineId);
     const stateData = JSON.parse(fs.readFileSync(statePath, 'utf8'));

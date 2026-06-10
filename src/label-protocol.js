@@ -123,19 +123,35 @@ export function decode(label) {
   }
 
   const naturalMatch = body.match(/^([a-z0-9][a-z0-9-]*)\s+([a-z0-9][a-z0-9-]*)\b/i);
-  if (!naturalMatch) return null;
+  if (naturalMatch) {
+    const first = naturalMatch[1].toLowerCase();
+    const second = naturalMatch[2].toLowerCase();
+    if (KNOWN_STAGES.has(first)) {
+      return {
+        projectSlug: second,
+        pipelineRunId: null,
+        pipelineRunIdShort: null,
+        stageId: first,
+        attempt: 1,
+      };
+    }
+  }
 
-  const first = naturalMatch[1].toLowerCase();
-  const second = naturalMatch[2].toLowerCase();
-  if (!KNOWN_STAGES.has(first)) return null;
+  const stageOnlyMatch = body.match(/^([a-z0-9][a-z0-9-]*)\s+/i);
+  if (stageOnlyMatch) {
+    const candidate = stageOnlyMatch[1].toLowerCase();
+    if (KNOWN_STAGES.has(candidate)) {
+      return {
+        projectSlug: null,
+        pipelineRunId: null,
+        pipelineRunIdShort: null,
+        stageId: candidate,
+        attempt: 1,
+      };
+    }
+  }
 
-  return {
-    projectSlug: second,
-    pipelineRunId: null,
-    pipelineRunIdShort: null,
-    stageId: first,
-    attempt: 1,
-  };
+  return null;
 }
 
 /**

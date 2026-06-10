@@ -44,4 +44,30 @@ describe('SEVO label protocol', () => {
       attempt: 1,
     });
   });
+
+  it('decodes stage-only labels with non-ASCII descriptions (no projectSlug)', () => {
+    expect(decode('sevo:fix 官网SEVO页面品字形布局修复')).toEqual({
+      projectSlug: null,
+      pipelineRunId: null,
+      pipelineRunIdShort: null,
+      stageId: 'fix',
+      attempt: 1,
+    });
+
+    expect(decode('sevo:review 官网SEVO品字形布局审计')).toEqual({
+      projectSlug: null,
+      pipelineRunId: null,
+      pipelineRunIdShort: null,
+      stageId: 'review',
+      attempt: 1,
+    });
+
+    expect(decode('sevo:implement 添加用户认证功能')).toEqual({
+      projectSlug: null,
+      pipelineRunId: null,
+      pipelineRunIdShort: null,
+      stageId: 'implement',
+      attempt: 1,
+    });
+  });
 });
