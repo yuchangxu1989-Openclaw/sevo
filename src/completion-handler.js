@@ -289,7 +289,18 @@ function stageMatches(run, stageId, attempt) {
   return Number(stage.attempt || 1) === Number(attempt || 1);
 }
 
-function getNextStageId(run, completedStageId) {
+function getCycleTargetStageId(run, completedStageId, completedStageStatus) {
+  const config = getStageConfig(completedStageId);
+  if (!config?.cycleTarget) return null;
+  if (config.cycleCondition && config.cycleCondition !== completedStageStatus) return null;
+  if (!run?.stages?.[config.cycleTarget]) return null;
+  return config.cycleTarget;
+}
+
+function getNextStageId(run, completedStageId, completedStageStatus = null) {
+  const cycleTarget = getCycleTargetStageId(run, completedStageId, completedStageStatus);
+  if (cycleTarget) return cycleTarget;
+
   const ordered = Array.isArray(run?.stagePlan?.ordered) ? run.stagePlan.ordered : [];
   const index = ordered.indexOf(completedStageId);
   if (index < 0) return null;
@@ -360,7 +371,7 @@ function buildAdvisorySummary(findingsInfo, advisoryCount) {
   return parts.join('; ') || null;
 }
 
-function computeAdvance(run, completedStageId, deps = {}) {
+  const nextStageId = getNextStageId(run, completedStageId, completedStageStatus);
   const runStore = deps.runStore || defaultRunStore;
   const nextStageId = getNextStageId(run, completedStageId);
   const completedStageStatus = run.stages?.[completedStageId]?.status || 'completed';
