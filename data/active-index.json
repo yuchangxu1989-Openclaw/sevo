@@ -159,6 +159,11 @@
       "projectSlug": "npm",
       "status": "running",
       "currentStageId": "fix"
+    },
+    "dc61de41-42fb-4264-8e50-bdb1bbe9967f": {
+      "projectSlug": "sevo-pipeline",
+      "status": "running",
+      "currentStageId": "fix"
     }
   }
 }

@@ -794,7 +794,7 @@ Why：SEVO 没有主会话拥有的实时上下文。若 SEVO 自己派任务，
 
 - **定位**：SEVO 的安装入口和用户交互界面。负责 npm 包分发、CLI 入口、初始化命令、插件自动注册、环境健康检查，以及 Project 管理、FR 管理、Pipeline 状态查询和手动干预的全部命令行操作。
 - **包名**：`sevo-pipeline`（统一 npm 包名，CLI 命令名为 `sevo`）。
-- **包结构**：单包双入口——`dist/` 提供库 API（PipelineEngine、AdvisoryEngine、LedgerEngine、Adapter 等），`plugin/` 提供 OpenClaw 插件入口（register + hooks），`bin/` 提供 CLI 入口。
+ - **包结构**：单包双入口——`lib/` 提供库 API（PipelineEngine、AdvisoryEngine、LedgerEngine、Adapter 等），`index.js` 提供 OpenClaw 插件入口（register + hooks），`bin/` 提供 CLI 入口。
 - **输入**：用户执行 `npm install -g sevo-pipeline` 和 CLI 命令。
 - **处理**：
   1. npm 包包含 SEVO 核心库 + CLI 入口 + 内置 OpenClaw 插件。

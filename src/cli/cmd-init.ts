@@ -461,8 +461,8 @@ function copyBuiltinEvaluators(projectRoot: string): void {
     fs.mkdirSync(evaluatorsDir, { recursive: true });
   }
 
-  // Built-in evaluators are located relative to this file in the dist/npm package
-  // At runtime: dist/cli/cmd-init.js → dist/evaluators/builtins/
+  // Built-in evaluators are located next to the CLI package entry.
+  // At runtime: lib/cli/cmd-init.js → lib/evaluators/builtins/
   // At source: src/cli/cmd-init.ts → src/evaluators/builtins/
   const currentDir = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
   const builtinsDir = path.join(currentDir, '..', 'evaluators', 'builtins');

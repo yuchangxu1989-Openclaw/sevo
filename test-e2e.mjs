@@ -92,61 +92,18 @@ await test('utils: resolveConfiguredPath', async () => {
   assert(rel === path.resolve('/base', 'rel/path'), `relative resolve failed: ${rel}`);
 });
 
-// ── 2. Bridge Module ──
+// ── 2. Legacy Bridge Module ──
 
-await test('bridge: import succeeds', async () => {
+await test('bridge: removed from v2 package surface', async () => {
+  assert(!fs.existsSync(path.join(__dirname, 'dist')), 'dist/ should not exist in v2 package');
+});
+
+await test('bridge: source compatibility file is absent or no dist-backed runtime is available', async () => {
+  const bridgePath = path.join(__dirname, 'bridge.js');
+  if (!fs.existsSync(bridgePath)) return;
   const mod = await import('./bridge.js');
-  assert(typeof mod.isAvailable === 'function');
-  assert(typeof mod.getPipelineEngine === 'function');
-  assert(typeof mod.getLedgerEngine === 'function');
-  assert(typeof mod.getRoute === 'function');
-  assert(typeof mod.getOrchestrator === 'function');
-  assert(typeof mod.getAdapter === 'function');
-  assert(typeof mod.getClarificationCoordinator === 'function');
-  assert(typeof mod.setBridgeConfig === 'function');
-  assert(typeof mod.getDataPath === 'function');
-});
-
-await test('bridge: isAvailable returns true (dist/ exists)', async () => {
-  const { isAvailable } = await import('./bridge.js');
-  assert(isAvailable() === true, 'should be true with dist/ present');
-});
-
-await test('bridge: getPipelineEngine loads or returns null', async () => {
-  const { getPipelineEngine } = await import('./bridge.js');
-  const eng = await getPipelineEngine();
-  // May succeed or fail depending on dist/ contents — should not throw
-  console.log(`    getPipelineEngine: ${eng ? 'loaded' : 'null (graceful)'}`);
-});
-
-await test('bridge: getLedgerEngine loads or returns null', async () => {
-  const { getLedgerEngine } = await import('./bridge.js');
-  const eng = await getLedgerEngine();
-  console.log(`    getLedgerEngine: ${eng ? 'loaded' : 'null (graceful)'}`);
-});
-
-await test('bridge: getRoute loads or returns null', async () => {
-  const { getRoute } = await import('./bridge.js');
-  const r = await getRoute();
-  console.log(`    getRoute: ${r ? 'loaded' : 'null (graceful)'}`);
-});
-
-await test('bridge: getOrchestrator loads or returns null', async () => {
-  const { getOrchestrator } = await import('./bridge.js');
-  const o = await getOrchestrator();
-  console.log(`    getOrchestrator: ${o ? 'loaded' : 'null (graceful)'}`);
-});
-
-await test('bridge: getAdapter loads or returns null', async () => {
-  const { getAdapter } = await import('./bridge.js');
-  const a = await getAdapter();
-  console.log(`    getAdapter: ${a ? 'loaded' : 'null (graceful)'}`);
-});
-
-await test('bridge: getClarificationCoordinator loads or returns null', async () => {
-  const { getClarificationCoordinator } = await import('./bridge.js');
-  const c = await getClarificationCoordinator();
-  console.log(`    getClarificationCoordinator: ${c ? 'loaded' : 'null (graceful)'}`);
+  const availability = mod.isAvailable();
+  assert(availability !== true, 'dist-backed bridge should not report active availability');
 });
 
 // ── 3. Task Mapper ──
@@ -183,9 +140,9 @@ await test('index: default export has correct shape', async () => {
   assert(typeof plugin.register === 'function', 'register not a function');
 });
 
-// ── 5. Plugin Register (degraded mode) ──
+// ── 5. Plugin Register ──
 
-await test('index: register() in active mode (dist/ exists)', async () => {
+await test('index: register() in active mode', async () => {
   const mod = await import('./index.js');
   const plugin = mod.default;
   const logs = { info: [], warn: [], error: [] };

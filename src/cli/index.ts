@@ -35,7 +35,7 @@ import { configureProgressiveHelp, recordCliCommandUsage } from '../progressive-
 function getVersion(): string {
   try {
     const __dirname = dirname(fileURLToPath(import.meta.url));
-    // Try ../package.json (from dist/cli/) and ../../package.json (fallback)
+    // Try ../package.json (from lib/cli/) and ../../package.json (fallback)
     for (const rel of ['..', '../..']) {
       const p = join(__dirname, rel, 'package.json');
       try {

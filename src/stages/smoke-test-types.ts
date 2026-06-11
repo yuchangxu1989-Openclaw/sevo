@@ -5,7 +5,7 @@ import type { ArtifactRef, GateConclusion } from '../types/index.js';
 /**
  * Three dimensions per AC-4.24p:
  * - core-path: Core functionality path validation
- * - build-integrity: Build artifact completeness (dist/, package.json, etc.)
+ * - build-integrity: Build artifact completeness (lib/, package.json, etc.)
  * - entry-crash: Key entry point no-crash verification
  */
 export type SmokeTestDimension = 'core-path' | 'build-integrity' | 'entry-crash';

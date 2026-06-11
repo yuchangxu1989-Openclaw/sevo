@@ -24,7 +24,7 @@ import { mergeCleanInstallChecks } from './clean-install-default-checks.js';
 const DEFAULT_L1_SCRIPT_RELATIVE_PATHS = [
   // npm package / source checkout: scripts/verify-l1.sh
   '../../scripts/verify-l1.sh',
-  // Fallback if the package is laid out with dist/ under a nested runtime path.
+  // Fallback if the package is laid out under a nested runtime path.
   '../scripts/verify-l1.sh',
 ] as const;
 const COMMAND_TIMEOUT_MS = 300_000;
