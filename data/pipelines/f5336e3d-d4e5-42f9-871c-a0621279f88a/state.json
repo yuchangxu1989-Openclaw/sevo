@@ -1,18 +1,18 @@
 {
   "schemaVersion": 2,
-  "pipelineRunId": "664134f6-7bdc-4d5a-b0ff-362510e33fa0",
-  "projectSlug": "kivo",
-  "projectRoot": "projects/kivo",
-  "goal": "## 目标\nKIVO 意图知识库（intents 表）已清空，需要从近 3 天的会话历史中重新提取高质量意图知识，写入 DB。\n\n## 背景\n- KIVO DB 路径：`/root/.openclaw/workspace/projects/kivo/kivo.db`\n- intents 表 schema：id, name, description, embedding, status, hit_c",
-  "scopeFingerprint": "sha256:7e29b9ba506bf69aab2d57fd6b0194f92850346bdec5f02311b2244e44349bf3",
+  "pipelineRunId": "f5336e3d-d4e5-42f9-871c-a0621279f88a",
+  "projectSlug": "aco",
+  "projectRoot": "projects/aco",
+  "goal": "## 目标\n给 ACO spec 补充一条新 FR：ACP Agent 启动失败后，系统自动诊断根因并修复该 Agent，而不是只换一个 agent 绕过。\n\n## 背景\n当前 ACO spec 覆盖了任务级的失败处理（重试、升级、拆分），但缺少 Agent 级的健康诊断能力。真实场景：codex ACP agent 启动失败（进程 0 token 退出），aco-run-watchdog 只是标",
+  "scopeFingerprint": "sha256:75ff41da0386033470be479c0c7fe17481fdf7a66bae8d2da192b5ba862398a2",
   "status": "running",
   "entryType": "auto-dispatch",
   "lifecycle": {
-    "createdAt": "2026-06-11T08:13:03.131Z",
-    "startedAt": "2026-06-11T08:13:03.131Z",
+    "createdAt": "2026-06-11T23:30:49.063Z",
+    "startedAt": "2026-06-11T23:30:49.063Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T23:42:01.348Z",
+    "lastActivityAt": "2026-06-11T23:30:49.063Z",
     "staleDetectedAt": null,
     "terminalReason": null
   },
@@ -33,19 +33,19 @@
     ],
     "skipped": []
   },
-  "currentStageId": "smoke-test",
+  "currentStageId": "fix",
   "stages": {
     "fix": {
-      "status": "passed",
-      "startedAt": "2026-06-11T08:13:03.131Z",
-      "completedAt": "2026-06-11T23:42:01.345Z",
+      "status": "active",
+      "startedAt": "2026-06-11T23:30:49.063Z",
+      "completedAt": null,
       "dispatchId": null,
       "artifacts": [],
       "attempt": 1
     },
     "smoke-test": {
-      "status": "active",
-      "startedAt": "2026-06-11T23:42:01.345Z",
+      "status": "pending",
+      "startedAt": null,
       "completedAt": null,
       "dispatchId": null,
       "artifacts": [],
@@ -137,39 +137,5 @@
     "maintenanceRun": false,
     "parentRunId": null,
     "routeDecision": null
-  },
-  "openAdvisories": [
-    {
-      "id": "0da3e475-0692-4a74-ae1b-08a1251418d3",
-      "runId": "664134f6-7bdc-4d5a-b0ff-362510e33fa0",
-      "stageId": "fix",
-      "type": "evidence-contract-missing-fields",
-      "severity": "warn",
-      "message": "Completion for stage \"fix\" is missing required evidence fields: codeChanges, testRun",
-      "evidence": [
-        "codeChanges",
-        "testRun"
-      ],
-      "createdAt": "2026-06-11T23:42:01.342Z",
-      "resolvedAt": null
-    }
-  ],
-  "nextAction": {
-    "kind": "dispatch-stage",
-    "pipelineRunId": "664134f6-7bdc-4d5a-b0ff-362510e33fa0",
-    "projectSlug": "kivo",
-    "completedStageId": "fix",
-    "completedStageStatus": "passed",
-    "nextStageId": "smoke-test",
-    "dispatch": {
-      "label": "sevo:kivo:664134f6:smoke-test:1",
-      "agentId": null,
-      "tier": "audit",
-      "timeout": 1200
-    },
-    "entryCriteria": "review 通过",
-    "exitCriteria": "冒烟测试全部通过",
-    "advisorySummary": "openAdvisories+=1",
-    "createdAt": "2026-06-11T23:42:01.348Z"
   }
 }

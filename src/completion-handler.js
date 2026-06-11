@@ -4,7 +4,7 @@ import { validateCompletion } from './evidence-contract.js';
 import { append as appendAdvisory } from './advisory-ledger.js';
 import { getStageMapping } from '../task-mapper.js';
 import { FULL_PIPELINE_STAGES } from './stage-policy.js';
-import { getStageConfig, getEntryCriteria, getExitCriteria } from './stage-pipeline-config.js';
+import { getStageConfig, getEntryCriteria, getExitCriteria, getRoleHint } from './stage-pipeline-config.js';
 
 const DEFAULT_MAX_ADVANCES_PER_RUN_ROUND = 3;
 const COMPLETED_STAGE_STATUSES = new Set(['passed', 'completed', 'repairing', 'cancelled', 'skipped']);
@@ -352,6 +352,9 @@ function buildNextActionText(nextAction) {
     nextAction.dispatch.agentId
       ? `Recommended agentId: ${nextAction.dispatch.agentId}`
       : `Recommended tier: ${nextAction.dispatch.tier || 'stage mapping'}`,
+    nextAction.entryCriteria ? `Entry criteria: ${nextAction.entryCriteria}` : null,
+    nextAction.exitCriteria ? `Exit criteria: ${nextAction.exitCriteria}` : null,
+    getRoleHint(nextAction.nextStageId) ? `Role hint: ${getRoleHint(nextAction.nextStageId)}` : null,
     nextAction.advisorySummary ? `Advisory: ${nextAction.advisorySummary}` : null,
   ].filter(Boolean).join('\n');
 }
@@ -371,10 +374,10 @@ function buildAdvisorySummary(findingsInfo, advisoryCount) {
   return parts.join('; ') || null;
 }
 
-  const nextStageId = getNextStageId(run, completedStageId, completedStageStatus);
+function computeAdvance(run, completedStageId, deps = {}) {
   const runStore = deps.runStore || defaultRunStore;
-  const nextStageId = getNextStageId(run, completedStageId);
   const completedStageStatus = run.stages?.[completedStageId]?.status || 'completed';
+  const nextStageId = getNextStageId(run, completedStageId, completedStageStatus);
   const advisorySummary = buildAdvisorySummary(deps._findingsSummary, deps._completionAdvisoryCount || 0);
 
   if (!nextStageId) {

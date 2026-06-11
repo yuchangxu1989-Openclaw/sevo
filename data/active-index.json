@@ -128,7 +128,7 @@
     "664134f6-7bdc-4d5a-b0ff-362510e33fa0": {
       "projectSlug": "kivo",
       "status": "running",
-      "currentStageId": "fix"
+      "currentStageId": "smoke-test"
     },
     "f9fd8480-98af-44ac-afc1-d5ded0500da1": {
       "projectSlug": "sevo",
@@ -169,6 +169,26 @@
       "projectSlug": "implement",
       "status": "running",
       "currentStageId": "fix"
+    },
+    "f5336e3d-d4e5-42f9-871c-a0621279f88a": {
+      "projectSlug": "aco",
+      "status": "running",
+      "currentStageId": "fix"
+    },
+    "d7871bc5-93e2-460f-88cf-9bb5c43789f8": {
+      "projectSlug": "kivo",
+      "status": "running",
+      "currentStageId": "smoke-test"
+    },
+    "563d06bf-c407-4074-8269-44c61fe68c62": {
+      "projectSlug": "kivo",
+      "status": "running",
+      "currentStageId": "smoke-test"
+    },
+    "ee6688f9-70a4-414a-85c1-da540315177e": {
+      "projectSlug": "kivo",
+      "status": "running",
+      "currentStageId": "smoke-test"
     }
   }
 }
