@@ -2,14 +2,12 @@ import * as defaultRunStore from './run-store.js';
 import { buildDispatchContract, classifyLabel, LABEL_CLASS } from './stage-dispatch-contract.js';
 import { validateCompletion } from './evidence-contract.js';
 import { append as appendAdvisory } from './advisory-ledger.js';
-import { renderAdvancePromptTemplate } from '../advance-prompt-templates.js';
 import { getStageMapping } from '../task-mapper.js';
 import { FULL_PIPELINE_STAGES } from './stage-policy.js';
-import { getCycleTarget, getRoleHint, getStageConfig, getEntryCriteria, getExitCriteria } from './stage-pipeline-config.js';
+import { getStageConfig, getEntryCriteria, getExitCriteria } from './stage-pipeline-config.js';
 
 const DEFAULT_MAX_ADVANCES_PER_RUN_ROUND = 3;
-const ADVANCE_TEMPLATE_NAME = 'autoAdvanceAction';
-const MAX_REVIEW_FIX_ATTEMPTS = 5;
+const COMPLETED_STAGE_STATUSES = new Set(['passed', 'completed', 'repairing', 'cancelled', 'skipped']);
 
 function noop() {}
 
@@ -26,6 +24,47 @@ function extractLabel(evt) {
     evt?.data?.label ||
     null
   );
+}
+
+function extractSevoMetadata(evt) {
+  const candidates = [
+    evt?.metadata?.sevo,
+    evt?.result?.metadata?.sevo,
+    evt?.task?.metadata?.sevo,
+    evt?.payload?.metadata?.sevo,
+    evt?.data?.metadata?.sevo,
+  ];
+  return candidates.find((value) => value && typeof value === 'object') || null;
+}
+
+function decodedFromSevoMetadata(metadata) {
+  if (!metadata?.projectSlug || !metadata?.pipelineRunId || !metadata?.stageId) return null;
+  const attempt = Number(metadata.attempt || 1) || 1;
+  const pipelineRunId = String(metadata.pipelineRunId);
+  return {
+    projectSlug: String(metadata.projectSlug),
+    pipelineRunId,
+    pipelineRunIdShort: String(metadata.pipelineRunIdShort || pipelineRunId.slice(0, 8)),
+    stageId: String(metadata.stageId),
+    attempt,
+  };
+}
+
+function resolveCompletionIdentity(evt) {
+  const label = extractLabel(evt);
+  const sevoMetadata = extractSevoMetadata(evt);
+  const metadataDecoded = decodedFromSevoMetadata(sevoMetadata);
+  if (metadataDecoded) {
+    return {
+      label,
+      labelClass: LABEL_CLASS.CANONICAL,
+      decoded: metadataDecoded,
+      source: 'metadata',
+    };
+  }
+
+  const { class: labelClass, decoded } = classifyLabel(label);
+  return { label, labelClass, decoded, source: 'label' };
 }
 
 function extractGoalFromLabel(label, stageId) {
@@ -62,9 +101,22 @@ function normalizeStatus(status) {
   if (['passed', 'pass', 'success', 'succeeded', 'completed', 'complete', 'ok'].includes(normalized)) {
     return 'passed';
   }
-  if (['blocked', 'cancelled', 'canceled', 'skipped'].includes(normalized)) return 'blocked';
-  if (['failed', 'fail', 'failure', 'error', 'errored', 'timeout', 'timed_out'].includes(normalized)) {
-    return 'failed';
+  if (['cancelled', 'canceled', 'skipped'].includes(normalized)) return 'cancelled';
+  if ([
+    'advisory',
+    'repair-required',
+    'repairing',
+    'failed',
+    'fail',
+    'failure',
+    'error',
+    'errored',
+    'timeout',
+    'timed_out',
+    'blocked',
+    'gate-failed',
+  ].includes(normalized)) {
+    return 'repairing';
   }
   return null;
 }
@@ -85,6 +137,43 @@ function extractFindings(evt) {
   }
   const parts = Object.entries(bySeverity).map(([k, v]) => `${k}:${v}`);
   return { count: findings.length, summary: parts.join(', '), bySeverity };
+}
+
+function rawCompletionStatus(evt) {
+  return evt?.status || evt?.result?.status || evt?.state || null;
+}
+
+function completionReason(evt) {
+  return evt?.result?.reason || evt?.reason || evt?.error || evt?.message || null;
+}
+
+function isAdvisoryCheckStage(stageId) {
+  return String(stageId || '').includes('gate') || String(stageId || '').includes('review');
+}
+
+function appendCompletionAdvisory(run, stageId, status, evt, findingsInfo, runStore) {
+  if (status !== 'repairing') return null;
+
+  const reason = completionReason(evt);
+  const rawStatus = rawCompletionStatus(evt);
+  const advisory = {
+    stageId,
+    type: isAdvisoryCheckStage(stageId) ? 'gate-advisory' : 'repair-required',
+    severity: 'must-review',
+    message: [
+      `Stage "${stageId}" completed with repair-required advisory`,
+      rawStatus ? `(source status: ${rawStatus})` : null,
+      reason ? `reason: ${reason}` : null,
+      findingsInfo?.count > 0 ? `findings: ${findingsInfo.count}${findingsInfo.summary ? ` (${findingsInfo.summary})` : ''}` : null,
+    ].filter(Boolean).join(' '),
+    evidence: [
+      ...extractArtifacts(evt),
+      ...(reason ? [`reason:${reason}`] : []),
+    ],
+  };
+
+  const result = appendAdvisory(run.pipelineRunId, advisory, { runStore });
+  return { ...advisory, id: result.id };
 }
 
 function resolveStageDispatchParams(stageId, deps) {
@@ -122,15 +211,66 @@ function extractDispatchId(evt) {
   );
 }
 
-function findRunFromDecodedLabel(decoded, runStore) {
+function summarizeRunForLookup(run) {
+  return {
+    pipelineRunId: run?.pipelineRunId || null,
+    projectSlug: run?.projectSlug || null,
+    currentStageId: run?.currentStageId || null,
+    status: run?.status || null,
+  };
+}
+
+function findRunFromDecodedLabel(decoded, runStore, logger) {
   if (!decoded?.pipelineRunId) return null;
 
   const direct = runStore.getRun(decoded.pipelineRunId);
-  if (direct) return direct;
+  if (direct) {
+    logger?.debug?.('findRunFromDecodedLabel: direct match', {
+      decodedProjectSlug: decoded.projectSlug,
+      decodedPipelineRunId: decoded.pipelineRunId,
+      pipelineRunId: direct.pipelineRunId,
+    });
+    return direct;
+  }
 
   const activeRuns = runStore.listActiveRuns(decoded.projectSlug);
   const matches = activeRuns.filter((run) => run.pipelineRunId?.startsWith(decoded.pipelineRunIdShort));
-  return matches.length === 1 ? matches[0] : null;
+  logger?.info?.('findRunFromDecodedLabel: canonical lookup', {
+    decodedProjectSlug: decoded.projectSlug,
+    decodedPipelineRunId: decoded.pipelineRunId,
+    pipelineRunIdShort: decoded.pipelineRunIdShort,
+    scopedActiveCount: activeRuns.length,
+    scopedMatchCount: matches.length,
+    scopedRuns: activeRuns.map(summarizeRunForLookup),
+    scopedMatchRunIds: matches.map((run) => run.pipelineRunId),
+  });
+  if (matches.length === 1) return matches[0];
+
+  if (matches.length === 0 && decoded.projectSlug) {
+    const allRuns = runStore.listActiveRuns();
+    const broadMatches = allRuns.filter((run) => run.pipelineRunId?.startsWith(decoded.pipelineRunIdShort));
+    if (broadMatches.length === 1) {
+      logger?.info?.('findRunFromDecodedLabel: scoped miss, unscoped hit', {
+        decodedProjectSlug: decoded.projectSlug,
+        actualProjectSlug: broadMatches[0].projectSlug,
+        pipelineRunId: broadMatches[0].pipelineRunId,
+        unscopedActiveCount: allRuns.length,
+        unscopedRuns: allRuns.map(summarizeRunForLookup),
+      });
+      return broadMatches[0];
+    }
+    logger?.warn?.('findRunFromDecodedLabel: no match', {
+      decodedProjectSlug: decoded.projectSlug,
+      pipelineRunIdShort: decoded.pipelineRunIdShort,
+      scopedCount: activeRuns.length,
+      unscopedCount: allRuns.length,
+      broadMatchCount: broadMatches.length,
+      unscopedRuns: allRuns.map(summarizeRunForLookup),
+      broadMatchRunIds: broadMatches.map((run) => run.pipelineRunId),
+    });
+  }
+
+  return null;
 }
 
 function findRunFromLegacyLabel(decoded, runStore) {
@@ -157,19 +297,15 @@ function getNextStageId(run, completedStageId) {
   return (
     ordered
       .slice(index + 1)
-      .find((stageId) => !['passed', 'failed', 'blocked', 'skipped'].includes(run.stages?.[stageId]?.status)) ||
+      .find((stageId) => !COMPLETED_STAGE_STATUSES.has(run.stages?.[stageId]?.status)) ||
     null
   );
 }
 
 function markRunCompleteIfPossible(run, runStore) {
   if (typeof runStore.closeRun !== 'function') return run;
-  runStore.closeRun(run.pipelineRunId, { status: 'completed', reason: 'all V2 stages passed' });
+  runStore.closeRun(run.pipelineRunId, { status: 'completed', reason: 'all V2 stages completed or recorded as advisory' });
   return runStore.getRun(run.pipelineRunId) || { ...run, status: 'completed' };
-}
-
-function getStagePromptTemplateRef(stageId) {
-  return `task-mapper.buildTaskPrompt("${stageId}", runSnapshot, projectSlug, projectRoot)`;
 }
 
 function trackAdvanceDepth(pipelineRunId, deps) {
@@ -183,39 +319,70 @@ function trackAdvanceDepth(pipelineRunId, deps) {
   return { allowed: true, depth: currentDepth + 1, maxDepth };
 }
 
-function buildRunCompleteText(run) {
+function buildNextActionText(nextAction) {
+  if (nextAction.kind === 'complete-run') {
+    return [
+      '[SEVO V2 nextAction]',
+      `Pipeline run ${nextAction.pipelineRunId} completed.`,
+      `Project: ${nextAction.projectSlug}`,
+      `Completed stage: ${nextAction.completedStageId} (${nextAction.completedStageStatus})`,
+      'No next stage dispatch is required.',
+    ].join('\n');
+  }
+
   return [
-    '[SEVO V2 advance]',
-    `Pipeline run ${run.pipelineRunId} has completed all configured stages.`,
-    `Project: ${run.projectSlug}`,
-    'No next stage dispatch is required.',
-  ].join('\n');
+    '[SEVO V2 nextAction]',
+    `Pipeline run ${nextAction.pipelineRunId}`,
+    `Project: ${nextAction.projectSlug}`,
+    `Completed stage: ${nextAction.completedStageId} (${nextAction.completedStageStatus})`,
+    `Next stage: ${nextAction.nextStageId}`,
+    `Label: ${nextAction.dispatch.label}`,
+    `Timeout: ${nextAction.dispatch.timeout}s`,
+    nextAction.dispatch.agentId
+      ? `Recommended agentId: ${nextAction.dispatch.agentId}`
+      : `Recommended tier: ${nextAction.dispatch.tier || 'stage mapping'}`,
+    nextAction.advisorySummary ? `Advisory: ${nextAction.advisorySummary}` : null,
+  ].filter(Boolean).join('\n');
 }
 
-function buildStageTaskDescription(run, completedStageId, nextStageId, stagePromptTemplateRef) {
-  const completedArtifacts = run.stages?.[completedStageId]?.artifacts || [];
-  return [
-    `[SEVO V2] Continue pipeline run ${run.pipelineRunId}.`,
-    `Project: ${run.projectSlug}`,
-    `Goal: ${run.goal}`,
-    `Completed stage: ${completedStageId}`,
-    `Next stage: ${nextStageId}`,
-    completedArtifacts.length > 0 ? `Artifacts from completed stage: ${completedArtifacts.join(', ')}` : null,
-    `Stage prompt template reference: ${stagePromptTemplateRef}`,
-    'Use the referenced stage prompt template as the task body source for this dispatch.',
-  ]
-    .filter(Boolean)
-    .join('\n');
+function persistNextAction(run, nextAction, runStore) {
+  if (!nextAction) return run;
+  if (typeof runStore.patchRun === 'function') {
+    return runStore.patchRun(run.pipelineRunId, { nextAction });
+  }
+  return { ...run, nextAction };
+}
+
+function buildAdvisorySummary(findingsInfo, advisoryCount) {
+  const parts = [];
+  if (findingsInfo?.count > 0) parts.push(`findings=${findingsInfo.count}${findingsInfo.summary ? ` (${findingsInfo.summary})` : ''}`);
+  if (advisoryCount > 0) parts.push(`openAdvisories+=${advisoryCount}`);
+  return parts.join('; ') || null;
 }
 
 function computeAdvance(run, completedStageId, deps = {}) {
+  const runStore = deps.runStore || defaultRunStore;
   const nextStageId = getNextStageId(run, completedStageId);
+  const completedStageStatus = run.stages?.[completedStageId]?.status || 'completed';
+  const advisorySummary = buildAdvisorySummary(deps._findingsSummary, deps._completionAdvisoryCount || 0);
+
   if (!nextStageId) {
-    const completedRun = markRunCompleteIfPossible(run, deps.runStore || defaultRunStore);
+    const completedRun = markRunCompleteIfPossible(run, runStore);
+    const nextAction = {
+      kind: 'complete-run',
+      pipelineRunId: completedRun.pipelineRunId,
+      projectSlug: completedRun.projectSlug,
+      completedStageId,
+      completedStageStatus,
+      advisorySummary,
+      createdAt: new Date().toISOString(),
+    };
+    const persistedRun = persistNextAction(completedRun, nextAction, runStore);
     return {
-      advanceText: buildRunCompleteText(completedRun),
+      advanceText: buildNextActionText(nextAction),
+      nextAction,
       nextStageId: null,
-      runSnapshot: completedRun,
+      runSnapshot: persistedRun,
     };
   }
 
@@ -237,181 +404,34 @@ function computeAdvance(run, completedStageId, deps = {}) {
     stageId: nextStageId,
     attempt: run.stages?.[nextStageId]?.attempt || 1,
   });
-  const stagePromptTemplateRef =
-    typeof deps.getStagePromptTemplateRef === 'function'
-      ? deps.getStagePromptTemplateRef(nextStageId, run)
-      : getStagePromptTemplateRef(nextStageId);
   const timeout = Number(dispatchParams.timeout || 1200);
-  const agentLine = dispatchParams.agentId
-    ? `Recommended agentId: ${dispatchParams.agentId}`
-    : `Recommended agentId: auto (${dispatchParams.tier || 'stage mapping'} tier)`;
-  const taskDescription = buildStageTaskDescription(run, completedStageId, nextStageId, stagePromptTemplateRef);
-  const roleHint = getRoleHint(completedStageId);
-  const entryCriteria = getEntryCriteria(nextStageId);
-  const exitCriteria = getExitCriteria(nextStageId);
-  const completionStatus = run.stages?.[completedStageId]?.status || 'passed';
-  const findingsInfo = deps._findingsSummary;
-
-  const criteriaBlock = [
-    `\n阶段: ${nextStageId} | 完成状态: ${completionStatus}`,
-    entryCriteria ? `准入条件: ${entryCriteria}` : null,
-    exitCriteria ? `准出条件: ${exitCriteria}` : null,
-    findingsInfo?.count > 0 ? `Findings: ${findingsInfo.count} (${findingsInfo.summary})` : null,
-  ].filter(Boolean).join('\n');
-
-  const renderer = deps.renderAdvancePromptTemplate || renderAdvancePromptTemplate;
-  const advanceText = renderer(ADVANCE_TEMPLATE_NAME, {
-    agentLine,
-    timeout,
-    label,
-    taskDescription: `${criteriaBlock}\n\n${taskDescription}`,
-    roleNavHint: roleHint ? `\n角色提示: ${roleHint}` : '',
-    roleRelevantAgents: '',
-    commercializationGateBlock: '',
-  });
-
-  return {
-    advanceText,
+  const nextAction = {
+    kind: 'dispatch-stage',
+    pipelineRunId: run.pipelineRunId,
+    projectSlug: run.projectSlug,
+    completedStageId,
+    completedStageStatus,
     nextStageId,
-    runSnapshot: run,
-    dispatchHint: {
+    dispatch: {
+      label,
       agentId: dispatchParams.agentId || null,
       tier: dispatchParams.tier || null,
       timeout,
-      label,
-      stagePromptTemplateRef,
     },
+    entryCriteria: getEntryCriteria(nextStageId) || null,
+    exitCriteria: getExitCriteria(nextStageId) || null,
+    advisorySummary,
+    createdAt: new Date().toISOString(),
   };
-}
+  const persistedRun = persistNextAction(run, nextAction, runStore);
 
-function buildFailureAdvanceText(run, stageId, status, evt) {
-  const attempt = run.stages?.[stageId]?.attempt || 1;
-  const reason = evt?.result?.reason || evt?.reason || evt?.error || 'unknown failure';
-  const findingsInfo = extractFindings(evt);
-  const config = getStageConfig(stageId);
-  const exitCriteria = config?.exitCriteria || '';
-  const entryCriteria = getEntryCriteria(stageId);
-  const roleHint = getRoleHint(stageId);
-
-  const suggestedAction = status === 'blocked'
-    ? 'retry（环境阻断，建议排除阻断因素后重试）'
-    : attempt >= MAX_REVIEW_FIX_ATTEMPTS
-      ? 'escalate（重试次数已耗尽，需人工介入）'
-      : 'retry（重试本阶段）';
-
-  const lines = [
-    '[SEVO V2 advance — stage failure recovery]',
-    `Pipeline run ${run.pipelineRunId} stage "${stageId}" ${status} (attempt ${attempt}).`,
-    `Project: ${run.projectSlug}`,
-    `Failure reason: ${reason}`,
-    entryCriteria ? `准入条件: ${entryCriteria}` : null,
-    exitCriteria ? `准出条件（未达成）: ${exitCriteria}` : null,
-    findingsInfo.count > 0 ? `Findings: ${findingsInfo.count} (${findingsInfo.summary})` : null,
-    roleHint ? `角色提示: ${roleHint}` : null,
-    '',
-    `建议动作: ${suggestedAction}`,
-    `建议 retry target: ${stageId} (attempt ${attempt + 1})`,
-  ].filter(Boolean);
-
-  return lines.join('\n');
-}
-
-function buildCycleAdvanceText(run, fromStageId, toStageId, reason) {
-  const attempt = run.stages?.[toStageId]?.attempt || 1;
-  const roleHint = getRoleHint(fromStageId);
-  const lines = [
-    `[SEVO V2 advance — ${fromStageId}→${toStageId} cycle]`,
-    `Pipeline run ${run.pipelineRunId}: "${fromStageId}" triggered cycle to "${toStageId}".`,
-    `Project: ${run.projectSlug}`,
-    `Reason: ${reason}`,
-    `Attempt: ${attempt}/${MAX_REVIEW_FIX_ATTEMPTS}`,
-    '',
-    `## Dispatch: ${toStageId} Task`,
-    `派发 agent 执行 "${toStageId}" 阶段：`,
-    `- 触发来源：${fromStageId} 阶段完成（reason: ${reason}）`,
-    `- 产出：${toStageId} 阶段工件`,
-    `- 完成后以 label 报告结果`,
-    roleHint ? `- 角色提示：${roleHint}` : null,
-  ].filter(Boolean);
-
-  return lines.join('\n');
-}
-
-function handleReviewFixCycle(run, completedStageId, status, evt, deps) {
-  const runStore = deps.runStore || defaultRunStore;
-  const cycleTarget = getCycleTarget(completedStageId, status);
-  if (!cycleTarget) return null;
-  if (!run.stagePlan.ordered.includes(cycleTarget)) return null;
-
-  const currentAttempt = run.stages?.[cycleTarget]?.attempt || 0;
-  if (currentAttempt >= MAX_REVIEW_FIX_ATTEMPTS) {
-    return {
-      advanceText: [
-        `[SEVO V2 advance — ${completedStageId}→${cycleTarget} cycle EXHAUSTED]`,
-        `Pipeline run ${run.pipelineRunId}: ${completedStageId}→${cycleTarget} cycle reached max attempts (${MAX_REVIEW_FIX_ATTEMPTS}).`,
-        `Project: ${run.projectSlug}`,
-        'Action: pipeline blocked. Manual intervention required.',
-        'Use `sevo:diagnose` or `sevo:cancel` to proceed.',
-      ].join('\n'),
-      nextStageId: null,
-      runSnapshot: run,
-    };
-  }
-
-  const updatedRun = runStore.resetStageForRetry(run.pipelineRunId, cycleTarget);
-  const reason = evt?.result?.reason || evt?.reason || `${completedStageId} triggered cycle`;
-  return computeCycleAdvance(updatedRun, completedStageId, cycleTarget, reason, deps);
-}
-
-function computeCycleAdvance(run, fromStageId, toStageId, reason, deps) {
-  const depth = trackAdvanceDepth(run.pipelineRunId, deps);
-  if (!depth.allowed) {
-    return { advanceText: null, nextStageId: toStageId, runSnapshot: run, recursionBlocked: true, reason: `advance-depth-limit:${depth.maxDepth}` };
-  }
-
-  const dispatchParams = resolveStageDispatchParams(toStageId, deps);
-  const { label } = buildDispatchContract({
-    projectSlug: run.projectSlug,
-    pipelineRunId: run.pipelineRunId,
-    stageId: toStageId,
-    attempt: run.stages?.[toStageId]?.attempt || 1,
-  });
-  const stagePromptTemplateRef =
-    typeof deps.getStagePromptTemplateRef === 'function'
-      ? deps.getStagePromptTemplateRef(toStageId, run)
-      : getStagePromptTemplateRef(toStageId);
-  const timeout = Number(dispatchParams.timeout || 1200);
-  const agentLine = dispatchParams.agentId
-    ? `Recommended agentId: ${dispatchParams.agentId}`
-    : `Recommended agentId: auto (${dispatchParams.tier || 'stage mapping'} tier)`;
-  const taskDescription = buildStageTaskDescription(run, fromStageId, toStageId, stagePromptTemplateRef);
-  const cycleContext = buildCycleAdvanceText(run, fromStageId, toStageId, reason);
-  const roleHint = getRoleHint(fromStageId);
-  const entryCriteria = getEntryCriteria(toStageId);
-  const exitCriteria = getExitCriteria(toStageId);
-  const findingsInfo = deps._findingsSummary;
-  const completionStatus = run.stages?.[fromStageId]?.status || 'failed';
-
-  const criteriaBlock = [
-    `\n阶段: ${toStageId} | 循环来源: ${fromStageId} | 完成状态: ${completionStatus}`,
-    entryCriteria ? `准入条件: ${entryCriteria}` : null,
-    exitCriteria ? `准出条件: ${exitCriteria}` : null,
-    findingsInfo?.count > 0 ? `Findings: ${findingsInfo.count} (${findingsInfo.summary})` : null,
-    `阻断原因: ${reason}`,
-  ].filter(Boolean).join('\n');
-
-  const renderer = deps.renderAdvancePromptTemplate || renderAdvancePromptTemplate;
-  const advanceText = renderer(ADVANCE_TEMPLATE_NAME, {
-    agentLine,
-    timeout,
-    label,
-    taskDescription: `${criteriaBlock}\n\n${cycleContext}\n\n${taskDescription}`,
-    roleNavHint: roleHint ? `\n角色提示: ${roleHint}` : '',
-    roleRelevantAgents: '',
-    commercializationGateBlock: '',
-  });
-
-  return { advanceText, nextStageId: toStageId, runSnapshot: run };
+  return {
+    advanceText: buildNextActionText(nextAction),
+    nextAction,
+    nextStageId,
+    runSnapshot: persistedRun,
+    dispatchHint: nextAction.dispatch,
+  };
 }
 
 function tryAutoCreateRun(label, decoded, evt, deps) {
@@ -434,7 +454,7 @@ function tryAutoCreateRun(label, decoded, evt, deps) {
 
   const projectRoot = inferred?.projectRoot || `projects/${projectSlug}`;
   const stagePlan = buildAutoCreateStagePlan(decoded.stageId);
-  const status = normalizeStatus(evt?.status || evt?.result?.status || evt?.state);
+  const status = normalizeStatus(rawCompletionStatus(evt));
   if (!status) return null;
 
   let run;
@@ -457,22 +477,22 @@ function tryAutoCreateRun(label, decoded, evt, deps) {
     stageId: decoded.stageId,
   });
 
+  const findingsInfo = extractFindings(evt);
+  const completionAdvisory = appendCompletionAdvisory(run, decoded.stageId, status, evt, findingsInfo, runStore);
+
   const updatedRun = runStore.advanceStage(run.pipelineRunId, decoded.stageId, {
     status,
     artifacts: extractArtifacts(evt),
     dispatchId: extractDispatchId(evt),
   });
 
-  if (status !== 'passed') {
-    return {
-      advanceText: buildFailureAdvanceText(updatedRun, decoded.stageId, status, evt),
-      nextStageId: decoded.stageId,
-      runSnapshot: updatedRun,
-      advisories: [],
-    };
-  }
-
-  const advance = computeAdvance(updatedRun, decoded.stageId, { ...deps, runStore });
+  const completionAdvisories = completionAdvisory ? [completionAdvisory] : [];
+  const advance = computeAdvance(updatedRun, decoded.stageId, {
+    ...deps,
+    runStore,
+    _findingsSummary: findingsInfo,
+    _completionAdvisoryCount: completionAdvisories.length,
+  });
   if (advance.recursionBlocked) {
     logger.warn?.('completion-handler auto-create advance blocked by recursion guard', {
       pipelineRunId: run.pipelineRunId,
@@ -484,8 +504,9 @@ function tryAutoCreateRun(label, decoded, evt, deps) {
   return {
     advanceText: advance.advanceText,
     nextStageId: advance.nextStageId,
+    nextAction: advance.nextAction,
     runSnapshot: advance.runSnapshot,
-    advisories: [],
+    advisories: completionAdvisories,
   };
 }
 
@@ -493,26 +514,36 @@ function tryAutoCreateRun(label, decoded, evt, deps) {
  * Handle a V2 SEVO subagent completion event.
  *
  * The handler decodes the SEVO label, resolves the PipelineRun, validates that
- * the completed stage is the active stage, persists the stage status through
- * run-store, and returns one ephemeral advance text for the next stage when the
- * completed stage passed. The advance text is not written to disk.
+ * the completed stage is the active stage, persists the stage fact through
+ * run-store, records repair-required completions as advisories, and writes a
+ * compact nextAction JSON object onto the run snapshot.
  *
  * @param {object} evt subagent_ended event payload.
- * @param {{ logger?: object, runStore?: object, advanceDepthByRun?: Map<string, number>, maxAdvancesPerRunRound?: number, getStageMapping?: Function, renderAdvancePromptTemplate?: Function, getStagePromptTemplateRef?: Function }} [deps]
- * @returns {{ advanceText: string | null, nextStageId: string | null, runSnapshot: object, advisories?: object[] } | null}
+ * @param {{ logger?: object, runStore?: object, advanceDepthByRun?: Map<string, number>, maxAdvancesPerRunRound?: number, getStageMapping?: Function }} [deps]
+ * @returns {{ advanceText: string | null, nextStageId: string | null, nextAction?: object, runSnapshot: object, advisories?: object[] } | null}
  */
 export function handleCompletion(evt, deps = {}) {
   const logger = getLogger(deps);
   const runStore = deps.runStore || defaultRunStore;
-  const label = extractLabel(evt);
-  const { class: labelClass, decoded } = classifyLabel(label);
+  const { label, labelClass, decoded, source: identitySource } = resolveCompletionIdentity(evt);
+
+  logger.debug?.('completion-handler entry', {
+    label,
+    labelClass,
+    identitySource,
+    decodedProjectSlug: decoded?.projectSlug,
+    decodedPipelineRunId: decoded?.pipelineRunId,
+    decodedPipelineRunIdShort: decoded?.pipelineRunIdShort,
+    decodedStageId: decoded?.stageId,
+    decodedAttempt: decoded?.attempt,
+  });
 
   if (labelClass === LABEL_CLASS.INVALID || !decoded?.stageId) {
     logger.debug?.('completion-handler skipped: invalid or missing label', { label });
     return null;
   }
 
-  if (labelClass !== LABEL_CLASS.CANONICAL) {
+  if (labelClass !== LABEL_CLASS.CANONICAL && labelClass !== LABEL_CLASS.LEGACY) {
     logger.info?.('completion-handler quarantined non-canonical label', { label, class: labelClass });
     return {
       advanceText: [
@@ -529,7 +560,15 @@ export function handleCompletion(evt, deps = {}) {
     };
   }
 
-  let run = findRunFromDecodedLabel(decoded, runStore);
+  let run = labelClass === LABEL_CLASS.CANONICAL
+    ? findRunFromDecodedLabel(decoded, runStore, logger)
+    : findRunFromLegacyLabel(decoded, runStore);
+
+  if (!run && labelClass === LABEL_CLASS.LEGACY) {
+    logger.info?.('completion-handler: legacy label, attempting auto-create', { label, decoded });
+    return tryAutoCreateRun(label, decoded, evt, deps);
+  }
+
   if (!run) {
     logger.info?.('completion-handler: canonical label but no matching run', { label, decoded });
     return {
@@ -557,21 +596,22 @@ export function handleCompletion(evt, deps = {}) {
     return null;
   }
 
-  const status = normalizeStatus(evt?.status || evt?.result?.status || evt?.state);
+  const status = normalizeStatus(rawCompletionStatus(evt));
   if (!status) {
     logger.warn?.('completion-handler skipped: unknown completion status', { label, status: evt?.status });
     return null;
   }
 
+  const findingsInfo = extractFindings(evt);
   const evidenceValidation = validateCompletion(decoded.stageId, evt);
-  const advisories = evidenceValidation.advisories;
-  if (advisories.length > 0) {
+  const evidenceAdvisories = evidenceValidation.advisories;
+  if (evidenceAdvisories.length > 0) {
     logger.warn?.('completion-handler evidence advisory', {
       pipelineRunId: run.pipelineRunId,
       stageId: decoded.stageId,
       missing: evidenceValidation.missing,
     });
-    for (const adv of advisories) {
+    for (const adv of evidenceAdvisories) {
       appendAdvisory(run.pipelineRunId, {
         stageId: adv.stageId,
         type: adv.type,
@@ -582,43 +622,24 @@ export function handleCompletion(evt, deps = {}) {
     }
   }
 
+  const completionAdvisory = appendCompletionAdvisory(run, decoded.stageId, status, evt, findingsInfo, runStore);
+  const advisories = [
+    ...evidenceAdvisories,
+    ...(completionAdvisory ? [completionAdvisory] : []),
+  ];
+
   const updatedRun = runStore.advanceStage(run.pipelineRunId, decoded.stageId, {
     status,
     artifacts: extractArtifacts(evt),
     dispatchId: extractDispatchId(evt),
   });
 
-  const findingsInfo = extractFindings(evt);
-
-  // Review-fix cycle: review fails → fix, fix passes → review
-  const cycleResult = handleReviewFixCycle(updatedRun, decoded.stageId, status, evt, { ...deps, runStore, _findingsSummary: findingsInfo });
-  if (cycleResult) {
-    if (cycleResult.recursionBlocked) {
-      logger.warn?.('completion-handler cycle advance blocked by recursion guard', {
-        pipelineRunId: run.pipelineRunId,
-        reason: cycleResult.reason,
-      });
-      return null;
-    }
-    return {
-      advanceText: cycleResult.advanceText,
-      nextStageId: cycleResult.nextStageId,
-      runSnapshot: cycleResult.runSnapshot,
-      advisories,
-    };
-  }
-
-  if (status !== 'passed') {
-    const failAdvanceText = buildFailureAdvanceText(updatedRun, decoded.stageId, status, evt);
-    return {
-      advanceText: failAdvanceText,
-      nextStageId: decoded.stageId,
-      runSnapshot: updatedRun,
-      advisories,
-    };
-  }
-
-  const advance = computeAdvance(updatedRun, decoded.stageId, { ...deps, runStore, _findingsSummary: findingsInfo });
+  const advance = computeAdvance(updatedRun, decoded.stageId, {
+    ...deps,
+    runStore,
+    _findingsSummary: findingsInfo,
+    _completionAdvisoryCount: advisories.length,
+  });
   if (advance.recursionBlocked) {
     logger.warn?.('completion-handler advance blocked by recursion guard', {
       pipelineRunId: run.pipelineRunId,
@@ -630,6 +651,7 @@ export function handleCompletion(evt, deps = {}) {
   return {
     advanceText: advance.advanceText,
     nextStageId: advance.nextStageId,
+    nextAction: advance.nextAction,
     runSnapshot: advance.runSnapshot,
     advisories,
   };

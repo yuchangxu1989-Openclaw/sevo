@@ -8,14 +8,14 @@
  * Rollback target resolution (architecture §4.1):
  *   1. Stage-level `rollbackTarget` config (explicit override)
  *   2. Previous stage in `requiredStages` ordering
- *   3. null — first stage cannot roll back (pipeline blocks)
+ *   3. null — first stage cannot roll back (records repair-required advisory)
  *
  * State transitions (architecture §4.2):
  *   failedStage (fix_pending) → rolled_back (terminal)
  *   targetStage (passed)      → active      (re-execution, guarded by reason='rollback')
  *
  * Pipeline-level exhaustion:
- *   rollbackCount >= maxRollbacks → pipeline.pipelineStatus = 'blocked'
+ *   rollbackCount >= maxRollbacks → pipeline.pipelineStatus = 'repair-required'
  */
 
 import type {
@@ -28,7 +28,7 @@ import { assertTransition } from './stage-machine.js';
 // ── Configuration ───────────────────────────────────────────────
 
 export interface RollbackConfig {
-  /** Maximum number of rollbacks allowed per pipeline before blocking. Default: 2. */
+  /** Maximum number of rollbacks allowed per pipeline before repair-required advisory. Default: 2. */
   maxRollbacks: number;
 }
 
@@ -142,11 +142,11 @@ export class StageRollback {
   }
 
   /**
-   * Mark the pipeline as blocked (no more rollbacks available or first stage failed).
+   * Mark the pipeline as repair-required (no more rollbacks available or first stage failed).
    * Mutates state in place; caller handles persistence.
    */
-  markBlocked(state: PipelineState, reason: string): void {
-    state.pipelineStatus = 'blocked';
+  markRepairRequired(state: PipelineState, reason: string): void {
+    state.pipelineStatus = 'repair-required';
     state.updatedAt = new Date().toISOString();
   }
 }

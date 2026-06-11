@@ -2,6 +2,8 @@
 
 🌐 [官网](https://agentos.site/sevo.html)
 
+已注册项目：exam-sprint
+
 ![SEVO Dashboard](docs/sevo-dashboard-screenshot.jpg)
 
 SEVO 是一个 Spec-to-Runtime Evidence Pipeline。
@@ -96,6 +98,8 @@ SEVO 把这些动作收进同一条流水线。
 
 这意味着流水线不是一串容易丢失上下文的 prompt。
 它是一个可恢复、可追责、可检查历史分叉的状态机。
+
+V2 自动推进进一步把 dispatch 接入流水线：dispatch 时自动创建 pipeline run，任务完成后自动推进到 review 阶段；handshake 已改为 command channel，不再泄露到用户回复。
 
 ### 2. 运行证据验证
 

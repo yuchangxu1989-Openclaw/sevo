@@ -25,6 +25,7 @@ export interface LedgerEvent {
     | 'stage_started'
     | 'stage_completed'
     | 'stage_failed'
+    | 'stage_advisory'
     | 'stage_blocked'
     | 'stage_rolled_back'
     | 'clarification_opened'

@@ -34,12 +34,26 @@ function markPriorStagesForEntry(run, requestedStageId, priorStages, deps) {
     });
   }
 
-  if (reviewStageId) {
-    return reviewStageId;
+  if (!reviewStageId) {
+    deps.runStore.advanceStage(run.pipelineRunId, requestedStageId, { status: 'active' });
+    return requestedStageId;
   }
 
-  deps.runStore.advanceStage(run.pipelineRunId, requestedStageId, { status: 'active' });
-  return requestedStageId;
+  const stagesBeforeRequested = run.stagePlan.ordered.slice(
+    run.stagePlan.ordered.indexOf(reviewStageId) + 1,
+    run.stagePlan.ordered.indexOf(requestedStageId),
+  );
+  for (const stageId of stagesBeforeRequested) {
+    if (!priorStages.includes(stageId) && isProtectedStage(stageId)) {
+      deps.runStore.advanceStage(run.pipelineRunId, stageId, {
+        status: 'pending',
+        needsPassNoChangeReview: true,
+        suppressAutoAdvance: true,
+      });
+    }
+  }
+
+  return reviewStageId;
 }
 
 export { DEFAULT_FULL_PIPELINE_STAGES };
@@ -418,6 +432,92 @@ function cmdEntryPoint(stageId) {
   };
 }
 
+/**
+ * Handshake command: acknowledge a stage-route advisory via the command channel.
+ * Resolves the advisory in the run's openAdvisories ledger.
+ *
+ * @param {object} args - { pipelineRunId?, advisoryId, selectedStage, reason }
+ * @param {object} deps
+ * @returns {string}
+ */
+function createRunFromHandshake(args, deps) {
+  const { advisoryId, selectedStage, reason } = args;
+  const projectSlug = args.projectSlug || null;
+  const projectRoot = args.projectRoot || (projectSlug ? `projects/${projectSlug}` : null);
+  const goal = args.goal || `handshake:${advisoryId} → ${selectedStage} (${reason})`;
+
+  if (!projectSlug) {
+    return `Error: no active run found with unresolved advisory "${advisoryId}" and no projectSlug provided to create one.`;
+  }
+
+  const stagePlan = { ordered: [...DEFAULT_FULL_PIPELINE_STAGES], skipped: [] };
+  const stageIndex = stagePlan.ordered.indexOf(selectedStage);
+  if (stageIndex < 0) {
+    return `Error: stage "${selectedStage}" not in default pipeline stages.`;
+  }
+
+  const run = deps.runStore.createRun({
+    projectSlug,
+    projectRoot,
+    goal,
+    entryType: 'handshake',
+    stagePlan,
+  });
+
+  const priorStages = stagePlan.ordered.slice(0, stageIndex);
+  markPriorStagesForEntry(run, selectedStage, priorStages, deps);
+
+  return `Handshake accepted: advisory "${advisoryId}" resolved. Created run [${run.pipelineRunId.slice(0, 8)}] for ${projectSlug} at stage "${selectedStage}".`;
+}
+
+function cmdHandshake(args, deps) {
+  const { advisoryId, selectedStage, reason } = args;
+  if (!advisoryId) return 'Error: advisoryId is required.';
+  if (!selectedStage) return 'Error: selectedStage is required.';
+  if (!reason) return 'Error: reason is required.';
+
+  const pipelineRunId = args.pipelineRunId || null;
+  let targetRun = pipelineRunId ? deps.runStore.getRun(pipelineRunId) : null;
+
+  if (!targetRun) {
+    const activeRuns = deps.runStore.listActiveRuns();
+    targetRun = activeRuns.find((r) => {
+      const advisories = r.openAdvisories || [];
+      return advisories.some((a) => a.id === advisoryId && !a.resolvedAt);
+    });
+  }
+
+  if (!targetRun) {
+    return createRunFromHandshake(args, deps);
+  }
+
+  const advisory = (targetRun.openAdvisories || []).find(
+    (a) => a.id === advisoryId && !a.resolvedAt,
+  );
+  if (!advisory) {
+    return `Error: advisory "${advisoryId}" not found or already resolved.`;
+  }
+
+  const resolution = `handshake: selectedStage=${selectedStage}, reason=${reason}`;
+  const openAdvisories = (targetRun.openAdvisories || []).map((a) =>
+    a.id === advisoryId
+      ? { ...a, resolvedAt: new Date().toISOString(), resolution }
+      : a,
+  );
+  if (typeof deps.runStore.patchRun === 'function') {
+    deps.runStore.patchRun(targetRun.pipelineRunId, { openAdvisories });
+  }
+
+  const stagePlan = targetRun.stagePlan || { ordered: [...DEFAULT_FULL_PIPELINE_STAGES], skipped: [] };
+  const stageIndex = stagePlan.ordered.indexOf(selectedStage);
+  if (stageIndex >= 0 && targetRun.currentStageId !== selectedStage) {
+    const priorStages = stagePlan.ordered.slice(0, stageIndex);
+    markPriorStagesForEntry(targetRun, selectedStage, priorStages, deps);
+  }
+
+  return `Handshake accepted: advisory "${advisoryId}" resolved. Pipeline run [${targetRun.pipelineRunId.slice(0, 8)}] advanced to stage "${selectedStage}".`;
+}
+
 const COMMANDS = {
   create: cmdCreate,
   cancel: cmdCancel,
@@ -426,6 +526,7 @@ const COMMANDS = {
   diagnose: cmdDiagnose,
   retry: cmdRetry,
   from: cmdFrom,
+  handshake: cmdHandshake,
   implement: cmdEntryPoint('implement'),
   fix: cmdEntryPoint('fix'),
 };

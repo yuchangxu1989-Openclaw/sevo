@@ -38,6 +38,19 @@ spec -> spec-review-gate -> test-case-authoring -> ux-acceptance-authoring -> co
 
 发布完成不等于流水线完成。必须继续做 verify、post-release-validation、clean-install-verification 或同等终局验证，并写 ledger。
 
+## advisory handshake
+
+当 SEVO 发出 advisory 并等待用户或主会话确认入口阶段时，handshake 必须通过 command channel 执行，命令格式为：
+
+`sevo:handshake {"advisoryId":"...","selectedStage":"...","reason":"..."}`
+
+`advisoryId` 使用 advisory 中给出的 ID，`selectedStage` 使用确认进入的阶段名，`reason` 写明选择该阶段的依据。不要再在 assistant message body 中粘贴 handshake payload；自然语言回复只用于说明决策，不能承担协议确认。handshake 确认成功后，SEVO 会自动创建对应 pipeline run，主 Agent 等待后续 advance prompt 并按阶段派发。
+
+
+### dispatch auto-create
+
+当 dispatch payload 带有 `sevo:` label 时，SEVO 插件的 `before_tool_call` hook 会自动创建 pipeline run；不再需要先手动发送 handshake command 才能创建 run。handshake 仍可作为显式阶段确认使用，但属于可选确认动作，不是 dispatch 建 run 的前置条件。
+
 ## spec
 
 准入条件：

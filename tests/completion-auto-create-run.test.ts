@@ -132,7 +132,7 @@ describe('completion-handler quarantines non-canonical labels', () => {
     expect(runStore.runs.size).toBe(0);
   });
 
-  it('returns quarantine advisory for legacy implement completion labels', () => {
+  it('auto-creates run and advances for legacy implement completion labels', () => {
     const inferProjectSlug = () => ({ projectSlug: 'kivo', projectRoot: 'projects/kivo' });
     const deps = makeDeps(runStore, { inferProjectSlug });
     const result = handleCompletion(
@@ -141,13 +141,10 @@ describe('completion-handler quarantines non-canonical labels', () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.nextStageId).toBeNull();
-    expect(result!.runSnapshot).toBeNull();
-    expect(result!.advanceText).toContain('non-canonical label quarantined');
-    expect(result!.advisories).toEqual([
-      { type: 'quarantine', severity: 'warn', stageId: 'implement', message: 'non-canonical label class: legacy' },
-    ]);
-    expect(runStore.runs.size).toBe(0);
+    expect(result!.nextStageId).toBe('review');
+    expect(result!.runSnapshot).not.toBeNull();
+    expect(result!.runSnapshot.projectSlug).toBe('kivo');
+    expect(runStore.runs.size).toBe(1);
   });
 
   it('returns quarantine advisory for failed legacy implement labels', () => {

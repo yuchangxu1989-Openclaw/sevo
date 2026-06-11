@@ -194,7 +194,7 @@ export class PipelineEngine {
   }
 
   /**
-   * Activate a specific stage (e.g. for retry from failed/blocked).
+   * Activate a specific stage (e.g. for retry from failed/repair-required).
    */
   activate(pipelineId: string, stageId: StageId): void {
     const state = this.load(pipelineId);
@@ -262,7 +262,7 @@ export class PipelineEngine {
    * AC-13.4: Roll back a failed stage to a prior stage for re-execution.
    *
    * Called when fix-loop retries are exhausted. Resolves the rollback target,
-   * transitions states, emits events, and blocks the pipeline if exhausted.
+   * transitions states and emits repair-required advisories when exhausted.
    */
   rollback(pipelineId: string, failedStage: StageId, reason: string): RollbackDecision {
     const state = this.load(pipelineId);
@@ -270,9 +270,9 @@ export class PipelineEngine {
 
     // Check if pipeline-level rollback budget is exhausted
     if (rollback.isExhausted(state)) {
-      rollback.markBlocked(state, `Rollback budget exhausted (max ${DEFAULT_ROLLBACK_CONFIG.maxRollbacks})`);
+      rollback.markRepairRequired(state, `Rollback budget exhausted (max ${DEFAULT_ROLLBACK_CONFIG.maxRollbacks})`);
       this.emitEvent(pipelineId, failedStage, 'stage_rolled_back', {
-        outcome: 'blocked',
+        outcome: 'repair-required',
         reason: 'rollback_budget_exhausted',
         rollbackCount: state.rollbackCount ?? 0,
       });
@@ -281,19 +281,19 @@ export class PipelineEngine {
         executed: false,
         failedStage,
         targetStage: null,
-        reason: 'Rollback budget exhausted — pipeline blocked',
-        blocked: true,
+        reason: 'Rollback budget exhausted — repair-required advisory recorded',
+        blocked: false,
       };
     }
 
     // Resolve rollback target
     const target = rollback.resolveTarget(state, failedStage);
 
-    // First stage cannot roll back — block pipeline
+    // First stage cannot roll back — record repair-required advisory.
     if (target === null) {
-      rollback.markBlocked(state, `First stage '${failedStage}' cannot roll back`);
+      rollback.markRepairRequired(state, `First stage '${failedStage}' cannot roll back`);
       this.emitEvent(pipelineId, failedStage, 'stage_rolled_back', {
-        outcome: 'blocked',
+        outcome: 'repair-required',
         reason: 'no_rollback_target',
         failedStage,
       });
@@ -302,8 +302,8 @@ export class PipelineEngine {
         executed: false,
         failedStage,
         targetStage: null,
-        reason: `First stage '${failedStage}' has no rollback target — pipeline blocked`,
-        blocked: true,
+        reason: `First stage '${failedStage}' has no rollback target — repair-required advisory recorded`,
+        blocked: false,
       };
     }
 
@@ -554,12 +554,13 @@ export class PipelineEngine {
         item.status !== 'settled',
     );
 
-    if (!outstandingBlocking && stage.status === 'clarification-blocked') {
+    if (!outstandingBlocking && (stage.status === 'clarification-blocked' || stage.status === 'fix_pending')) {
       stage.status = 'active';
       stage.blockReason = undefined;
+      stage.failureReason = undefined;
       stage.completedAt = undefined;
       this.emitEvent(pipelineId, record.stageId, 'stage_activated', {
-        unblocked: true, clarificationId,
+        advisoryResolved: true, clarificationId,
       });
     }
   }
@@ -729,11 +730,13 @@ export class PipelineEngine {
     }
 
     if (clarificationBlocked) {
-      stageRecord.status = 'clarification-blocked';
-      stageRecord.blockReason = BLOCK_REASONS.CLARIFICATION;
-      this.emitEvent(state.pipelineId, stageId, 'stage_blocked', {
-        reason: stageRecord.blockReason,
+      stageRecord.status = 'fix_pending';
+      stageRecord.failureReason = BLOCK_REASONS.CLARIFICATION;
+      stageRecord.fixAttempts = (stageRecord.fixAttempts ?? 0) + 1;
+      this.emitEvent(state.pipelineId, stageId, 'stage_advisory', {
+        reason: stageRecord.failureReason,
         kind: 'clarification',
+        repairTask: 'clarification-required',
       });
     }
 
@@ -981,7 +984,7 @@ export class PipelineEngineFacade {
       return this.activateFirst(record, eventsBefore);
     }
 
-    // lifecycle === 'running' or 'blocked'
+    // lifecycle === 'running' (legacy blocked records are treated as running by callers)
     return this.advanceRunningAsync(record, eventsBefore);
   }
 
@@ -1006,8 +1009,7 @@ export class PipelineEngineFacade {
   }
 
   /**
-   * Pause a running pipeline.
-   * Transitions lifecycle: running → paused.
+   * Record a pause request as advisory while keeping the pipeline running.
    * Throws if pipeline is not in 'running' state.
    */
   pause(pipelineId: string): PipelineSummary {
@@ -1017,27 +1019,24 @@ export class PipelineEngineFacade {
         `Cannot pause pipeline '${pipelineId}': current lifecycle is '${record.lifecycle}', expected 'running'`,
       );
     }
-    record.lifecycle = 'paused';
     record.updatedAt = new Date().toISOString();
     record.state.updatedAt = record.updatedAt;
 
-    this.ledger.append(pipelineId, { type: 'pipeline_paused' });
+    this.ledger.append(pipelineId, { type: 'pipeline_pause_advisory' });
     return this.toSummary(record);
   }
 
   /**
-   * Resume a paused pipeline.
-   * Transitions lifecycle: paused → running.
-   * Throws if pipeline is not in 'paused' state.
+   * Acknowledge an advisory-only pause request.
+   * The lifecycle remains running because SEVO no longer stores a paused state.
    */
   resume(pipelineId: string): PipelineSummary {
     const record = this.getRecord(pipelineId);
-    if (record.lifecycle !== 'paused') {
+    if (record.lifecycle !== 'running') {
       throw new Error(
-        `Cannot resume pipeline '${pipelineId}': current lifecycle is '${record.lifecycle}', expected 'paused'`,
+        `Cannot resume pipeline '${pipelineId}': current lifecycle is '${record.lifecycle}', expected 'running'`,
       );
     }
-    record.lifecycle = 'running';
     record.updatedAt = new Date().toISOString();
     record.state.updatedAt = record.updatedAt;
 
@@ -1206,7 +1205,7 @@ export class PipelineEngineFacade {
     }
 
     // 原则：SEVO 流水线永远往前走。没有 pending stage 但 pipeline 未全完成时，
-    // 不再写 lifecycle='blocked' 静默卡死。先扫描任何可激活的非终态 stage
+    // 不再把 lifecycle 写成阻断终态。先扫描任何可激活的非终态 stage
     // （fix_pending / failed / blocked / clarification-blocked，见 canActivate），
     // 找到就直接激活继续推进；这是 parallel 分支或依赖未就绪的正常恢复路径。
     const recoverable = record.state.requiredStages.find(
@@ -1603,22 +1602,24 @@ export class PipelineEngineFacade {
 
     if (blocking.length === 0) return null;
 
-    stageRecord.status = 'clarification-blocked';
-    stageRecord.blockReason = `Awaiting clarification for ${blocking.length} blocking ambiguity point(s)`;
+    stageRecord.status = 'fix_pending';
+    stageRecord.failureReason = `Awaiting clarification for ${blocking.length} ambiguity advisory point(s)`;
+    stageRecord.fixAttempts = (stageRecord.fixAttempts ?? 0) + 1;
     stageRecord.completedAt = undefined;
-    record.lifecycle = 'awaiting-clarification';
+    record.lifecycle = 'running';
     record.updatedAt = new Date().toISOString();
     record.state.updatedAt = record.updatedAt;
 
     this.dispatchSpecClarificationRequests(record.pipelineId, blocking);
     this.ledger.append(record.pipelineId, {
-      type: 'stage_blocked',
+      type: 'stage_advisory',
       stageId: 'spec',
-      detail: { reason: stageRecord.blockReason, kind: 'clarification' },
+      detail: { reason: stageRecord.failureReason, kind: 'clarification', repairTask: 'clarification-required' },
     });
     this.ledger.append(record.pipelineId, {
-      type: 'pipeline_blocked',
-      detail: { reason: stageRecord.blockReason, lifecycle: 'awaiting-clarification' },
+      type: 'fix_attempt_initiated',
+      stageId: 'spec',
+      detail: { reason: stageRecord.failureReason, attempt: stageRecord.fixAttempts },
     });
 
     return {
@@ -1626,10 +1627,10 @@ export class PipelineEngineFacade {
         pipelineId: record.pipelineId,
         fromStage: 'spec',
         toStage: 'spec',
-        status: 'clarification-blocked',
+        status: 'fix_pending',
         artifacts: stageRecord.artifacts,
       },
-      lifecycle: 'awaiting-clarification',
+      lifecycle: 'running',
       events: this.ledger.getHistory(record.pipelineId).slice(eventsBefore),
     };
   }

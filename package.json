@@ -2,8 +2,22 @@
   "name": "sevo-pipeline",
   "version": "1.13.7",
   "description": "SEVO — Automated software delivery pipeline for AI agents (Specify → Execute → Verify → Operate)",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./plugin": "./index.js",
+    "./legacy": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
   "bin": {
     "sevo": "./bin/sevo.js"
   },
@@ -35,6 +49,17 @@
   "license": "MIT",
   "files": [
     "dist/",
+    "!dist/__tests__/",
+    "!dist/**/__tests__/",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.d.ts.map",
+    "lib/",
+    "src/*.js",
+    "src/context-injection/*.js",
+    "data/*-vectors.json",
+    "data/v2-enabled",
     "bin/",
     "templates/",
     "scripts/",

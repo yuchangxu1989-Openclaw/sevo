@@ -22,6 +22,7 @@ state/
 !src/stage-pipeline-config.js
 !src/advisory-ledger.js
 !src/consistency-check-plan.js
+!src/context-injection/*.js
 !index.js
 !data/v2-enabled
 

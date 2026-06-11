@@ -56,14 +56,17 @@ try {
   assert.equal(result.runSnapshot.stages.spec.dispatchId, 'completion-handler-smoke-task');
   assert.deepEqual(result.runSnapshot.stages.spec.artifacts, ['docs/design/product-requirements.md']);
   assert.match(result.advanceText, /Recommended agentId: codex/);
-  assert.match(result.advanceText, /timeout: 1200s/);
+  assert.match(result.advanceText, /Timeout: 1200s/);
   assert.match(result.advanceText, new RegExp(nextLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  assert.match(result.advanceText, /task-mapper\.buildTaskPrompt\("implement"/);
+  assert.equal(result.nextAction.nextStageId, 'implement');
+  assert.equal(result.nextAction.dispatch.label, nextLabel);
   assert.equal(advanceDepthByRun.get(run.pipelineRunId), 1);
 
   const persisted = getRun(run.pipelineRunId);
   assert.equal(persisted.currentStageId, 'implement');
   assert.equal(persisted.stages.spec.status, 'passed');
+  assert.equal(persisted.nextAction.nextStageId, 'implement');
+  assert.equal(persisted.nextAction.dispatch.label, nextLabel);
 
   console.log(`completion-handler smoke passed: ${run.pipelineRunId}`);
 } finally {

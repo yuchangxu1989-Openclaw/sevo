@@ -1,5 +1,5 @@
 /**
- * sevo pause <pipeline-id> — pause a running pipeline.
+ * sevo pause <pipeline-id> — record an advisory-only pause request.
  */
 
 import type { Command } from 'commander';
@@ -11,7 +11,7 @@ import { projectRoot } from './helpers.js';
 export function registerPause(program: Command): void {
   program
     .command('pause <pipeline-id>')
-    .description('Pause a running pipeline')
+    .description('Record an advisory-only pause request')
     .action((pipelineId: string) => {
       const root = projectRoot();
       const pipelinesDir = path.join(root, 'pipelines');
@@ -33,11 +33,14 @@ export function registerPause(program: Command): void {
         return;
       }
 
-      data.status = 'paused';
+      data.pauseAdvisory = {
+        requestedAt: new Date().toISOString(),
+        reason: 'pause command is advisory-only; pipeline remains running',
+      };
       data.updatedAt = new Date().toISOString();
       fs.writeFileSync(instanceFile, JSON.stringify(data, null, 2));
 
-      console.log(`Pipeline "${pipelineId}" paused.`);
+      console.log(`Pipeline "${pipelineId}" pause advisory recorded; status remains running.`);
     });
 }
 

@@ -1,12 +1,17 @@
 import type { ProjectConfig, TaskScope } from '../types/index.js';
 import type { SpecOutput } from '../stages/spec-types.js';
-import { LLMProvider } from '../llm/index.js';
+import { classifyByEmbedding, type EmbeddingConfig } from '../embedding/index.js';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+const DESIGN_VECTORS_PATH = resolve(MODULE_DIR, '..', '..', 'data', 'design-need-vectors.json');
 
 export interface DesignNeedInput {
   taskScope: TaskScope;
   specOutput?: SpecOutput;
   projectConfig?: Partial<ProjectConfig>;
-  llm?: Pick<LLMProvider, 'chat'>;
+  embeddingConfig?: EmbeddingConfig | null;
 }
 
 export interface DesignNeedResult {
@@ -16,20 +21,12 @@ export interface DesignNeedResult {
   archDesignReason: string;
 }
 
-interface LlmDesignNeedPayload {
-  needsUxDesign?: unknown;
-  uxDesignReason?: unknown;
-  needsArchDesign?: unknown;
-  archDesignReason?: unknown;
-}
-
 /**
  * FR-02d/FR-02e routing classifier.
  *
- * The default path delegates semantic judgement to an LLM. If no LLM credential is
- * configured, the classifier fails closed: it keeps the pipeline safe by requiring
- * architecture design for non-trivial scope and UX design whenever the project is
- * configured as UI-capable. It never uses keyword matching to fake semantics.
+ * Uses embedding cosine similarity against pre-computed design-need reference
+ * vectors. If embedding is unavailable, falls back to conservative defaults
+ * based on task scope metadata.
  */
 export async function classifyDesignNeeds(input: DesignNeedInput): Promise<DesignNeedResult> {
   const projectHasUi = input.projectConfig?.hasUI !== false;
@@ -44,141 +41,106 @@ export async function classifyDesignNeeds(input: DesignNeedInput): Promise<Desig
     };
   }
 
-  const llm = input.llm ?? createConfiguredLlm();
-  if (!llm) {
-    return conservativeFallback(input, '未配置 LLM，按安全默认值触发条件性设计阶段');
+  const description = buildDescription(input);
+
+  if (description.length < 10 || description === 'unknown task') {
+    return conservativeFallback(input, '描述信息不足，按安全默认值处理');
   }
 
   try {
-    const content = await llm.chat([
-      {
-        role: 'system',
-        content: [
-          '你是 SEVO 流水线路由判定器。',
-          '只基于输入的任务范围和规格语义判断是否需要两个设计阶段。',
-          '不要做关键词匹配；要判断真实语义。',
-          'UX Interaction Design 只在任务涉及 Web 页面、用户交互界面、导航结构变更时需要。',
-          'Architecture Design 在任务涉及前后端复杂功能、数据模型变化、多模块协作、新增 API 接口时需要。',
-          '只返回 JSON，不要输出解释文本。',
-        ].join('\n'),
-      },
-      {
-        role: 'user',
-        content: JSON.stringify({
-          taskScope: input.taskScope,
-          projectConfig: input.projectConfig ?? {},
-          specSummary: input.specOutput?.summary ?? '',
-          functionalRequirements: input.specOutput?.functionalRequirements ?? [],
-          acceptanceCriteria: input.specOutput?.acceptanceCriteria ?? [],
-          expectedShape: {
-            needsUxDesign: 'boolean',
-            uxDesignReason: 'string',
-            needsArchDesign: 'boolean',
-            archDesignReason: 'string',
-          },
-        }),
-      },
-    ]);
+    const uxResult = await classifyByEmbedding(description, DESIGN_VECTORS_PATH, {
+      config: input.embeddingConfig,
+      labelFilter: undefined,
+    });
 
-    return normalizeLlmResult(content);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return conservativeFallback(input, `LLM 判定失败，按安全默认值处理：${message}`);
+    const needsUx = uxResult.matched && uxResult.label === 'needs-ux';
+    const needsArch = uxResult.matched && (uxResult.label === 'needs-arch');
+
+    // Also check arch specifically if UX didn't match arch
+    let archResult = uxResult;
+    if (!needsArch) {
+      archResult = await classifyByEmbedding(description, DESIGN_VECTORS_PATH, {
+        config: input.embeddingConfig,
+        labelFilter: 'needs-arch',
+      });
+    }
+
+    const archMatched = archResult.matched && archResult.label === 'needs-arch';
+
+    return {
+      needsUxDesign: needsUx,
+      uxDesignReason: needsUx
+        ? `向量匹配判定需要 UX Design (score=${uxResult.score.toFixed(3)})`
+        : `向量匹配判定不需要 UX Design (best=${uxResult.label}, score=${uxResult.score.toFixed(3)})`,
+      needsArchDesign: archMatched || conservativeArchCheck(input.taskScope),
+      archDesignReason: archMatched
+        ? `向量匹配判定需要 Architecture Design (score=${archResult.score.toFixed(3)})`
+        : conservativeArchCheck(input.taskScope)
+          ? '范围显示涉及多域/数据模型/多文件复杂变更，触发 Architecture Design'
+          : '向量匹配 + 范围检查均未触发 Architecture Design',
+    };
+  } catch {
+    return conservativeFallback(input, 'Embedding 不可用，按安全默认值处理');
   }
 }
 
-function createConfiguredLlm(): Pick<LLMProvider, 'chat'> | null {
-  if (!process.env.OPENAI_API_KEY) return null;
-  return new LLMProvider();
+function buildDescription(input: DesignNeedInput): string {
+  const parts: string[] = [];
+  if (input.specOutput?.summary) parts.push(input.specOutput.summary);
+  if (input.taskScope.affectedDomains?.length) {
+    parts.push(`domains: ${input.taskScope.affectedDomains.join(', ')}`);
+  }
+  if (input.specOutput?.functionalRequirements?.length) {
+    parts.push(input.specOutput.functionalRequirements.slice(0, 3).join('; '));
+  }
+  return parts.join(' | ') || 'unknown task';
 }
 
 async function classifyArchitectureNeed(input: DesignNeedInput): Promise<Pick<DesignNeedResult, 'needsArchDesign' | 'archDesignReason'>> {
-  const llm = input.llm ?? createConfiguredLlm();
-  if (!llm) {
-    const fallback = conservativeFallback(input, '未配置 LLM，按安全默认值判定 Architecture Design');
-    return {
-      needsArchDesign: fallback.needsArchDesign,
-      archDesignReason: fallback.archDesignReason,
-    };
-  }
+  const description = buildDescription(input);
 
   try {
-    const content = await llm.chat([
-      {
-        role: 'system',
-        content: [
-          '你是 SEVO Architecture Design 路由判定器。',
-          '基于任务范围和规格语义判断是否涉及复杂功能、数据模型变化、多模块协作或新增 API。',
-          '不要做关键词匹配。只返回 JSON。',
-        ].join('\n'),
-      },
-      {
-        role: 'user',
-        content: JSON.stringify({
-          taskScope: input.taskScope,
-          specSummary: input.specOutput?.summary ?? '',
-          functionalRequirements: input.specOutput?.functionalRequirements ?? [],
-          acceptanceCriteria: input.specOutput?.acceptanceCriteria ?? [],
-          expectedShape: { needsArchDesign: 'boolean', archDesignReason: 'string' },
-        }),
-      },
-    ]);
-    const parsed = parseJsonObject(content) as Partial<LlmDesignNeedPayload>;
-    return {
-      needsArchDesign: asBoolean(parsed.needsArchDesign, true),
-      archDesignReason: asReason(parsed.archDesignReason, 'LLM 判定需要 Architecture Design'),
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const fallback = conservativeFallback(input, `LLM 判定失败，按安全默认值处理：${message}`);
-    return {
-      needsArchDesign: fallback.needsArchDesign,
-      archDesignReason: fallback.archDesignReason,
-    };
-  }
-}
+    const result = await classifyByEmbedding(description, DESIGN_VECTORS_PATH, {
+      config: input.embeddingConfig,
+      labelFilter: 'needs-arch',
+    });
 
-function normalizeLlmResult(content: string): DesignNeedResult {
-  const parsed = parseJsonObject(content) as LlmDesignNeedPayload;
-  return {
-    needsUxDesign: asBoolean(parsed.needsUxDesign, false),
-    uxDesignReason: asReason(parsed.uxDesignReason, 'LLM 判定不需要 UX Interaction Design'),
-    needsArchDesign: asBoolean(parsed.needsArchDesign, true),
-    archDesignReason: asReason(parsed.archDesignReason, 'LLM 判定需要 Architecture Design'),
-  };
-}
+    const matched = result.matched && result.label === 'needs-arch';
+    const fallbackCheck = conservativeArchCheck(input.taskScope);
 
-function parseJsonObject(content: string): unknown {
-  const trimmed = content.trim();
-  try {
-    return JSON.parse(trimmed);
+    return {
+      needsArchDesign: matched || fallbackCheck,
+      archDesignReason: matched
+        ? `向量匹配判定需要 Architecture Design (score=${result.score.toFixed(3)})`
+        : fallbackCheck
+          ? '范围检查触发 Architecture Design（多域/数据模型/多文件）'
+          : '向量匹配 + 范围检查均未触发 Architecture Design',
+    };
   } catch {
-    const match = trimmed.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('LLM response is not JSON');
-    return JSON.parse(match[0]);
+    const fallback = conservativeFallback(input, 'Embedding 不可用，按安全默认值判定');
+    return {
+      needsArchDesign: fallback.needsArchDesign,
+      archDesignReason: fallback.archDesignReason,
+    };
   }
 }
 
-function asBoolean(value: unknown, fallback: boolean): boolean {
-  return typeof value === 'boolean' ? value : fallback;
+function conservativeArchCheck(scope: TaskScope): boolean {
+  const affectedDomainCount = scope.affectedDomains?.length ?? 0;
+  const estimatedFiles = scope.estimatedFiles ?? 0;
+  return affectedDomainCount >= 2
+    || scope.hasDataModelChange === true
+    || scope.isNewModule === true
+    || estimatedFiles >= 5;
 }
 
-function asReason(value: unknown, fallback: string): string {
-  return typeof value === 'string' && value.trim() ? value : fallback;
-}
-
-export function classifyDesignNeedsFallback(input: DesignNeedInput, prefix = '未执行 LLM 判定，按安全默认值处理'): DesignNeedResult {
+export function classifyDesignNeedsFallback(input: DesignNeedInput, prefix = 'Embedding 未执行，按安全默认值处理'): DesignNeedResult {
   return conservativeFallback(input, prefix);
 }
 
 function conservativeFallback(input: DesignNeedInput, prefix: string): DesignNeedResult {
   const scope = input.taskScope;
-  const affectedDomainCount = scope.affectedDomains?.length ?? 0;
-  const estimatedFiles = scope.estimatedFiles ?? 0;
-  const needsArchDesign = affectedDomainCount >= 2
-    || scope.hasDataModelChange === true
-    || scope.isNewModule === true
-    || estimatedFiles >= 5;
+  const needsArchDesign = conservativeArchCheck(scope);
 
   return {
     needsUxDesign: input.projectConfig?.hasUI !== false,

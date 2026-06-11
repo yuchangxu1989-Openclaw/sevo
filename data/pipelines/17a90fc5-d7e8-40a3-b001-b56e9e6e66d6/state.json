@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "17a90fc5-d7e8-40a3-b001-b56e9e6e66d6",
+  "projectSlug": "sevo",
+  "projectRoot": "projects/sevo",
+  "goal": "## 目标\n按照刚更新的 SEVO spec（已去除所有阻断式 Gate 语义），重写 sevo-pipeline 插件代码，使其与新 spec 对齐：pipeline 永不阻断、Gate 产出 advisory 而非 block、stale pipeline 自动清理。\n\n## 背景\n- SEVO spec 飞书已更新（pm-01 今天完成），所有 blocked/pause/gate-fail",
+  "scopeFingerprint": "sha256:d3cb0625fde89c59695ba97cddaa2f06f0d1c1ed2dcc9e28361798f8568e9f4f",
+  "status": "running",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-11T11:31:11.129Z",
+    "startedAt": "2026-06-11T11:31:11.129Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "lastActivityAt": "2026-06-11T11:31:11.129Z",
+    "staleDetectedAt": null,
+    "terminalReason": null
+  },
+  "stagePlan": {
+    "ordered": [
+      "implement",
+      "review",
+      "fix",
+      "smoke-test",
+      "ux-acceptance",
+      "pm-commercial-review",
+      "regression",
+      "publish-generalization-gate",
+      "deploy",
+      "verify",
+      "readme",
+      "post-release-validation",
+      "clean-install-verification",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "implement",
+  "stages": {
+    "implement": {
+      "status": "active",
+      "startedAt": "2026-06-11T11:31:11.129Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "fix": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "smoke-test": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ux-acceptance": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "pm-commercial-review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "publish-generalization-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "readme": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "post-release-validation": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "clean-install-verification": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": true,
+    "parentRunId": null,
+    "routeDecision": null
+  }
+}

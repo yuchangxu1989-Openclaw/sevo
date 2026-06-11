@@ -381,9 +381,10 @@ export async function classifyStageRoute(input = {}) {
 
 export async function classifyCommandRoute(commandName, args = {}) {
   const text = String(args.goal || args.taskDescription || args.description || args.rawCommand || args.label || '').trim();
-  const pipeline = await classifyPipelineRoute({ text });
-  const stage = await classifyStageRoute({ text });
-
+  const explicitVector = normalizeVector(args.vector);
+  const sharedVector = explicitVector || storedVectorFromExactText(text, loadRouteVectorDb().samples) || await embedText(text);
+  const pipeline = await classifyPipelineRoute({ text, vector: sharedVector });
+  const stage = await classifyStageRoute({ text, vector: sharedVector });
   return {
     commandName: String(commandName || ''),
     source: 'route-vector-classifier',

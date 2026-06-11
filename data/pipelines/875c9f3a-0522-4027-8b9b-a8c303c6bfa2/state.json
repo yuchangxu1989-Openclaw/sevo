@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "875c9f3a-0522-4027-8b9b-a8c303c6bfa2",
+  "projectSlug": "kivo",
+  "projectRoot": "projects/kivo",
+  "goal": "## 目标\n按照缺口分析报告，补全 KIVO spec（飞书文档），新增 3 个 FR + 扩展 1 个 FR + 修改多处现有 FR/AC。完成后 KIVO spec 覆盖数据质量管控、多表一致性、增量提取策略、前端数据源边界。\n\n## 输入\n- 缺口分析报告：`/root/.openclaw/workspace/reports/kivo-spec-gap-analysis-20260611.m",
+  "scopeFingerprint": "sha256:180a61742966136d93db202979ddac10487220beaddb5ff553c18127b2cfb154",
+  "status": "running",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-11T10:07:55.977Z",
+    "startedAt": "2026-06-11T10:07:55.977Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "lastActivityAt": "2026-06-11T10:07:55.977Z",
+    "staleDetectedAt": null,
+    "terminalReason": null
+  },
+  "stagePlan": {
+    "ordered": [
+      "specify",
+      "review"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "specify",
+  "stages": {
+    "specify": {
+      "status": "active",
+      "startedAt": "2026-06-11T10:07:55.977Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  }
+}

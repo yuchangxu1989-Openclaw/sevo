@@ -18,6 +18,8 @@
  *     `<basePath>/<pipelineId>/artifacts/<stage>/<stage>-output.md` so every
  *     stage produces evidence on disk.
  *   - Returns a `StageHandlerResult` (passed | failed | gate_blocked).
+ *     Legacy gate_blocked outcomes are persisted as repairing advisories so
+ *     the pipeline itself keeps running.
  *
  * The handlers are deliberately thin: they prove the engine drives every
  * stage end-to-end. Heavy LLM-backed stage logic (real spec writing, real
@@ -63,14 +65,15 @@ export type EnginePipelineStatus =
   | 'created'
   | 'running'
   | 'completed'
-  | 'failed'
-  | 'blocked';
+  | 'failed';
 
 export type EngineStageStatus =
   | 'pending'
   | 'active'
   | 'passed'
+  | 'repairing'
   | 'failed'
+  /** Legacy read compatibility only. New writes normalize this to repairing. */
   | 'gate_blocked'
   | 'skipped';
 
@@ -88,6 +91,7 @@ export interface EngineStageRecord {
   completedAt?: string;
   artifacts: EngineArtifactRef[];
   blockReason?: string;
+  advisoryReason?: string;
   failureReason?: string;
 }
 
@@ -364,11 +368,9 @@ export class PipelineEngine {
    * Advance a pipeline by one stage (or autoAdvance through several).
    *
    * Resolution rules:
-   *   - If `options.stage` is set, run that stage (must be pending or
-   *     gate_blocked + force).
-   *   - Otherwise pick the first stage with status 'pending' or 'active'.
-   *   - If the resolved stage is gate_blocked and force=false, return
-   *     immediately with outcome=gate_blocked.
+   *   - If `options.stage` is set, run that stage.
+   *   - Otherwise pick the first stage with status 'pending', 'active',
+   *     'failed', 'repairing', or legacy 'gate_blocked'.
    *   - Otherwise call the handler, persist the transition, and if
    *     autoAdvance=true and outcome=passed, recurse into the next stage.
    */
@@ -414,18 +416,6 @@ export class PipelineEngine {
       throw new Error(`Stage '${target}' is not present in pipeline '${pipelineId}'`);
     }
 
-    if (stageRecord.status === 'gate_blocked' && !options.force) {
-      return {
-        pipelineId,
-        stage: target,
-        outcome: 'gate_blocked',
-        artifacts: stageRecord.artifacts,
-        nextStage: this.peekNextStage(state, target),
-        pipelineStatus: 'blocked',
-        reason: stageRecord.blockReason ?? 'gate not passed',
-      };
-    }
-
     const result = await this.runStage(state, target);
 
     // Recurse when autoAdvance requested and stage passed.
@@ -446,10 +436,13 @@ export class PipelineEngine {
     for (const sid of state.requiredStages) {
       const rec = state.stages[sid];
       if (!rec) continue;
-      if (rec.status === 'pending' || rec.status === 'active' || rec.status === 'failed') {
-        return sid;
-      }
-      if (rec.status === 'gate_blocked' && options.force) {
+      if (
+        rec.status === 'pending' ||
+        rec.status === 'active' ||
+        rec.status === 'failed' ||
+        rec.status === 'repairing' ||
+        rec.status === 'gate_blocked'
+      ) {
         return sid;
       }
     }
@@ -515,8 +508,8 @@ export class PipelineEngine {
     if (result.outcome === 'passed') {
       stageRecord.status = 'passed';
     } else if (result.outcome === 'gate_blocked') {
-      stageRecord.status = 'gate_blocked';
-      stageRecord.blockReason = result.reason ?? 'gate not passed';
+      stageRecord.status = 'repairing';
+      stageRecord.advisoryReason = result.reason ?? 'gate returned repair-required advisory';
     } else {
       stageRecord.status = 'failed';
       stageRecord.failureReason = result.reason ?? 'stage handler returned failed';
@@ -541,8 +534,8 @@ export class PipelineEngine {
         state.currentStage = null;
         state.status = 'completed';
       }
-    } else if (stageRecord.status === 'gate_blocked') {
-      state.status = 'blocked';
+    } else if (stageRecord.status === 'repairing') {
+      state.status = 'running';
     } else {
       // 原则：SEVO 流水线永远往前走。stage handler 失败/抛错不是 pipeline 终态。
       // stage 保持 'failed'，使下一次 advanceAsync 的 resolveTargetStage 重新选中
@@ -557,7 +550,7 @@ export class PipelineEngine {
       pipelineId,
       eventType:
         stageRecord.status === 'passed' ? 'stage_completed' :
-        stageRecord.status === 'gate_blocked' ? 'stage_gate_blocked' : 'stage_failed',
+        stageRecord.status === 'repairing' ? 'stage_advisory' : 'stage_failed',
       stage: stageId,
       artifacts: result.artifacts.map((a) => a.path),
       reason: result.reason,

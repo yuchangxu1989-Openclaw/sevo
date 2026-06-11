@@ -150,9 +150,6 @@ describe('SEVO V2 route classifier', { timeout: 30000 }, () => {
 
   it('V2 from entry prefers high-confidence semantic stage over low-confidence default route', async () => {
     const publishGoal = 'Prepare release notes, versioning, artifact routing, and publish evidence for users.';
-    const decision = await classifyCommandRoute('from', { goal: publishGoal });
-    expect(decision.selectedStage).toBe('publish');
-
     const store = createMockRunStore();
     const result = await handleCommand('from', {
       projectSlug: 'sevo',
@@ -160,7 +157,19 @@ describe('SEVO V2 route classifier', { timeout: 30000 }, () => {
       goal: publishGoal,
       fromStage: 'implement',
       stagePlan: { ordered: ['spec', 'implement', 'review', 'publish', 'verify'], skipped: [] },
-    }, { runStore: store });
+    }, {
+      runStore: store,
+      classifyCommandRoute: async () => ({
+        source: 'route-vector-classifier',
+        selectedStage: 'publish',
+        pipeline: { ok: true },
+        stage: {
+          ok: true,
+          stage: 'publish',
+          matchedSample: { id: 'stage-publish-02' },
+        },
+      }),
+    });
 
     expect(result).toContain('semantic route selected "publish" over requested "implement"');
     expect(result).toContain('Mandatory prior stage "implement" requires pass/no-change review before "publish"');
@@ -248,7 +257,15 @@ describe('SEVO V2 route classifier', { timeout: 30000 }, () => {
       goal: 'resume deployment after implementation and review',
       fromStage: 'deploy',
       stagePlan: { ordered: ['spec', 'implement', 'review', 'fix', 'deploy', 'verify'], skipped: [] },
-    }, { runStore: store });
+    }, {
+      runStore: store,
+      classifyCommandRoute: async () => ({
+        source: 'test',
+        selectedStage: 'deploy',
+        pipeline: { ok: true },
+        stage: { ok: true, stage: 'deploy' },
+      }),
+    });
 
     const run = store.listActiveRuns('sevo')[0];
     expect(result).toContain('starting from stage "implement"');

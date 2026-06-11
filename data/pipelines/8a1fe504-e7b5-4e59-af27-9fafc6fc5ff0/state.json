@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "8a1fe504-e7b5-4e59-af27-9fafc6fc5ff0",
+  "projectSlug": "sevo",
+  "projectRoot": "projects/sevo",
+  "goal": "## 目标\n评估 SEVO spec 重构方案：如果我们把整个流水线阶段链和 FR 结构重新定义，应该怎么写？产出一份结构化的重构方案建议。\n\n## 背景（用户已确认的决策）\n\n### 决策 1：阶段链收敛为 10 个阶段\n用户确认的固定序列（不可裁剪，不可跳过）：\n1. 需求定义 (specify)\n2. 需求审查 (spec-review)\n3. 设计（架构 + UX 并行）(design)\n",
+  "scopeFingerprint": "sha256:520dc5da3c26e5e2efca4b3fc69641e00bd16a5aee48734634b5f082a56b890a",
+  "status": "running",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-11T07:10:04.055Z",
+    "startedAt": "2026-06-11T07:10:04.055Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "lastActivityAt": "2026-06-11T07:10:04.055Z",
+    "staleDetectedAt": null,
+    "terminalReason": null
+  },
+  "stagePlan": {
+    "ordered": [
+      "design",
+      "review"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "design",
+  "stages": {
+    "design": {
+      "status": "active",
+      "startedAt": "2026-06-11T07:10:04.055Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": true,
+    "parentRunId": null,
+    "routeDecision": null
+  }
+}

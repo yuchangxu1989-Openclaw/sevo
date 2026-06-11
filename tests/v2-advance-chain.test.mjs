@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { handleCompletion } from '../src/completion-handler.js';
-import { createRun, closeRun, getRun, resetStageForRetry } from '../src/run-store.js';
+import { createRun, closeRun, getRun } from '../src/run-store.js';
 import { encode } from '../src/label-protocol.js';
 import { buildInjection } from '../src/prompt-injector.js';
 
@@ -13,9 +13,6 @@ function makeMockDeps(overrides = {}) {
     advanceDepthByRun: new Map(),
     getStageMapping(stageId) {
       return { tier: 'T1', agentId: 'cc', timeout: 600 };
-    },
-    renderAdvancePromptTemplate(name, values) {
-      return `[ADVANCE] label=${values.label} agent=${values.agentLine} timeout=${values.timeout}s\n${values.taskDescription}`;
     },
     ...overrides,
   };
@@ -57,48 +54,36 @@ try {
   assert.equal(r2.runSnapshot.currentStageId, 'review');
   console.log('PASS: implement→review linear advance');
 
-  // --- Test 3: Review fails → auto-advance to fix (cycle) ---
+  // --- Test 3: Review repair-required advisory → continue to fix ---
   const deps3 = makeMockDeps();
   const r3 = handleCompletion(
     { label: makeLabel(run, 'review'), status: 'failed', result: { reason: 'type errors found' }, taskId: 't3' },
     deps3,
   );
-  assert.ok(r3, 'review failure should trigger fix cycle advance');
+  assert.ok(r3, 'review repair-required advisory should continue to fix');
   assert.equal(r3.nextStageId, 'fix');
   assert.equal(r3.runSnapshot.currentStageId, 'fix');
-  assert.ok(r3.runSnapshot.stages.fix.attempt >= 1, 'fix attempt should be set');
-  assert.match(r3.advanceText, /review→fix cycle/);
-  assert.match(r3.advanceText, /type errors found/);
-  console.log('PASS: review fails → auto-advance to fix');
+  assert.equal(r3.runSnapshot.stages.review.status, 'repairing');
+  assert.equal(r3.nextAction.completedStageStatus, 'repairing');
+  assert.match(r3.advanceText, /Next stage: fix/);
+  assert.match(r3.advanceText, /Advisory:/);
+  console.log('PASS: review repair-required advisory → continue to fix');
 
-  // --- Test 4: Fix passes → loop back to review (cycle) ---
+  // --- Test 4: Fix passes → pipeline completes without re-loop prompt ---
   const deps4 = makeMockDeps();
   const currentFixAttempt = getRun(run.pipelineRunId).stages.fix.attempt;
   const r4 = handleCompletion(
     { label: makeLabel(run, 'fix', currentFixAttempt), status: 'passed', taskId: 't4' },
     deps4,
   );
-  assert.ok(r4, 'fix pass should trigger review re-loop');
-  assert.equal(r4.nextStageId, 'review');
-  assert.equal(r4.runSnapshot.currentStageId, 'review');
-  const reviewAttempt = r4.runSnapshot.stages.review.attempt;
-  assert.ok(reviewAttempt >= 2, `review attempt should be >=2, got ${reviewAttempt}`);
-  assert.match(r4.advanceText, /fix→review cycle/);
-  console.log('PASS: fix passes → loop back to review');
+  assert.ok(r4, 'fix pass should complete the configured stage chain');
+  assert.equal(r4.nextStageId, null);
+  assert.equal(r4.runSnapshot.status, 'completed');
+  assert.equal(r4.nextAction.kind, 'complete-run');
+  assert.match(r4.advanceText, /completed/);
+  console.log('PASS: fix passes → pipeline complete');
 
-  // --- Test 5: Review passes → linear advance (pipeline complete) ---
-  const deps5 = makeMockDeps();
-  const currentReviewAttempt = getRun(run.pipelineRunId).stages.review.attempt;
-  const r5 = handleCompletion(
-    { label: makeLabel(run, 'review', currentReviewAttempt), status: 'passed', taskId: 't5' },
-    deps5,
-  );
-  assert.ok(r5, 'review pass should produce completion or next-stage advance');
-  assert.equal(r5.runSnapshot.stages.review.status, 'passed');
-  assert.match(r5.advanceText, /completed all configured stages/);
-  console.log('PASS: review passes → pipeline complete');
-
-  // --- Test 6: Prompt injector delivers pending advance ---
+  // --- Test 5: Prompt injector delivers pending advance ---
   const run2 = createRun({
     projectSlug: 'v2-injector-test',
     projectRoot: 'projects/test',

@@ -10,19 +10,24 @@
  * Strategy (architecture spec §3.1):
  *   1. Heuristic regex fast-path — cheap, deterministic, hits common Chinese
  *      "实装 / 实现 / 新增" + module-name patterns.
- *   2. LLM fallback — when heuristics yield nothing, ask the configured LLM
- *      for a structured `Partial<TaskScope>` JSON.
- *   3. Conservative bottom — any LLM error / parse failure / disabled LLM
- *      returns `{}` so the caller's L1 default takes over.
+ *   2. Embedding fallback — when heuristics yield nothing, use vector cosine
+ *      similarity to classify scope from pre-computed reference samples.
+ *   3. Conservative bottom — any embedding error / no match returns `{}` so
+ *      the caller's L1 default takes over.
  */
 import type { TaskScope } from '../types/index.js';
-import { LLMProvider } from '../llm/index.js';
+import { classifyByEmbedding, type EmbeddingConfig } from '../embedding/index.js';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+const SCOPE_VECTORS_PATH = resolve(MODULE_DIR, '..', '..', 'data', 'scope-inference-vectors.json');
 
 export interface InferenceOptions {
-  /** Optional LLM override (mostly for tests). */
-  llm?: Pick<LLMProvider, 'chat'>;
-  /** Disable LLM fallback (heuristics-only); useful for offline contexts. */
-  disableLlm?: boolean;
+  /** Optional embedding config override (mostly for tests). */
+  embeddingConfig?: EmbeddingConfig | null;
+  /** Disable embedding fallback (heuristics-only); useful for offline contexts. */
+  disableEmbedding?: boolean;
 }
 
 /** Heuristic keywords that imply a non-trivial implementation task (FR-1 AC1). */
@@ -34,8 +39,7 @@ const DATA_MODEL_HINTS = ['数据模型', 'schema', 'DB', '数据库表', '迁�
 /** Heuristic markers for cross-module / multi-FR scope (FR-1 AC2). */
 const CROSS_MODULE_HINTS = ['跨模块', '跨多个模块', '多个 FR', '多个FR', '多 FR', '多模块', 'cross-module'];
 
-/** Module noun pattern after a "new module" verb. Matches alphanum + Chinese block names like
- *  "metadata-extractor service", "router 模块", "FR-P03 新增 LLM 推断模块". */
+/** Module noun pattern after a "new module" verb. */
 const MODULE_NOUN_RE = /(?:模块|service|service\s|api|链路|module|compiler|extractor|inferrer|engine|adapter|provider|store|router|gate|stage|pipeline|component|client|hook|manager|worker)/i;
 
 /**
@@ -52,40 +56,22 @@ export async function inferScopeFromDescription(
   const text = description;
   const heuristic = applyHeuristics(text);
 
-  // Heuristics already gave us a strong signal — return immediately.
   if (heuristic.isNewModule || (heuristic.affectedDomains?.length ?? 0) >= 2 || heuristic.hasDataModelChange) {
     return heuristic;
   }
 
-  if (options.disableLlm) return heuristic;
-
-  const llm = options.llm ?? createConfiguredLlm();
-  if (!llm) return heuristic;
+  if (options.disableEmbedding) return heuristic;
 
   try {
-    const reply = await llm.chat([
-      {
-        role: 'system',
-        content: [
-          '你是 SEVO 路由层的 scope 推断器。',
-          '只输出 JSON，不要解释，字段全部可选。',
-          'JSON schema: {',
-          '  "isNewModule": boolean,',
-          '  "estimatedFiles": number,',
-          '  "estimatedLines": number,',
-          '  "affectedDomains": string[],',
-          '  "hasDataModelChange": boolean',
-          '}',
-          '判定原则：实装/实现/新增/接入/搭建 + 模块名 → isNewModule=true。',
-          '修 typo / 改文案 / 单行 → 留空字段。',
-        ].join('\n'),
-      },
-      { role: 'user', content: text },
-    ]);
-    const parsed = parseJsonObject(reply);
-    return mergeScope(heuristic, sanitize(parsed));
+    const result = await classifyByEmbedding(text, SCOPE_VECTORS_PATH, {
+      config: options.embeddingConfig,
+    });
+
+    if (!result.matched) return heuristic;
+
+    const embeddingScope = labelToScope(result.label);
+    return mergeScope(heuristic, embeddingScope);
   } catch {
-    // LLM unreachable / non-JSON / network error → conservative empty.
     return heuristic;
   }
 }
@@ -116,44 +102,28 @@ function applyHeuristics(text: string): Partial<TaskScope> {
   return out;
 }
 
-function createConfiguredLlm(): Pick<LLMProvider, 'chat'> | null {
-  if (!process.env.OPENAI_API_KEY) return null;
-  return new LLMProvider();
-}
-
-function parseJsonObject(content: string): unknown {
-  const trimmed = content.trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    const match = trimmed.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('LLM response is not JSON');
-    return JSON.parse(match[0]);
+function labelToScope(label: string | null): Partial<TaskScope> {
+  switch (label) {
+    case 'new-module':
+      return { isNewModule: true };
+    case 'cross-domain':
+      return { affectedDomains: ['inferred-domain-1', 'inferred-domain-2'] };
+    case 'data-model':
+      return { hasDataModelChange: true };
+    case 'large-change':
+      return { estimatedFiles: 10, estimatedLines: 500 };
+    case 'micro-change':
+      return {};
+    case 'medium-change':
+      return { estimatedFiles: 3, estimatedLines: 150 };
+    default:
+      return {};
   }
 }
 
-function sanitize(raw: unknown): Partial<TaskScope> {
-  if (!raw || typeof raw !== 'object') return {};
-  const obj = raw as Record<string, unknown>;
-  const out: Partial<TaskScope> = {};
-  if (typeof obj.isNewModule === 'boolean') out.isNewModule = obj.isNewModule;
-  if (typeof obj.estimatedFiles === 'number' && Number.isFinite(obj.estimatedFiles)) {
-    out.estimatedFiles = Math.max(0, Math.floor(obj.estimatedFiles));
-  }
-  if (typeof obj.estimatedLines === 'number' && Number.isFinite(obj.estimatedLines)) {
-    out.estimatedLines = Math.max(0, Math.floor(obj.estimatedLines));
-  }
-  if (Array.isArray(obj.affectedDomains)) {
-    const domains = obj.affectedDomains.filter((d): d is string => typeof d === 'string' && d.trim() !== '');
-    if (domains.length > 0) out.affectedDomains = domains;
-  }
-  if (typeof obj.hasDataModelChange === 'boolean') out.hasDataModelChange = obj.hasDataModelChange;
-  return out;
-}
-
-function mergeScope(base: Partial<TaskScope>, llm: Partial<TaskScope>): Partial<TaskScope> {
+function mergeScope(base: Partial<TaskScope>, embedding: Partial<TaskScope>): Partial<TaskScope> {
   return {
-    ...llm,
+    ...embedding,
     ...base, // heuristics win on overlap
   };
 }

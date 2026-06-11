@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "f9fd8480-98af-44ac-afc1-d5ded0500da1",
+  "projectSlug": "sevo",
+  "projectRoot": "projects/sevo",
+  "goal": "## 目标\n修复 SEVO 插件的 label 重写逻辑：当前 SEVO 把用户设置的中文 label（如 \"sevo:fix KIVO意图知识库重新提取\"）重写为内部格式（如 \"sevo:kivo:664134f6:fix:1\"），导致用户在飞书看到的任务名是乱码般的内部 ID，完全不知道任务在做什么。\n\n## 正确行为\n- 用户可见的 label（看板、飞书通知、completion even",
+  "scopeFingerprint": "sha256:2654affcf04ab8c69445d8caa81d0867f3854d1188e117e63cf29175c6ce2f3e",
+  "status": "running",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-11T08:40:57.056Z",
+    "startedAt": "2026-06-11T08:40:57.056Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "lastActivityAt": "2026-06-11T08:40:57.056Z",
+    "staleDetectedAt": null,
+    "terminalReason": null
+  },
+  "stagePlan": {
+    "ordered": [
+      "fix",
+      "smoke-test",
+      "ux-acceptance",
+      "pm-commercial-review",
+      "regression",
+      "publish-generalization-gate",
+      "deploy",
+      "verify",
+      "readme",
+      "post-release-validation",
+      "clean-install-verification",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "fix",
+  "stages": {
+    "fix": {
+      "status": "active",
+      "startedAt": "2026-06-11T08:40:57.056Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "smoke-test": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ux-acceptance": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "pm-commercial-review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "publish-generalization-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "readme": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "post-release-validation": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "clean-install-verification": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": true,
+    "parentRunId": null,
+    "routeDecision": null
+  }
+}

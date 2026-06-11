@@ -2,6 +2,14 @@
 
 本文件记录 sevo-pipeline 的所有重要变更，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
+## [Unreleased] - 2026-06-10
+
+### 修复
+- dispatch 时通过 `before_tool_call` hook 自动创建 pipeline run
+- 修复 `WORKSPACE_PROJECTS` 作用域 bug
+- completion-handler fallback 增加全局搜索兜底
+- handshake 改为 command channel
+
 ## [1.0.0] - 2026-05-03
 
 ### 新增

@@ -12,8 +12,12 @@
 
 import type { TaskLevel, TaskScope } from '../types/index.js';
 import { classifyLevel } from '../router/level-classifier.js';
-import { LLMProvider } from '../llm/index.js';
-import type { LLMProviderConfig } from '../llm/index.js';
+import { classifyByEmbedding, type EmbeddingConfig } from '../embedding/index.js';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+const SCOPE_VECTORS_PATH = resolve(MODULE_DIR, '..', '..', 'data', 'scope-inference-vectors.json');
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -44,60 +48,30 @@ export interface ComplianceResult {
   reason: string;
 }
 
-// ── LLM Scope Inference ────────────────────────────────────────
+// ── Embedding-based Scope Inference ──────────────────────────────
 
-const SCOPE_INFERENCE_SYSTEM_PROMPT = `You are a task scope analyzer for a software development pipeline.
-Given a task description, determine:
-1. isNewModule: Is this creating a brand new module/system from scratch?
-2. hasDataModelChange: Does this involve database schema changes, data model migrations, or data structure modifications?
-3. hasGovernanceChange: Does this involve changes to permissions, security policies, or governance rules?
-4. hasReleaseTargetChange: Does this involve changes to deployment targets or release configurations?
-5. isCrossDomain: Does this affect multiple distinct modules/domains?
-6. affectedDomains: If cross-domain, list the domain names.
-7. estimatedFiles: Estimated number of files that will be changed (1-50).
-8. estimatedLines: Estimated number of lines that will be changed (1-5000).
-
-Respond ONLY with a JSON object, no markdown fences, no explanation:
-{"isNewModule":false,"hasDataModelChange":false,"hasGovernanceChange":false,"hasReleaseTargetChange":false,"isCrossDomain":false,"affectedDomains":[],"estimatedFiles":3,"estimatedLines":100}`;
-
-function parseTaskScopeFromLLM(raw: string): TaskScope {
-  // Strip markdown fences if present
-  const cleaned = raw.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '').trim();
-  const parsed = JSON.parse(cleaned);
-
-  const estimatedFiles = typeof parsed.estimatedFiles === 'number' ? parsed.estimatedFiles : 3;
-  const estimatedLines = typeof parsed.estimatedLines === 'number' ? parsed.estimatedLines : 100;
-  const affectedDomains = parsed.isCrossDomain && Array.isArray(parsed.affectedDomains)
-    ? parsed.affectedDomains
-    : undefined;
-  const isNewModule = Boolean(parsed.isNewModule);
-  const hasDataModelChange = Boolean(parsed.hasDataModelChange);
-  const hasGovernanceChange = Boolean(parsed.hasGovernanceChange);
-  const hasReleaseTargetChange = Boolean(parsed.hasReleaseTargetChange);
-
-  // L0 must be explicitly opted-in (FR-2 AC3). When the LLM has semantically
-  // judged this as a micro-change (single file, <50 lines, no risky flags),
-  // treat that judgement as the explicit opt-in so historical L0 routing
-  // through ComplianceRouter still works.
-  const looksMicro =
-    estimatedFiles <= 1 &&
-    estimatedLines < 50 &&
-    (affectedDomains?.length ?? 0) <= 1 &&
-    !isNewModule &&
-    !hasDataModelChange &&
-    !hasGovernanceChange &&
-    !hasReleaseTargetChange;
-
-  return {
-    estimatedFiles,
-    estimatedLines,
-    affectedDomains,
-    isNewModule,
-    hasDataModelChange,
-    hasGovernanceChange,
-    hasReleaseTargetChange,
-    userExplicitL0: looksMicro || undefined,
+function labelToTaskScope(label: string | null): TaskScope {
+  const base: TaskScope = {
+    estimatedFiles: 3,
+    estimatedLines: 100,
   };
+
+  switch (label) {
+    case 'new-module':
+      return { ...base, isNewModule: true, estimatedFiles: 8, estimatedLines: 400 };
+    case 'cross-domain':
+      return { ...base, affectedDomains: ['domain-1', 'domain-2'], estimatedFiles: 6 };
+    case 'data-model':
+      return { ...base, hasDataModelChange: true, estimatedFiles: 5 };
+    case 'large-change':
+      return { ...base, estimatedFiles: 15, estimatedLines: 1000 };
+    case 'micro-change':
+      return { estimatedFiles: 1, estimatedLines: 20, userExplicitL0: true };
+    case 'medium-change':
+      return { estimatedFiles: 3, estimatedLines: 150 };
+    default:
+      return base;
+  }
 }
 
 // ── ComplianceRouter ────────────────────────────────────────────
@@ -105,17 +79,17 @@ function parseTaskScopeFromLLM(raw: string): TaskScope {
 export interface ComplianceRouterConfig {
   /** Current compliance mode. Defaults to 'guide'. */
   mode?: ComplianceMode;
-  /** LLM provider configuration for semantic scope inference. */
-  llm?: LLMProviderConfig;
+  /** Embedding config override. */
+  embeddingConfig?: EmbeddingConfig;
 }
 
 export class ComplianceRouter {
   private mode: ComplianceMode;
-  private llm: LLMProvider;
+  private embeddingConfig?: EmbeddingConfig;
 
   constructor(config?: ComplianceRouterConfig) {
     this.mode = config?.mode ?? 'guide';
-    this.llm = new LLMProvider(config?.llm);
+    this.embeddingConfig = config?.embeddingConfig;
   }
 
   /**
@@ -124,25 +98,21 @@ export class ComplianceRouter {
    * Decision logic:
    * 1. If mode is 'off', always pass.
    * 2. If task already has a SEVO tag, pass (already orchestrated).
-   * 3. Classify the task level (async — uses LLM for scope inference).
+   * 3. Classify the task level (async — uses embedding for scope inference).
    * 4. If mode is 'guide', return guide action with level info.
    * 5. If mode is 'auto-route', return create action with level info.
    */
   async evaluate(taskContext: ComplianceTaskContext): Promise<ComplianceResult> {
-    // Off mode: no intervention
     if (this.mode === 'off') {
       return { action: 'pass', reason: 'Compliance mode is off' };
     }
 
-    // Already orchestrated: skip
     if (taskContext.hasSevoTag) {
       return { action: 'pass', reason: 'Task already has SEVO tag' };
     }
 
-    // Classify the task
     const level = await this.classifyLevel(taskContext.description, taskContext.codeStats);
 
-    // L0 tasks don't need full pipeline guidance
     if (level === 'L0' && this.mode === 'guide') {
       return {
         action: 'pass',
@@ -151,7 +121,6 @@ export class ComplianceRouter {
       };
     }
 
-    // Guide mode: suggest but don't create
     if (this.mode === 'guide') {
       return {
         action: 'guide',
@@ -160,7 +129,6 @@ export class ComplianceRouter {
       };
     }
 
-    // Auto-route mode: create pipeline
     return {
       action: 'create',
       level,
@@ -172,7 +140,7 @@ export class ComplianceRouter {
    * Classify a task's level based on description and optional code stats.
    *
    * Uses the existing level-classifier from the Router module.
-   * If no codeStats are provided, infers scope via LLM semantic analysis.
+   * If no codeStats are provided, infers scope via embedding cosine similarity.
    */
   async classifyLevel(description: string, codeStats?: TaskScope): Promise<TaskLevel> {
     const scope = codeStats ?? await this.inferScopeFromDescription(description);
@@ -192,16 +160,19 @@ export class ComplianceRouter {
 
   // ── Private ─────────────────────────────────────────────────
 
-  /**
-   * Infer a TaskScope from a task description using LLM semantic analysis.
-   * The LLM evaluates the description and returns structured scope metadata.
-   */
   private async inferScopeFromDescription(description: string): Promise<TaskScope> {
-    const response = await this.llm.chat([
-      { role: 'system', content: SCOPE_INFERENCE_SYSTEM_PROMPT },
-      { role: 'user', content: description || '(empty task description)' },
-    ]);
-
-    return parseTaskScopeFromLLM(response);
+    try {
+      const result = await classifyByEmbedding(
+        description || '(empty)',
+        SCOPE_VECTORS_PATH,
+        { config: this.embeddingConfig },
+      );
+      if (result.matched) {
+        return labelToTaskScope(result.label);
+      }
+    } catch {
+      // Embedding unavailable — fall through to default
+    }
+    return { estimatedFiles: 3, estimatedLines: 100 };
   }
 }

@@ -30,7 +30,7 @@ export type StageId =
   | 'clean-install-verification'
   | 'ledger';
 
-/** Stage lifecycle including clarification-specific blocking. */
+/** Stage lifecycle. Legacy blocked states are read-compatible; new flows use fix_pending/advisory states. */
 export type StageStatus =
   | 'pending'
   | 'active'
@@ -189,8 +189,8 @@ export interface PipelineState {
   updatedAt: string;
   /** AC-13.4: Pipeline-level rollback count (incremented on each rollback). */
   rollbackCount?: number;
-  /** AC-13.4: Pipeline-level status — 'blocked' when rollbacks exhausted or first stage fails. */
-  pipelineStatus?: 'active' | 'blocked';
+  /** AC-13.4: Pipeline-level status. Legacy 'blocked' is read-only compatibility. */
+  pipelineStatus?: 'active' | 'repair-required' | 'blocked';
   /** P0-3: Latest automatic review→verify tiered scan summary. */
   tieredScan?: {
     status: 'passed' | 'failed' | 'error';
@@ -212,6 +212,7 @@ export interface PipelineEvent {
     | 'stage_activated'
     | 'stage_completed'
     | 'stage_failed'
+    | 'stage_advisory'
     | 'stage_blocked'
     | 'stage_skipped'
     | 'artifact_registered'

@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "8d07b481-164c-4954-a11a-c61a80273385",
+  "projectSlug": "sevo",
+  "projectRoot": "projects/sevo",
+  "goal": "## 目标\n在 SEVO 操作手册（projects/sevo/docs/sevo-operations-guide.md）中补充一段\"dispatch 自动创建 pipeline run\"的操作说明。\n\n## 具体任务\n找到操作手册中\"advisory handshake\"相关段落，在其后新增一段说明：\n- dispatch 带 sevo: label 时，SEVO 插件 before_tool",
+  "scopeFingerprint": "sha256:3b4481b71b7d4bf3119ea443ae2e79a05b39814ab09536e7b1b129c08b68b45a",
+  "status": "running",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-10T15:03:53.338Z",
+    "startedAt": "2026-06-10T15:03:53.338Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "lastActivityAt": "2026-06-10T15:38:10.568Z",
+    "staleDetectedAt": null,
+    "terminalReason": null
+  },
+  "stagePlan": {
+    "ordered": [
+      "implement",
+      "review",
+      "fix",
+      "smoke-test",
+      "ux-acceptance",
+      "pm-commercial-review",
+      "regression",
+      "publish-generalization-gate",
+      "deploy",
+      "verify",
+      "readme",
+      "post-release-validation",
+      "clean-install-verification",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "review",
+  "stages": {
+    "implement": {
+      "status": "passed",
+      "startedAt": "2026-06-10T15:03:53.338Z",
+      "completedAt": "2026-06-10T15:38:10.568Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "fix_pending",
+      "startedAt": "2026-06-10T15:38:10.568Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1,
+      "failureReason": "Task failed",
+      "fixAttempts": 1
+    },
+    "fix": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "smoke-test": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ux-acceptance": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "pm-commercial-review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "publish-generalization-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "readme": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "post-release-validation": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "clean-install-verification": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": true,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "e03bb888-f90c-41f9-903f-1ff8fae55526",
+      "runId": "8d07b481-164c-4954-a11a-c61a80273385",
+      "stageId": "implement",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"implement\" is missing required evidence fields: codeChanges, testRun",
+      "evidence": [
+        "codeChanges",
+        "testRun"
+      ],
+      "createdAt": "2026-06-10T15:38:10.566Z",
+      "resolvedAt": null
+    }
+  ],
+  "updatedAt": "2026-06-10T16:21:13.346Z"
+}

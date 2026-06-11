@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "9793eb1f-1f47-4da6-8683-461f675c4efb",
+  "projectSlug": "npm",
+  "projectRoot": "projects/npm",
+  "goal": "## 目标\n修复 SEVO npm 包的 `files` 字段，让 V2 JS 运行时文件被打进 npm tarball；同时排除 `dist/__tests__` 测试垃圾。这是 npm API 迁移的第一步（纯发布配置修复，不改入口、不改功能）。\n\n## 背景\n交叉论证报告（`reports/sevo-npm-migration-cross-validation.md`）确认的第一步。当前问题",
+  "scopeFingerprint": "sha256:3cb54375b8e07a95afa3706221a36a178242c8a2f9cf8588cc25de6ea0a5d450",
+  "status": "running",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-11T17:09:42.546Z",
+    "startedAt": "2026-06-11T17:09:42.546Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "lastActivityAt": "2026-06-11T17:09:42.546Z",
+    "staleDetectedAt": null,
+    "terminalReason": null
+  },
+  "stagePlan": {
+    "ordered": [
+      "implement",
+      "review",
+      "fix",
+      "smoke-test",
+      "ux-acceptance",
+      "pm-commercial-review",
+      "regression",
+      "publish-generalization-gate",
+      "deploy",
+      "verify",
+      "readme",
+      "post-release-validation",
+      "clean-install-verification",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "implement",
+  "stages": {
+    "implement": {
+      "status": "active",
+      "startedAt": "2026-06-11T17:09:42.546Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "fix": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "smoke-test": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ux-acceptance": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "pm-commercial-review": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "publish-generalization-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "readme": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "post-release-validation": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "clean-install-verification": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  }
+}

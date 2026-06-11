@@ -14,9 +14,12 @@ skill/
 logs/
 .cache/
 coverage/
+data/active-index.json
+data/lifecycle-scans.jsonl
+data/pipelines/
 
-# Source code (npm gets compiled output, not source)
-src/
+# Source TypeScript is omitted; V2 runtime JavaScript is allowlisted in package.json.
+src/**/*.ts
 tsconfig.json
 
 # Internal files not for distribution

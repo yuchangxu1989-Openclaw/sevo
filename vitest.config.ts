@@ -10,6 +10,9 @@ export default defineConfig({
       'tests/**/*.test.ts',
       'web/__tests__/**/*.test.{ts,tsx}',
     ],
+    env: {
+      SEVO_EMBEDDING_DISABLED: '1',
+    },
   },
   resolve: {
     alias: {

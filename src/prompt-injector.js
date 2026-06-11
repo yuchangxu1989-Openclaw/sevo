@@ -43,11 +43,11 @@ function formatClarificationGuidance(run) {
 
 const PIPELINE_DISCIPLINE_TEXT = [
   '## SEVO Pipeline Discipline',
-  '- Spec-first: 需求规格必须在实现前完成并通过评审',
-  '- 开发→审计→复验: 每个阶段产出必须经过独立审计后才能 advance',
-  '- Advance 权威性: 只有 completion-handler 的 advance 计算才能推进阶段',
-  '- 不跳阶段: 按 stagePlan.ordered 顺序执行，不允许跳过未完成阶段',
-  '- 单次聚焦: 每轮只处理一个阶段的一个具体任务',
+  '- Spec-first: 任意入口先核实需求规格覆盖当前 FR/AC。Why: 只有需求先验明确，后续实现和审计才不会把伪需求写成产品事实。',
+  '- Advisory-first: Gate/审计/验证只记录 advisory、finding 和 repair task，不把 pipeline 写成阻断态。Why: 风险需要被保留和传递，但流水线不能因为旧阻断语义失去前进性。',
+  '- Always-forward: completion-handler 记录阶段事实并写 nextAction，主线继续按 stagePlan.ordered 推进。Why: 结构化 nextAction 是唯一推进契约，避免 prompt 文本和真实状态分叉。',
+  '- 不跳阶段: 按 stagePlan.ordered 顺序执行，未关闭 advisory 传递给后续审计兜底。Why: 阶段顺序承载验收覆盖，跳阶段会制造无法追踪的质量空洞。',
+  '- 单次聚焦: 每轮只处理一个阶段的一个具体任务。Why: 缩小变更面能让 completion、证据和修复责任保持一一对应。',
 ].join('\n');
 
 /**
@@ -213,8 +213,12 @@ export function buildInjection(ctx, deps) {
     for (const run of runs) {
       const advisories = listOpenAdvisories(run.pipelineRunId);
       if (Array.isArray(advisories) && advisories.length > 0) {
-        const lines = advisories.map((a) => `  - [${a.severity}] ${a.stageId}: ${a.message}`);
-        sections.push(`### [${run.projectSlug}] Open Advisories\n${lines.join('\n')}`);
+        const lines = advisories.map((a) => `  - [${a.severity}] ${a.stageId}: ${a.message} (id: ${a.id})`);
+        const handshakeHint = [
+          'To acknowledge an advisory, use the command channel (never place handshake payloads in assistant message body):',
+          '  sevo:handshake {"advisoryId":"<id>","selectedStage":"<stage>","reason":"<rationale>"}',
+        ].join('\n');
+        sections.push(`### [${run.projectSlug}] Open Advisories\n${lines.join('\n')}\n${handshakeHint}`);
       }
     }
   }

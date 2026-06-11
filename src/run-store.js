@@ -1,15 +1,27 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 
 const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(MODULE_DIR, '..');
-const DATA_DIR = join(PROJECT_ROOT, 'data');
+const DATA_DIR = process.env.SEVO_DATA_DIR
+  ? resolve(process.env.SEVO_DATA_DIR)
+  : join(PROJECT_ROOT, 'data');
+const STATE_DIR = process.env.SEVO_STATE_DIR
+  ? resolve(process.env.SEVO_STATE_DIR)
+  : join(PROJECT_ROOT, 'state');
 const PIPELINES_DIR = join(DATA_DIR, 'pipelines');
 const ACTIVE_INDEX_PATH = join(DATA_DIR, 'active-index.json');
 const ACTIVE_STATUSES = new Set(['running', 'stale']);
-const TERMINAL_STAGE_STATUSES = new Set(['passed', 'failed', 'blocked', 'skipped']);
+const COMPLETED_STAGE_STATUSES = new Set(['passed', 'completed', 'repairing', 'cancelled', 'skipped']);
+const DEFAULT_STALE_AFTER_DAYS = 7;
+const DEFAULT_ARCHIVE_AFTER_STALE_DAYS = 7;
+const DEFAULT_STALE_ARCHIVE_DAYS = DEFAULT_STALE_AFTER_DAYS;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const LIFECYCLE_SCAN_PATH = join(DATA_DIR, 'lifecycle-scans.jsonl');
+const COMPAT_ACTIVE_PIPELINES_PATH = join(STATE_DIR, 'active-pipelines.json');
+const COMPAT_ACTIVE_PIPELINES_SCHEMA_VERSION = 3;
 
 function nowIso() {
   return new Date().toISOString();
@@ -19,8 +31,21 @@ function ensureDataDirs() {
   mkdirSync(PIPELINES_DIR, { recursive: true });
 }
 
+function normalizePipelineRunId(pipelineRunId) {
+  if (!pipelineRunId || typeof pipelineRunId !== 'string') {
+    throw new Error(`invalid pipelineRunId: ${pipelineRunId}`);
+  }
+  if (pipelineRunId !== basename(pipelineRunId) || pipelineRunId === '.' || pipelineRunId === '..') {
+    throw new Error(`invalid pipelineRunId: ${pipelineRunId}`);
+  }
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(pipelineRunId)) {
+    throw new Error(`invalid pipelineRunId: ${pipelineRunId}`);
+  }
+  return pipelineRunId;
+}
+
 function runDir(pipelineRunId) {
-  return join(PIPELINES_DIR, pipelineRunId);
+  return join(PIPELINES_DIR, normalizePipelineRunId(pipelineRunId));
 }
 
 function statePath(pipelineRunId) {
@@ -51,6 +76,80 @@ function writeActiveIndex(index) {
   });
 }
 
+function toCompatibilityEntry(run) {
+  const currentStage = run.currentStageId || null;
+  return {
+    projectSlug: run.projectSlug,
+    projectRoot: run.projectRoot,
+    status: run.status,
+    currentStage,
+    currentStageId: currentStage,
+    lastAdvancedAt: run.lifecycle?.lastActivityAt || nowIso(),
+    source: 'v2-run-store',
+  };
+}
+
+function updateActivePipelineCompatibilityIndex(run) {
+  const index = readJson(COMPAT_ACTIVE_PIPELINES_PATH, {
+    schemaVersion: COMPAT_ACTIVE_PIPELINES_SCHEMA_VERSION,
+    pipelines: {},
+    _v2MigrationNote: 'V1 pipelines archived on 2026-06-09. V2 active-index.json is now authoritative.',
+  });
+  const pipelines = { ...(index?.pipelines || {}) };
+
+  if (ACTIVE_STATUSES.has(run.status)) {
+    pipelines[run.pipelineRunId] = {
+      ...(pipelines[run.pipelineRunId] || {}),
+      ...toCompatibilityEntry(run),
+    };
+  } else {
+    delete pipelines[run.pipelineRunId];
+  }
+
+  writeJson(COMPAT_ACTIVE_PIPELINES_PATH, {
+    ...index,
+    schemaVersion: index?.schemaVersion || COMPAT_ACTIVE_PIPELINES_SCHEMA_VERSION,
+    pipelines,
+  });
+}
+
+function reconcileActivePipelineCompatibilityIndex() {
+  const active = readActiveIndex();
+  const compat = readJson(COMPAT_ACTIVE_PIPELINES_PATH, {
+    schemaVersion: COMPAT_ACTIVE_PIPELINES_SCHEMA_VERSION,
+    pipelines: {},
+    _v2MigrationNote: 'V1 pipelines archived on 2026-06-09. V2 active-index.json is now authoritative.',
+  });
+  const pipelines = { ...(compat?.pipelines || {}) };
+  const activeIds = new Set(Object.keys(active?.pipelines || {}));
+  let dirty = false;
+
+  for (const pipelineRunId of activeIds) {
+    const run = getRun(pipelineRunId);
+    if (!run || !ACTIVE_STATUSES.has(run.status)) continue;
+    pipelines[pipelineRunId] = {
+      ...(pipelines[pipelineRunId] || {}),
+      ...toCompatibilityEntry(run),
+    };
+    dirty = true;
+  }
+
+  for (const [pipelineRunId, entry] of Object.entries(pipelines)) {
+    if (entry?.source === 'v2-run-store' && !activeIds.has(pipelineRunId)) {
+      delete pipelines[pipelineRunId];
+      dirty = true;
+    }
+  }
+
+  if (dirty) {
+    writeJson(COMPAT_ACTIVE_PIPELINES_PATH, {
+      ...compat,
+      schemaVersion: compat?.schemaVersion || COMPAT_ACTIVE_PIPELINES_SCHEMA_VERSION,
+      pipelines,
+    });
+  }
+}
+
 function updateActiveIndex(run) {
   const index = readActiveIndex();
   const pipelines = { ...(index.pipelines || {}) };
@@ -64,6 +163,7 @@ function updateActiveIndex(run) {
     delete pipelines[run.pipelineRunId];
   }
   writeActiveIndex({ pipelines });
+  updateActivePipelineCompatibilityIndex(run);
 }
 
 function appendLedger(pipelineRunId, type, data) {
@@ -72,6 +172,124 @@ function appendLedger(pipelineRunId, type, data) {
     `${JSON.stringify({ timestamp: nowIso(), type, pipelineRunId, data })}\n`,
     'utf8',
   );
+}
+
+function normalizePositiveDays(value, fallback) {
+  const days = Number(value);
+  return Number.isFinite(days) && days > 0 ? days : fallback;
+}
+
+function normalizeStageStatusForWrite(status) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (['blocked', 'paused', 'gate-failed', 'failed'].includes(normalized)) return 'repairing';
+  return status;
+}
+
+function toTimeMs(value) {
+  if (value instanceof Date) return value.getTime();
+  if (value === undefined || value === null || value === '') return NaN;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : NaN;
+}
+
+function normalizeNowMs(value) {
+  const ms = value instanceof Date
+    ? value.getTime()
+    : value
+      ? new Date(value).getTime()
+      : Date.now();
+  return Number.isFinite(ms) ? ms : Date.now();
+}
+
+function appendLifecycleScan(record) {
+  ensureDataDirs();
+  appendFileSync(LIFECYCLE_SCAN_PATH, `${JSON.stringify(record)}\n`, 'utf8');
+}
+
+function readLastLedgerEvent(pipelineRunId) {
+  const path = ledgerPath(pipelineRunId);
+  if (!existsSync(path)) return null;
+  const lines = readFileSync(path, 'utf8').trim().split('\n').filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    try {
+      return JSON.parse(lines[i]);
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+function buildStaleSummary(run, detectedAt, thresholds) {
+  const detectedMs = toTimeMs(detectedAt);
+  const lastActivityAt = run.lifecycle?.lastActivityAt || run.lifecycle?.createdAt || null;
+  const lastActivityMs = toTimeMs(lastActivityAt);
+  const stalledForMs = Number.isFinite(lastActivityMs) && Number.isFinite(detectedMs)
+    ? Math.max(0, detectedMs - lastActivityMs)
+    : null;
+  return {
+    stuckStageId: run.currentStageId || null,
+    lastActivityAt,
+    stalledForMs,
+    stalledForDays: stalledForMs === null ? null : Number((stalledForMs / MS_PER_DAY).toFixed(3)),
+    recentEvent: readLastLedgerEvent(run.pipelineRunId),
+    thresholds,
+  };
+}
+
+function appendStaleAdvisory(run, staleSummary, detectedAt) {
+  const existing = (run.openAdvisories || []).some(
+    (advisory) => advisory?.type === 'stale-lifecycle' && advisory.resolvedAt === null,
+  );
+  if (existing) return run.openAdvisories || [];
+  const stageId = staleSummary.stuckStageId || run.currentStageId || 'unknown';
+  const stalledDays = staleSummary.stalledForDays === null ? 'unknown' : `${staleSummary.stalledForDays}`;
+  return [
+    ...(run.openAdvisories || []),
+    {
+      id: randomUUID(),
+      runId: run.pipelineRunId,
+      stageId,
+      type: 'stale-lifecycle',
+      severity: 'warn',
+      message: `Pipeline run marked stale at stage "${stageId}" after ${stalledDays}d without activity`,
+      evidence: [
+        `lastActivityAt:${staleSummary.lastActivityAt || 'unknown'}`,
+        `staleDetectedAt:${detectedAt}`,
+        `staleAfterDays:${staleSummary.thresholds.staleAfterDays}`,
+        `archiveAfterStaleDays:${staleSummary.thresholds.archiveAfterStaleDays}`,
+      ],
+      createdAt: detectedAt,
+      resolvedAt: null,
+    },
+  ];
+}
+
+function resolveStaleAdvisories(run, timestamp, reason) {
+  return (run.openAdvisories || []).map((advisory) => (
+    advisory?.type === 'stale-lifecycle' && advisory.resolvedAt === null
+      ? { ...advisory, resolvedAt: timestamp, resolution: reason }
+      : advisory
+  ));
+}
+
+function restoreStaleRunFields(run, timestamp, reason) {
+  if (run.status !== 'stale') return { run, restored: false };
+  return {
+    restored: true,
+    run: {
+      ...run,
+      status: 'running',
+      openAdvisories: resolveStaleAdvisories(run, timestamp, reason),
+      lifecycle: {
+        ...run.lifecycle,
+        lastActivityAt: timestamp,
+        staleDetectedAt: null,
+        staleResolvedAt: timestamp,
+        staleResolutionReason: reason,
+      },
+    },
+  };
 }
 
 function normalizeStagePlan(stagePlan) {
@@ -109,7 +327,7 @@ function nextOpenStage(run, completedStageId) {
   const searchFrom = completedIndex >= 0 ? completedIndex + 1 : 0;
   return run.stagePlan.ordered
     .slice(searchFrom)
-    .find((stageId) => !TERMINAL_STAGE_STATUSES.has(run.stages?.[stageId]?.status));
+    .find((stageId) => !COMPLETED_STAGE_STATUSES.has(run.stages?.[stageId]?.status));
 }
 
 function requireRun(pipelineRunId) {
@@ -169,6 +387,7 @@ export function createRun({ projectSlug, projectRoot, goal, entryType, stagePlan
       startedAt: timestamp,
       completedAt: null,
       cancelledAt: null,
+      archivedAt: null,
       lastActivityAt: timestamp,
       staleDetectedAt: null,
       terminalReason: null,
@@ -204,8 +423,13 @@ export function createRun({ projectSlug, projectRoot, goal, entryType, stagePlan
  * @returns {object | null} The PipelineRun snapshot, or null when missing.
  */
 export function getRun(pipelineRunId) {
-  if (!pipelineRunId || typeof pipelineRunId !== 'string') return null;
-  return readJson(statePath(pipelineRunId), null);
+  try {
+    if (!pipelineRunId || typeof pipelineRunId !== 'string') return null;
+    return readJson(statePath(pipelineRunId), null);
+  } catch (error) {
+    if (String(error?.message || '').startsWith('invalid pipelineRunId:')) return null;
+    throw error;
+  }
 }
 
 /**
@@ -230,16 +454,18 @@ export function listActiveRuns(projectSlug) {
  * @param {{ status: string, artifacts?: string[], dispatchId?: string }} update
  * @returns {object} The updated PipelineRun snapshot.
  */
-export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispatchId, needsPassNoChangeReview, suppressAutoAdvance }) {
+export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispatchId, needsPassNoChangeReview, suppressAutoAdvance, nextAction }) {
   if (!stageId || typeof stageId !== 'string') {
     throw new Error(`advanceStage: invalid stageId: ${stageId}`);
   }
-  if (!status || typeof status !== 'string') {
+  const writeStatus = normalizeStageStatusForWrite(status);
+  if (!writeStatus || typeof writeStatus !== 'string') {
     throw new Error(`advanceStage: invalid status: ${status}`);
   }
 
-  const run = requireRun(pipelineRunId);
+  const loadedRun = requireRun(pipelineRunId);
   const timestamp = nowIso();
+  const { run, restored } = restoreStaleRunFields(loadedRun, timestamp, 'stage advanced after stale detection');
   const previousStage = run.stages?.[stageId] || {
     status: 'pending',
     startedAt: null,
@@ -248,13 +474,18 @@ export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispat
     artifacts: [],
     attempt: 1,
   };
+  const stageArtifacts = artifacts === undefined
+    ? [...(previousStage.artifacts || [])]
+    : Array.isArray(artifacts)
+      ? [...artifacts]
+      : (() => { throw new Error('advanceStage: artifacts must be an array when provided'); })();
   const stage = {
     ...previousStage,
-    status,
-    startedAt: previousStage.startedAt || (status === 'active' ? timestamp : null),
-    completedAt: TERMINAL_STAGE_STATUSES.has(status) ? timestamp : null,
+    status: writeStatus,
+    startedAt: previousStage.startedAt || (writeStatus === 'active' ? timestamp : null),
+    completedAt: COMPLETED_STAGE_STATUSES.has(writeStatus) ? timestamp : null,
     dispatchId: dispatchId ?? previousStage.dispatchId ?? null,
-    artifacts: artifacts ? [...artifacts] : [...(previousStage.artifacts || [])],
+    artifacts: stageArtifacts,
     attempt: previousStage.attempt || 1,
     ...(needsPassNoChangeReview === undefined ? {} : { needsPassNoChangeReview }),
   };
@@ -262,7 +493,7 @@ export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispat
     ...run.stages,
     [stageId]: stage,
   };
-  const shouldAutoAdvance = !suppressAutoAdvance && ['passed', 'skipped'].includes(status);
+  const shouldAutoAdvance = !suppressAutoAdvance && COMPLETED_STAGE_STATUSES.has(writeStatus);
   const nextStageId = shouldAutoAdvance
     ? nextOpenStage({ ...run, stages }, stageId)
     : null;
@@ -278,11 +509,12 @@ export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispat
       }
     : stages;
   const currentStageId =
-    status === 'active' ? stageId : nextStageId || (['failed', 'blocked'].includes(status) ? stageId : run.currentStageId);
+    writeStatus === 'active' ? stageId : nextStageId || run.currentStageId;
   const updatedRun = {
     ...run,
     currentStageId,
     stages: advancedStages,
+    ...(nextAction === undefined ? {} : { nextAction }),
     lifecycle: {
       ...run.lifecycle,
       lastActivityAt: timestamp,
@@ -291,7 +523,8 @@ export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispat
 
   writeJson(statePath(pipelineRunId), updatedRun);
   updateActiveIndex(updatedRun);
-  appendLedger(pipelineRunId, 'stage-advanced', { stageId, status, artifacts, dispatchId, needsPassNoChangeReview });
+  appendLedger(pipelineRunId, 'stage-advanced', { stageId, status: writeStatus, artifacts: stageArtifacts, dispatchId, needsPassNoChangeReview, nextAction });
+  if (restored) appendLedger(pipelineRunId, 'run-stale-restored', { reason: 'stage advanced after stale detection' });
   return updatedRun;
 }
 
@@ -299,15 +532,15 @@ export function advanceStage(pipelineRunId, stageId, { status, artifacts, dispat
  * Move a PipelineRun to a terminal status and remove it from active-index.json.
  *
  * @param {string} pipelineRunId
- * @param {{ status: 'completed' | 'cancelled', reason?: string }} update
+ * @param {{ status: 'completed' | 'cancelled' | 'archived', reason?: string }} update
  * @returns {void}
  */
-export function closeRun(pipelineRunId, { status, reason }) {
-  if (!['completed', 'cancelled'].includes(status)) {
+export function closeRun(pipelineRunId, { status, reason, timestamp: explicitTimestamp }) {
+  if (!['completed', 'cancelled', 'archived'].includes(status)) {
     throw new Error(`closeRun: invalid terminal status: ${status}`);
   }
   const run = requireRun(pipelineRunId);
-  const timestamp = nowIso();
+  const timestamp = explicitTimestamp || nowIso();
   const updatedRun = {
     ...run,
     status,
@@ -315,6 +548,7 @@ export function closeRun(pipelineRunId, { status, reason }) {
       ...run.lifecycle,
       completedAt: status === 'completed' ? timestamp : run.lifecycle.completedAt,
       cancelledAt: status === 'cancelled' ? timestamp : run.lifecycle.cancelledAt,
+      archivedAt: status === 'archived' ? timestamp : run.lifecycle.archivedAt,
       lastActivityAt: timestamp,
       terminalReason: reason || null,
     },
@@ -326,26 +560,146 @@ export function closeRun(pipelineRunId, { status, reason }) {
 }
 
 /**
+ * Archive active V2 runs that have had no lifecycle activity for the configured age.
+ *
+ * @param {{ olderThanDays?: number, now?: Date|string|number }} [options]
+ * @returns {object[]} Archived PipelineRun snapshots.
+ */
+export function archiveStaleRuns(options = {}) {
+  const staleAfterDays = normalizePositiveDays(options.staleAfterDays ?? options.olderThanDays, DEFAULT_STALE_ARCHIVE_DAYS);
+  const archiveAfterStaleDays = normalizePositiveDays(options.archiveAfterStaleDays ?? options.archiveAfterDays, DEFAULT_ARCHIVE_AFTER_STALE_DAYS);
+  const nowMs = normalizeNowMs(options.now);
+  const scannedAt = new Date(nowMs).toISOString();
+  const staleThresholdMs = staleAfterDays * MS_PER_DAY;
+  const archiveThresholdMs = archiveAfterStaleDays * MS_PER_DAY;
+  const index = readActiveIndex();
+  const stale = [];
+  const archived = [];
+  let checkedCount = 0;
+  for (const pipelineRunId of Object.keys(index.pipelines || {})) {
+    const run = getRun(pipelineRunId);
+    if (!run || !ACTIVE_STATUSES.has(run.status)) continue;
+    if (options.projectSlug && run.projectSlug !== options.projectSlug) continue;
+    checkedCount += 1;
+
+    if (run.status === 'stale') {
+      const staleDetectedMs = toTimeMs(run.lifecycle?.staleDetectedAt);
+      if (!Number.isFinite(staleDetectedMs)) {
+        const staleRun = markStale(pipelineRunId, { now: scannedAt, staleAfterDays, archiveAfterStaleDays, logger: options.logger });
+        stale.push(staleRun);
+        continue;
+      }
+      if (nowMs - staleDetectedMs < archiveThresholdMs) continue;
+
+      closeRun(pipelineRunId, {
+        status: 'archived',
+        reason: `stale pipeline archived after ${archiveAfterStaleDays}d in stale status`,
+        timestamp: scannedAt,
+      });
+      const archivedRun = getRun(pipelineRunId);
+      if (archivedRun) archived.push(archivedRun);
+      continue;
+    }
+
+    const lastActivityAt = run.lifecycle?.lastActivityAt || run.lifecycle?.createdAt;
+    const lastActivityMs = toTimeMs(lastActivityAt);
+    if (!Number.isFinite(lastActivityMs)) continue;
+    if (nowMs - lastActivityMs < staleThresholdMs) continue;
+
+    const staleRun = markStale(pipelineRunId, { now: scannedAt, staleAfterDays, archiveAfterStaleDays, logger: options.logger });
+    stale.push(staleRun);
+  }
+
+  const scanRecord = {
+    scannedAt,
+    checkedCount,
+    staleCount: stale.length,
+    archivedCount: archived.length,
+    restoredCount: 0,
+    thresholds: { staleAfterDays, archiveAfterStaleDays },
+    staleRunIds: stale.map((run) => run.pipelineRunId),
+    archivedRunIds: archived.map((run) => run.pipelineRunId),
+  };
+  appendLifecycleScan(scanRecord);
+  archived.scanRecord = scanRecord;
+  archived.staleRuns = stale;
+  archived.archivedRuns = [...archived];
+  archived.restoredRuns = [];
+  return archived;
+}
+
+/**
  * Mark a PipelineRun as stale and keep its stale summary in active-index.json.
  *
  * @param {string} pipelineRunId
- * @returns {void}
+ * @param {{ now?: Date|string|number, staleAfterDays?: number, archiveAfterStaleDays?: number, logger?: object }} [options]
+ * @returns {object} The updated PipelineRun snapshot.
  */
-export function markStale(pipelineRunId) {
+export function markStale(pipelineRunId, options = {}) {
   const run = requireRun(pipelineRunId);
-  const timestamp = nowIso();
+  if (run.status === 'stale' && run.lifecycle?.staleDetectedAt) return run;
+  if (!ACTIVE_STATUSES.has(run.status)) {
+    throw new Error(`markStale: run is not active: ${run.status}`);
+  }
+  const nowMs = normalizeNowMs(options.now);
+  const timestamp = new Date(nowMs).toISOString();
+  const thresholds = {
+    staleAfterDays: normalizePositiveDays(options.staleAfterDays, DEFAULT_STALE_ARCHIVE_DAYS),
+    archiveAfterStaleDays: normalizePositiveDays(options.archiveAfterStaleDays, DEFAULT_ARCHIVE_AFTER_STALE_DAYS),
+  };
+  const staleSummary = buildStaleSummary(run, timestamp, thresholds);
   const updatedRun = {
     ...run,
     status: 'stale',
+    openAdvisories: appendStaleAdvisory(run, staleSummary, timestamp),
     lifecycle: {
       ...run.lifecycle,
-      lastActivityAt: timestamp,
       staleDetectedAt: timestamp,
+      staleSummary,
     },
   };
   writeJson(statePath(pipelineRunId), updatedRun);
   updateActiveIndex(updatedRun);
-  appendLedger(pipelineRunId, 'run-stale', {});
+  appendLedger(pipelineRunId, 'run-stale', staleSummary);
+  options.logger?.info?.('[sevo-v2] pipeline run marked stale', {
+    pipelineRunId,
+    currentStageId: staleSummary.stuckStageId,
+    stalledForDays: staleSummary.stalledForDays,
+  });
+  return updatedRun;
+}
+
+/**
+ * Restore a stale or archived PipelineRun to running status.
+ *
+ * @param {string} pipelineRunId
+ * @returns {object} The restored PipelineRun snapshot.
+ */
+export function restoreRun(pipelineRunId) {
+  const run = requireRun(pipelineRunId);
+  if (!['stale', 'archived'].includes(run.status)) {
+    throw new Error(`restoreRun: run is not restorable: ${run.status}`);
+  }
+  const timestamp = nowIso();
+  const updatedRun = {
+    ...run,
+    status: 'running',
+    openAdvisories: resolveStaleAdvisories(run, timestamp, 'run restored'),
+    lifecycle: {
+      ...run.lifecycle,
+      archivedAt: null,
+      lastActivityAt: timestamp,
+      staleDetectedAt: null,
+      staleResolvedAt: timestamp,
+      restoredAt: timestamp,
+      restoreCount: (run.lifecycle?.restoreCount || 0) + 1,
+      terminalReason: null,
+    },
+  };
+  writeJson(statePath(pipelineRunId), updatedRun);
+  updateActiveIndex(updatedRun);
+  appendLedger(pipelineRunId, 'run-restored', { fromStatus: run.status });
+  return updatedRun;
 }
 
 /**
@@ -360,8 +714,9 @@ export function resetStageForRetry(pipelineRunId, stageId) {
   if (!stageId || typeof stageId !== 'string') {
     throw new Error(`resetStageForRetry: invalid stageId: ${stageId}`);
   }
-  const run = requireRun(pipelineRunId);
+  const loadedRun = requireRun(pipelineRunId);
   const timestamp = nowIso();
+  const { run, restored } = restoreStaleRunFields(loadedRun, timestamp, 'stage reset for retry after stale detection');
   const previousStage = run.stages?.[stageId] || {
     status: 'pending',
     startedAt: null,
@@ -388,6 +743,7 @@ export function resetStageForRetry(pipelineRunId, stageId) {
   writeJson(statePath(pipelineRunId), updatedRun);
   updateActiveIndex(updatedRun);
   appendLedger(pipelineRunId, 'stage-reset-for-retry', { stageId, attempt: stage.attempt });
+  if (restored) appendLedger(pipelineRunId, 'run-stale-restored', { reason: 'stage reset for retry after stale detection' });
   return updatedRun;
 }
 
@@ -398,8 +754,9 @@ export function resetStageForRetry(pipelineRunId, stageId) {
  * @returns {void}
  */
 export function touch(pipelineRunId) {
-  const run = requireRun(pipelineRunId);
+  const loadedRun = requireRun(pipelineRunId);
   const timestamp = nowIso();
+  const { run, restored } = restoreStaleRunFields(loadedRun, timestamp, 'run touched after stale detection');
   const updatedRun = {
     ...run,
     lifecycle: {
@@ -410,6 +767,7 @@ export function touch(pipelineRunId) {
   writeJson(statePath(pipelineRunId), updatedRun);
   updateActiveIndex(updatedRun);
   appendLedger(pipelineRunId, 'run-touched', {});
+  if (restored) appendLedger(pipelineRunId, 'run-stale-restored', { reason: 'run touched after stale detection' });
 }
 
 /**
@@ -420,11 +778,19 @@ export function touch(pipelineRunId) {
  * @returns {object} The updated PipelineRun snapshot.
  */
 export function patchRun(pipelineRunId, patch) {
-  const run = requireRun(pipelineRunId);
+  const loadedRun = requireRun(pipelineRunId);
   const timestamp = nowIso();
+  const mergedRun = {
+    ...loadedRun,
+    ...patch,
+    lifecycle: {
+      ...loadedRun.lifecycle,
+      lastActivityAt: timestamp,
+    },
+  };
+  const { run, restored } = restoreStaleRunFields(mergedRun, timestamp, 'run patched after stale detection');
   const updatedRun = {
     ...run,
-    ...patch,
     lifecycle: {
       ...run.lifecycle,
       lastActivityAt: timestamp,
@@ -433,5 +799,8 @@ export function patchRun(pipelineRunId, patch) {
   writeJson(statePath(pipelineRunId), updatedRun);
   updateActiveIndex(updatedRun);
   appendLedger(pipelineRunId, 'run-patched', { fields: Object.keys(patch) });
+  if (restored) appendLedger(pipelineRunId, 'run-stale-restored', { reason: 'run patched after stale detection' });
   return updatedRun;
 }
+export { normalizePipelineRunId };
+reconcileActivePipelineCompatibilityIndex();
