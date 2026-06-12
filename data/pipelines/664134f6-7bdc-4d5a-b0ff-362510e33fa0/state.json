@@ -12,7 +12,7 @@
     "startedAt": "2026-06-11T08:13:03.131Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T23:42:01.348Z",
+    "lastActivityAt": "2026-06-11T08:13:03.131Z",
     "staleDetectedAt": null,
     "terminalReason": null
   },
@@ -33,19 +33,19 @@
     ],
     "skipped": []
   },
-  "currentStageId": "smoke-test",
+  "currentStageId": "fix",
   "stages": {
     "fix": {
-      "status": "passed",
+      "status": "active",
       "startedAt": "2026-06-11T08:13:03.131Z",
-      "completedAt": "2026-06-11T23:42:01.345Z",
+      "completedAt": null,
       "dispatchId": null,
       "artifacts": [],
       "attempt": 1
     },
     "smoke-test": {
-      "status": "active",
-      "startedAt": "2026-06-11T23:42:01.345Z",
+      "status": "pending",
+      "startedAt": null,
       "completedAt": null,
       "dispatchId": null,
       "artifacts": [],
@@ -137,39 +137,5 @@
     "maintenanceRun": false,
     "parentRunId": null,
     "routeDecision": null
-  },
-  "openAdvisories": [
-    {
-      "id": "0da3e475-0692-4a74-ae1b-08a1251418d3",
-      "runId": "664134f6-7bdc-4d5a-b0ff-362510e33fa0",
-      "stageId": "fix",
-      "type": "evidence-contract-missing-fields",
-      "severity": "warn",
-      "message": "Completion for stage \"fix\" is missing required evidence fields: codeChanges, testRun",
-      "evidence": [
-        "codeChanges",
-        "testRun"
-      ],
-      "createdAt": "2026-06-11T23:42:01.342Z",
-      "resolvedAt": null
-    }
-  ],
-  "nextAction": {
-    "kind": "dispatch-stage",
-    "pipelineRunId": "664134f6-7bdc-4d5a-b0ff-362510e33fa0",
-    "projectSlug": "kivo",
-    "completedStageId": "fix",
-    "completedStageStatus": "passed",
-    "nextStageId": "smoke-test",
-    "dispatch": {
-      "label": "sevo:kivo:664134f6:smoke-test:1",
-      "agentId": null,
-      "tier": "audit",
-      "timeout": 1200
-    },
-    "entryCriteria": "review 通过",
-    "exitCriteria": "冒烟测试全部通过",
-    "advisorySummary": "openAdvisories+=1",
-    "createdAt": "2026-06-11T23:42:01.348Z"
   }
 }

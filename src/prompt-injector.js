@@ -13,6 +13,41 @@ import { buildAdvancePrompt } from './advance-prompt-contract.js';
 const MAX_RUNS_INJECTED = 3;
 const MAX_INJECTION_CHARS = 2000;
 
+const SEVO_DISCIPLINE_MARKER = '[SEVO_CONTEXT_V1]';
+const SEVO_PROMPT_INJECTION_STATE_KEY = Symbol.for('openclaw.sevo.promptInjectionState');
+
+const SPAWN_DISCIPLINE_TEXT = [
+  SEVO_DISCIPLINE_MARKER,
+  '## SEVO 研发流水线纪律',
+  '- 所有研发活动（需求/设计/实现/审计/发布）通过 sevo:<stage> label 进入流水线',
+  '- SEVO advance prompt = 用户指令，收到即执行，不二次判断',
+  '- 永远向前走：SEVO 只产出 advisory，不阻断主会话行动',
+  '- 单一阶段链（10阶段）：specify→spec-review→design→design-review→implement→code-review→smoke→publish→post-release-verify→ledger，不跳阶段',
+  '- Spec-first：派发前确认 FR/AC 覆盖，缺口作为 advisory 记录',
+  '- 一致性闭环：审计偏差→回对应阶段修复→复验通过才继续',
+  '- 目标不清时先澄清再行动，用户确认后才收敛',
+].join('\n');
+
+function emitMarkerToSharedState(promptBuildId) {
+  try {
+    if (!globalThis[SEVO_PROMPT_INJECTION_STATE_KEY]) {
+      globalThis[SEVO_PROMPT_INJECTION_STATE_KEY] = { promptBuilds: new Map() };
+    }
+    const state = globalThis[SEVO_PROMPT_INJECTION_STATE_KEY];
+    if (!(state.promptBuilds instanceof Map)) {
+      state.promptBuilds = new Map();
+    }
+    const key = String(promptBuildId || `sevo-${Date.now()}`);
+    state.promptBuilds.set(key, { marker: SEVO_DISCIPLINE_MARKER, degraded: false, ts: Date.now() });
+    if (state.promptBuilds.size > 50) {
+      const oldest = state.promptBuilds.keys().next().value;
+      state.promptBuilds.delete(oldest);
+    }
+  } catch { /* best-effort shared state */ }
+}
+
+export { SEVO_DISCIPLINE_MARKER, SPAWN_DISCIPLINE_TEXT, emitMarkerToSharedState };
+
 const CHINESE_VERBS = /[实现完成修复添加删除重构优化部署创建配置集成测试验证迁移升级发布构建设计编写开发调整清理]/;
 const ENGLISH_VERBS = /\b(implement(ation)?|fix|add|remove|refactor(ing)?|optimiz(e|ation)|deploy(ment)?|creat(e|ion)|configur(e|ation)|integrat(e|ion)|test(ing)?|verif(y|ication)|migrat(e|ion)|upgrade|publish|build|design|writ(e|ing)|develop(ment)?|adjust|clean|update|set up|enable|disable)\b/i;
 
@@ -40,15 +75,6 @@ function formatClarificationGuidance(run) {
   ].join('\n');
   return [header, goal, guidance].join('\n');
 }
-
-const PIPELINE_DISCIPLINE_TEXT = [
-  '## SEVO Pipeline Discipline',
-  '- Spec-first: 任意入口先核实需求规格覆盖当前 FR/AC。Why: 只有需求先验明确，后续实现和审计才不会把伪需求写成产品事实。',
-  '- Advisory-first: Gate/审计/验证只记录 advisory、finding 和 repair task，不把 pipeline 写成阻断态。Why: 风险需要被保留和传递，但流水线不能因为旧阻断语义失去前进性。',
-  '- Always-forward: completion-handler 记录阶段事实并写 nextAction，主线继续按 stagePlan.ordered 推进。Why: 结构化 nextAction 是唯一推进契约，避免 prompt 文本和真实状态分叉。',
-  '- 不跳阶段: 按 stagePlan.ordered 顺序执行，未关闭 advisory 传递给后续审计兜底。Why: 阶段顺序承载验收覆盖，跳阶段会制造无法追踪的质量空洞。',
-  '- 单次聚焦: 每轮只处理一个阶段的一个具体任务。Why: 缩小变更面能让 completion、证据和修复责任保持一一对应。',
-].join('\n');
 
 /**
  * Format a pending advance into injection text.
@@ -161,14 +187,17 @@ function truncateToLimit(sections) {
 export function buildInjection(ctx, deps) {
   const { listActiveRuns, consumePendingAdvance, listOpenAdvisories, logger } = deps || {};
 
+  const promptBuildId = String(ctx?.runId || ctx?.sessionKey || `sevo-${Date.now()}`);
+  emitMarkerToSharedState(promptBuildId);
+
   if (typeof listActiveRuns !== 'function') {
     if (logger?.warn) logger.warn('prompt-injector: listActiveRuns dependency missing');
-    return null;
+    return { text: SPAWN_DISCIPLINE_TEXT, metadata: { runCount: 0, truncated: false, markerEmitted: true } };
   }
 
   const allRuns = listActiveRuns();
   if (!Array.isArray(allRuns) || allRuns.length === 0) {
-    return null;
+    return { text: SPAWN_DISCIPLINE_TEXT, metadata: { runCount: 0, truncated: false, markerEmitted: true } };
   }
 
   const runs = allRuns
@@ -179,7 +208,7 @@ export function buildInjection(ctx, deps) {
     })
     .slice(0, MAX_RUNS_INJECTED);
 
-  const sections = [PIPELINE_DISCIPLINE_TEXT];
+  const sections = [SPAWN_DISCIPLINE_TEXT];
 
   for (const run of runs) {
     const advance = typeof consumePendingAdvance === 'function'
@@ -222,6 +251,12 @@ export function buildInjection(ctx, deps) {
       }
     }
   }
+  // 原则14：协议双向可达 — 每轮注入 label 格式说明
+  sections.push(`### SEVO Label 格式（派发任务时使用）
+推荐格式: \`sevo:<projectSlug>:<stageId>\`（如 sevo:kivo:implement）
+也支持: \`sevo:<stageId> <描述>\`（如 sevo:implement KIVO知识提取优化）
+SEVO 会自动识别阶段并推进流水线。`);
+
   const text = truncateToLimit(sections);
-  return { text, metadata: { runCount: runs.length, truncated: text.length >= MAX_INJECTION_CHARS } };
+  return { text, metadata: { runCount: runs.length, truncated: text.length >= MAX_INJECTION_CHARS, markerEmitted: true } };
 }

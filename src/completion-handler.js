@@ -211,6 +211,74 @@ function extractDispatchId(evt) {
   );
 }
 
+function collectContextStrings(evt) {
+  const values = [
+    evt?.cwd,
+    evt?.projectRoot,
+    evt?.workspaceRoot,
+    evt?.path,
+    evt?.filePath,
+    evt?.task,
+    evt?.prompt,
+    evt?.message,
+    evt?.taskDescription,
+    evt?.result?.cwd,
+    evt?.result?.projectRoot,
+    evt?.result?.path,
+    evt?.result?.filePath,
+    evt?.result?.task,
+    evt?.result?.prompt,
+    evt?.result?.message,
+    evt?.result?.taskDescription,
+    evt?.task?.cwd,
+    evt?.task?.projectRoot,
+    evt?.task?.path,
+    evt?.task?.filePath,
+    evt?.task?.prompt,
+    evt?.task?.message,
+    evt?.payload?.cwd,
+    evt?.payload?.projectRoot,
+    evt?.payload?.path,
+    evt?.payload?.filePath,
+    evt?.payload?.prompt,
+    evt?.payload?.message,
+    evt?.data?.cwd,
+    evt?.data?.projectRoot,
+    evt?.data?.path,
+    evt?.data?.filePath,
+    evt?.data?.prompt,
+    evt?.data?.message,
+  ];
+  return values
+    .filter((value) => typeof value === 'string' && value.trim())
+    .map((value) => value.trim());
+}
+
+function inferProjectSlugFromEvent(evt, runStore) {
+  const context = [extractLabel(evt), ...collectContextStrings(evt)].filter(Boolean).join(' ');
+  const activeRuns = runStore.listActiveRuns();
+  const projectSlugs = [...new Set(activeRuns.map((run) => run.projectSlug).filter(Boolean))];
+  const matches = projectSlugs.filter((slug) => {
+    const escaped = String(slug).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^a-z0-9-])${escaped}([^a-z0-9-]|$)`, 'i').test(context);
+  });
+  if (matches.length === 1) {
+    const matchedRun = activeRuns.find((run) => run.projectSlug === matches[0]);
+    return { projectSlug: matches[0], projectRoot: matchedRun?.projectRoot || `projects/${matches[0]}` };
+  }
+
+  for (const text of collectContextStrings(evt)) {
+    const normalized = text.replace(/\\/g, '/');
+    const projectPathMatch = normalized.match(/(?:^|\/)projects\/([a-z0-9][a-z0-9-]*)(?:\/|$)/i);
+    if (projectPathMatch) {
+      const projectSlug = projectPathMatch[1].toLowerCase();
+      return { projectSlug, projectRoot: `projects/${projectSlug}` };
+    }
+  }
+
+  return null;
+}
+
 function summarizeRunForLookup(run) {
   return {
     pipelineRunId: run?.pipelineRunId || null,
@@ -282,12 +350,51 @@ function findRunFromLegacyLabel(decoded, runStore) {
   return matches.length === 1 ? matches[0] : null;
 }
 
+function findRecentActiveRun(decoded, evt, runStore, logger) {
+  if (!decoded?.stageId) return null;
+  const inferred = decoded.projectSlug
+    ? { projectSlug: decoded.projectSlug }
+    : inferProjectSlugFromEvent(evt, runStore);
+  const activeRuns = inferred?.projectSlug
+    ? runStore.listActiveRuns(inferred.projectSlug)
+    : runStore.listActiveRuns();
+  const matches = activeRuns.filter(
+    (run) => run.currentStageId === decoded.stageId && run.status === 'running',
+  );
+  logger?.info?.('completion-handler: active run fallback lookup', {
+    decodedStageId: decoded.stageId,
+    decodedProjectSlug: decoded.projectSlug,
+    inferredProjectSlug: inferred?.projectSlug || null,
+    activeCount: activeRuns.length,
+    matchCount: matches.length,
+    matches: matches.map(summarizeRunForLookup),
+  });
+  if (matches.length === 1) return matches[0];
+
+  const activeOnly = activeRuns.filter((run) => run.status === 'running');
+  if (activeOnly.length === 1 && activeOnly[0].currentStageId === decoded.stageId) return activeOnly[0];
+  return null;
+}
+
 function stageMatches(run, stageId, attempt) {
   const stage = run?.stages?.[stageId];
   if (!stage) return false;
   if (run.currentStageId !== stageId) return false;
   return Number(stage.attempt || 1) === Number(attempt || 1);
 }
+
+function buildNonCanonicalAdvisory(label, labelClass, decoded) {
+  if (labelClass === LABEL_CLASS.CANONICAL) return null;
+  return {
+    type: 'label-advisory',
+    severity: 'warn',
+    stageId: decoded.stageId,
+    message: `non-canonical label class: ${labelClass}`,
+    label,
+    recommendation: 'Prefer sevo:<projectSlug>:<pipelineRunId-short>:<stageId>:<attempt> for precise dispatch identity.',
+  };
+}
+
 
 function getCycleTargetStageId(run, completedStageId, completedStageStatus) {
   const config = getStageConfig(completedStageId);
@@ -557,34 +664,20 @@ export function handleCompletion(evt, deps = {}) {
     return null;
   }
 
-  if (labelClass !== LABEL_CLASS.CANONICAL && labelClass !== LABEL_CLASS.LEGACY) {
-    logger.info?.('completion-handler quarantined non-canonical label', { label, class: labelClass });
-    return {
-      advanceText: [
-        '[SEVO V2 advisory — non-canonical label quarantined]',
-        `Label "${label}" classified as "${labelClass}" — only canonical V2 labels can advance a pipeline.`,
-        `Decoded fields: ${JSON.stringify(decoded)}`,
-        '',
-        'No pipeline run was advanced. To proceed, dispatch with a canonical label:',
-        '  sevo:<projectSlug>:<pipelineRunId-short>:<stageId>:<attempt>',
-      ].join('\n'),
-      nextStageId: null,
-      runSnapshot: null,
-      advisories: [{ type: 'quarantine', severity: 'warn', stageId: decoded.stageId, message: `non-canonical label class: ${labelClass}` }],
-    };
-  }
-
   let run = labelClass === LABEL_CLASS.CANONICAL
     ? findRunFromDecodedLabel(decoded, runStore, logger)
     : findRunFromLegacyLabel(decoded, runStore);
 
-  if (!run && labelClass === LABEL_CLASS.LEGACY) {
-    logger.info?.('completion-handler: legacy label, attempting auto-create', { label, decoded });
+  if (!run && labelClass !== LABEL_CLASS.CANONICAL) {
+    run = findRecentActiveRun(decoded, evt, runStore, logger);
+  }
+
+  if (!run && labelClass !== LABEL_CLASS.CANONICAL) {
+    logger.info?.('completion-handler: non-canonical label without matching run, attempting auto-create', { label, labelClass, decoded });
     return tryAutoCreateRun(label, decoded, evt, deps);
   }
 
   if (!run) {
-    logger.info?.('completion-handler: canonical label but no matching run', { label, decoded });
     return {
       advanceText: [
         '[SEVO V2 advisory — pipeline run not found]',
@@ -619,6 +712,7 @@ export function handleCompletion(evt, deps = {}) {
   const findingsInfo = extractFindings(evt);
   const evidenceValidation = validateCompletion(decoded.stageId, evt);
   const evidenceAdvisories = evidenceValidation.advisories;
+  const labelAdvisory = buildNonCanonicalAdvisory(label, labelClass, decoded);
   if (evidenceAdvisories.length > 0) {
     logger.warn?.('completion-handler evidence advisory', {
       pipelineRunId: run.pipelineRunId,
@@ -638,6 +732,7 @@ export function handleCompletion(evt, deps = {}) {
 
   const completionAdvisory = appendCompletionAdvisory(run, decoded.stageId, status, evt, findingsInfo, runStore);
   const advisories = [
+    ...(labelAdvisory ? [labelAdvisory] : []),
     ...evidenceAdvisories,
     ...(completionAdvisory ? [completionAdvisory] : []),
   ];

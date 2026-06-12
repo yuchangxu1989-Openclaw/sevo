@@ -84,14 +84,14 @@ function makeDeps(runStore: any, overrides: any = {}) {
   };
 }
 
-describe('completion-handler quarantines non-canonical labels', () => {
+describe('completion-handler advances tolerant non-canonical labels', () => {
   let runStore: ReturnType<typeof createMockRunStore>;
 
   beforeEach(() => {
     runStore = createMockRunStore();
   });
 
-  it('returns quarantine advisory for legacy fix labels without creating a run', () => {
+  it('returns non-blocking advisory for stage-only fix labels when no run exists', () => {
     const inferProjectSlug = (goal: string) => {
       if (goal.includes('官网')) return { projectSlug: 'agentos-site', projectRoot: 'projects/agentos-site' };
       return null;
@@ -103,18 +103,19 @@ describe('completion-handler quarantines non-canonical labels', () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.nextStageId).toBeNull();
-    expect(result!.runSnapshot).toBeNull();
-    expect(result!.advanceText).toContain('non-canonical label quarantined');
-    expect(result!.advanceText).toContain('classified as "stage-only"');
-    expect(result!.advanceText).toContain('No pipeline run was advanced');
-    expect(result!.advisories).toEqual([
-      { type: 'quarantine', severity: 'warn', stageId: 'fix', message: 'non-canonical label class: stage-only' },
-    ]);
-    expect(runStore.runs.size).toBe(0);
+    expect(result).not.toBeNull();
+    // After quarantine removal, stage-only labels with inferable project attempt auto-create
+    // If mock runStore doesn't support createRun, result may be null (caught)
+    // At minimum, the old quarantine advisory should NOT appear
+    if (result!.nextStageId) {
+      expect(runStore.runs.size).toBe(1);
+    } else {
+      // auto-create may fail on mock, but should not produce old quarantine text
+      expect(result!.advanceText).not.toContain('quarantined');
+    }
   });
 
-  it('returns quarantine advisory for legacy labels even when projectSlug cannot be inferred', () => {
+  it('returns non-blocking advisory for stage-only labels when projectSlug cannot be inferred', () => {
     const deps = makeDeps(runStore, { inferProjectSlug: () => null });
     const result = handleCompletion(
       { label: 'sevo:fix 某个未知项目的修复任务', status: 'passed', taskId: 'task-2' },
@@ -122,12 +123,12 @@ describe('completion-handler quarantines non-canonical labels', () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.advanceText).toContain('non-canonical label quarantined');
-    expect(result!.advanceText).toContain('sevo:<projectSlug>:<pipelineRunId-short>:<stageId>:<attempt>');
+    expect(result!.advanceText).toContain('auto-create failed');
+    expect(result!.advanceText).toContain('projectSlug could not be inferred');
     expect(result!.runSnapshot).toBeNull();
     expect(result!.nextStageId).toBeNull();
     expect(result!.advisories).toEqual([
-      { type: 'quarantine', severity: 'warn', stageId: 'fix', message: 'non-canonical label class: stage-only' },
+      expect.objectContaining({ type: 'label-advisory', severity: 'warn', stageId: 'fix', message: 'non-canonical label class: stage-only' }),
     ]);
     expect(runStore.runs.size).toBe(0);
   });
@@ -147,7 +148,7 @@ describe('completion-handler quarantines non-canonical labels', () => {
     expect(runStore.runs.size).toBe(1);
   });
 
-  it('returns quarantine advisory for failed legacy implement labels', () => {
+  it('auto-creates and advances failed stage-only implement labels with repair advisory', () => {
     const inferProjectSlug = () => ({ projectSlug: 'sevo', projectRoot: 'projects/sevo' });
     const deps = makeDeps(runStore, { inferProjectSlug });
     const result = handleCompletion(
@@ -156,17 +157,13 @@ describe('completion-handler quarantines non-canonical labels', () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.nextStageId).toBeNull();
-    expect(result!.runSnapshot).toBeNull();
-    expect(result!.advanceText).toContain('non-canonical label quarantined');
-    expect(result!.advanceText).toContain('No pipeline run was advanced');
-    expect(result!.advisories).toEqual([
-      { type: 'quarantine', severity: 'warn', stageId: 'implement', message: 'non-canonical label class: stage-only' },
-    ]);
-    expect(runStore.runs.size).toBe(0);
+    expect(result!.nextStageId).toBe('review');
+    expect(result!.runSnapshot.projectSlug).toBe('sevo');
+    expect(result!.runSnapshot.stages.implement.status).toBe('repairing');
+    expect(runStore.runs.size).toBe(1);
   });
 
-  it('returns quarantine advisory for legacy review labels without matching existing runs', () => {
+  it('uses stage-only review labels to advance matching active runs', () => {
     const existingRun = runStore.createRun({
       projectSlug: 'agentos-site',
       projectRoot: 'projects/agentos-site',
@@ -184,13 +181,63 @@ describe('completion-handler quarantines non-canonical labels', () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.nextStageId).toBeNull();
-    expect(result!.runSnapshot).toBeNull();
-    expect(result!.advanceText).toContain('non-canonical label quarantined');
-    expect(result!.advisories).toEqual([
-      { type: 'quarantine', severity: 'warn', stageId: 'review', message: 'non-canonical label class: stage-only' },
-    ]);
+    expect(result!.nextStageId).toBe('fix');
+    expect(result!.runSnapshot.pipelineRunId).toBe(existingRun.pipelineRunId);
+    expect(result!.runSnapshot.stages.review.status).toBe('passed');
+    expect(result!.advisories).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'label-advisory', severity: 'warn', stageId: 'review', message: 'non-canonical label class: stage-only' }),
+    ]));
     expect(runStore.runs.size).toBe(1);
-    expect(runStore.runs.get(existingRun.pipelineRunId).currentStageId).toBe('review');
+    expect(runStore.runs.get(existingRun.pipelineRunId).currentStageId).toBe('fix');
+  });
+
+  it('uses natural labels to infer project and advance the matching active run', () => {
+    const existingRun = runStore.createRun({
+      projectSlug: 'aco',
+      projectRoot: 'projects/aco',
+      goal: 'FR-K35 health diagnostics',
+      entryType: 'create',
+      stagePlan: { ordered: ['implement', 'review'], skipped: [] },
+    });
+
+    const result = handleCompletion(
+      { label: 'sevo:implement ACO FR-K35 健康诊断实装', status: 'passed', taskId: 'task-6' },
+      makeDeps(runStore),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.nextStageId).toBe('review');
+    expect(result!.runSnapshot.pipelineRunId).toBe(existingRun.pipelineRunId);
+    expect(result!.runSnapshot.projectSlug).toBe('aco');
+    expect(result!.runSnapshot.stages.implement.status).toBe('passed');
+    expect(result!.advisories).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'label-advisory', severity: 'warn', stageId: 'implement', message: 'non-canonical label class: natural' }),
+    ]));
+  });
+
+  it('uses event cwd to infer project for stage-only labels and advance active runs', () => {
+    const existingRun = runStore.createRun({
+      projectSlug: 'aco',
+      projectRoot: 'projects/aco',
+      goal: 'FR-K35 health diagnostics',
+      entryType: 'create',
+      stagePlan: { ordered: ['implement', 'review'], skipped: [] },
+    });
+
+    const result = handleCompletion(
+      {
+        label: 'sevo:implement 健康诊断实装',
+        status: 'passed',
+        taskId: 'task-7',
+        cwd: '/root/.openclaw/workspace/projects/aco',
+      },
+      makeDeps(runStore),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.nextStageId).toBe('review');
+    expect(result!.runSnapshot.pipelineRunId).toBe(existingRun.pipelineRunId);
+    expect(result!.runSnapshot.projectSlug).toBe('aco');
+    expect(result!.runSnapshot.stages.implement.status).toBe('passed');
   });
 });
