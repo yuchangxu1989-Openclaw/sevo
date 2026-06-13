@@ -11,8 +11,8 @@ import { buildDispatchContract } from './stage-dispatch-contract.js';
 import { buildAdvancePrompt } from './advance-prompt-contract.js';
 
 const MAX_RUNS_INJECTED = 3;
+const MANDATORY_ADVANCE_HEADER = '## SEVO 强制阶段推进指令 — 你必须在本轮执行以下阶段推进动作';
 const MAX_INJECTION_CHARS = 2000;
-
 const SEVO_DISCIPLINE_MARKER = '[SEVO_CONTEXT_V1]';
 const SEVO_PROMPT_INJECTION_STATE_KEY = Symbol.for('openclaw.sevo.promptInjectionState');
 
@@ -80,15 +80,32 @@ function formatClarificationGuidance(run) {
  * Format a pending advance into injection text.
  *
  * @param {object} run - PipelineRun snapshot
- * @param {object} advance - Pending advance from completion-handler
+ * @param {object[]} advisories - Open advisories to include in the advance contract
  * @returns {string}
  */
 function formatAdvanceInjection(run, advance, advisories = []) {
+  const nextAction = advance.nextAction || run.nextAction || null;
+  const nextStageId = advance.nextStageId || nextAction?.nextStageId || 'unknown';
+  const dispatch = nextAction?.dispatch || {};
+  const attempt = dispatch.attempt || run.stages?.[nextStageId]?.attempt || 1;
+  const label = dispatch.label || `sevo:${nextStageId} ${(run.goal || run.projectSlug).slice(0, 30)}`;
+  const agentLine = dispatch.agentId
+    ? `派发角色/agent: ${dispatch.agentId}`
+    : `派发角色/agent: ${dispatch.tier || 'stage mapping'}`;
   const header = `### [${run.projectSlug}] Pipeline ${run.pipelineRunId.slice(0, 8)}`;
-  const contract = buildAdvancePrompt(run, advance, advisories);
-  const action = advance.text || `Advance to stage: ${advance.nextStageId || 'unknown'}`;
-  return [header, contract, `Next action: ${action}`].join('\n');
+  const contract = buildAdvancePrompt(run, nextAction || advance, advisories);
+  const action = advance.text || `Advance to stage: ${nextStageId}`;
+  const mandatory = [
+    MANDATORY_ADVANCE_HEADER,
+    `下一阶段: ${nextStageId}`,
+    agentLine,
+    `建议 label: ${label}`,
+    `metadata.sevo: { trackingLabel: "${dispatch.label || label}", projectSlug: "${run.projectSlug}", pipelineRunId: "${run.pipelineRunId}", stageId: "${nextStageId}", attempt: ${attempt} }`,
+    '必须现在 spawn 对应下一阶段任务；如果当前上下文还有用户消息或其他 completion event，也先执行本推进动作。',
+  ].join('\n');
+  return [mandatory, header, contract, `Next action: ${action}`].join('\n');
 }
+
 
 /**
  * Format a static status reminder (no fresh advance pending).
@@ -180,13 +197,13 @@ function truncateToLimit(sections) {
  * @param {object} ctx - Hook context (currently unused, reserved for future routing hints)
  * @param {object} deps - Injected dependencies
  * @param {function} deps.listActiveRuns - () => PipelineRun[] from run-store
- * @param {function} [deps.consumePendingAdvance] - (pipelineRunId) => advance | null
+ * @param {function} [deps.getPendingAdvance] - (pipelineRunId) => advance | null
  * @param {function} [deps.listOpenAdvisories] - (runId) => advisory[]
- * @param {function} [deps.logger] - { info, warn, error }
+ * @param {object} [deps.logger] - { info, warn, error }
  * @returns {{ text: string, metadata: object } | null}
  */
 export function buildInjection(ctx, deps) {
-  const { listActiveRuns, consumePendingAdvance, listOpenAdvisories, logger } = deps || {};
+  const { listActiveRuns, getPendingAdvance, listOpenAdvisories, logger } = deps || {};
 
   const promptBuildId = String(ctx?.runId || ctx?.sessionKey || `sevo-${Date.now()}`);
   emitMarkerToSharedState(promptBuildId);
@@ -201,20 +218,39 @@ export function buildInjection(ctx, deps) {
     return { text: SPAWN_DISCIPLINE_TEXT, metadata: { runCount: 0, truncated: false, markerEmitted: true } };
   }
 
-  const runs = allRuns
+  const sortedRuns = allRuns
     .sort((a, b) => {
       const aTime = a.lifecycle?.lastActivityAt || '';
       const bTime = b.lifecycle?.lastActivityAt || '';
       return bTime.localeCompare(aTime);
-    })
-    .slice(0, MAX_RUNS_INJECTED);
+    });
 
-  const sections = [SPAWN_DISCIPLINE_TEXT];
+  const pendingByRunId = new Map();
+  const pendingRuns = [];
+  const nonPendingRuns = [];
+  for (const run of sortedRuns) {
+    const advance = typeof getPendingAdvance === 'function'
+      ? getPendingAdvance(run.pipelineRunId)
+      : null;
+    if (advance) {
+      pendingByRunId.set(run.pipelineRunId, advance);
+      pendingRuns.push(run);
+    } else {
+      nonPendingRuns.push(run);
+    }
+  }
+
+  const remainingSlots = Math.max(0, MAX_RUNS_INJECTED - pendingRuns.length);
+  const runs = pendingRuns.length > 0
+    ? [...pendingRuns, ...nonPendingRuns.slice(0, remainingSlots)]
+    : nonPendingRuns.slice(0, MAX_RUNS_INJECTED);
+
+  const pendingSections = [];
+  const runSections = [];
+  const runsWithPendingAdvance = new Set();
 
   for (const run of runs) {
-    const advance = typeof consumePendingAdvance === 'function'
-      ? consumePendingAdvance(run.pipelineRunId)
-      : null;
+    const advance = pendingByRunId.get(run.pipelineRunId) || null;
     const openAdvisories = typeof listOpenAdvisories === 'function'
       ? listOpenAdvisories(run.pipelineRunId)
       : [];
@@ -222,17 +258,22 @@ export function buildInjection(ctx, deps) {
     const advisories = [...completionAdvisories, ...(Array.isArray(openAdvisories) ? openAdvisories : [])];
 
     if (advance) {
-      sections.push(formatAdvanceInjection(run, advance, advisories));
+      pendingSections.push(formatAdvanceInjection(run, advance, advisories));
+      runsWithPendingAdvance.add(run.pipelineRunId);
     } else if (needsInitialDispatch(run)) {
       if (isGoalVague(run.goal)) {
-        sections.push(formatClarificationGuidance(run));
+        runSections.push(formatClarificationGuidance(run));
       } else {
-        sections.push(formatInitialDispatch(run));
+        runSections.push(formatInitialDispatch(run));
       }
     } else {
-      sections.push(formatStatusReminder(run));
+      runSections.push(formatStatusReminder(run));
     }
   }
+
+  const sections = pendingSections.length > 0
+    ? [...pendingSections, SPAWN_DISCIPLINE_TEXT, ...runSections]
+    : [SPAWN_DISCIPLINE_TEXT, ...runSections];
 
   const routeGuidance = buildRouteGuidance(runs);
   if (routeGuidance) {
@@ -241,6 +282,7 @@ export function buildInjection(ctx, deps) {
 
   if (typeof listOpenAdvisories === 'function') {
     for (const run of runs) {
+      if (runsWithPendingAdvance.has(run.pipelineRunId)) continue;
       const advisories = listOpenAdvisories(run.pipelineRunId);
       if (Array.isArray(advisories) && advisories.length > 0) {
         const lines = advisories.map((a) => `  - [${a.severity}] ${a.stageId}: ${a.message} (id: ${a.id})`);

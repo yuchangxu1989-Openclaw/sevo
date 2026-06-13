@@ -164,7 +164,7 @@ describe('prompt injector advance prompt contract integration', () => {
     const run = makeRun();
     const injection = buildInjection({}, {
       listActiveRuns: () => [run],
-      consumePendingAdvance: () => ({
+      getPendingAdvance: () => ({
         text: 'Dispatch review now',
         nextStageId: 'review',
         advisories: [{ severity: 'advisory', stageId: 'implement', message: 'missing testRun' }],

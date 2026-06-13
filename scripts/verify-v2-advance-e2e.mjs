@@ -52,7 +52,7 @@ assert(!run.stages.spec.dispatchId, `spec stage has no dispatchId yet`);
 console.log('\nTest 2: Prompt injector initial dispatch');
 const injection = buildInjection({}, {
   listActiveRuns: () => listActiveRuns('e2e-test'),
-  consumePendingAdvance: () => null,
+  getPendingAdvance: () => null,
 });
 
 assert(injection?.text?.includes('DISPATCH NEEDED'), 'injection contains DISPATCH NEEDED');
@@ -124,7 +124,7 @@ const vagueRun = createRun({
 
 const vagueInjection = buildInjection({}, {
   listActiveRuns: () => listActiveRuns('e2e-vague'),
-  consumePendingAdvance: () => null,
+  getPendingAdvance: () => null,
 });
 
 assert(vagueInjection?.text?.includes('澄清'), 'vague goal injection contains 澄清');
@@ -143,7 +143,7 @@ const clearRun = createRun({
 
 const clearInjection = buildInjection({}, {
   listActiveRuns: () => listActiveRuns('e2e-clear'),
-  consumePendingAdvance: () => null,
+  getPendingAdvance: () => null,
 });
 
 assert(clearInjection?.text?.includes('DISPATCH NEEDED'), 'clear goal injection contains DISPATCH NEEDED');

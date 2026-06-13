@@ -159,7 +159,7 @@ describe('P1: listOpenAdvisories wired into buildInjection', () => {
 
     const result = buildInjection({}, {
       listActiveRuns: () => runStore.listActiveRuns(),
-      consumePendingAdvance: () => null,
+      getPendingAdvance: () => null,
       listOpenAdvisories: (runId: string) => listOpen(runId, { runStore }),
     });
 
@@ -178,7 +178,7 @@ describe('P1: listOpenAdvisories wired into buildInjection', () => {
 
     const result = buildInjection({}, {
       listActiveRuns: () => runStore.listActiveRuns(),
-      consumePendingAdvance: () => null,
+      getPendingAdvance: () => null,
       listOpenAdvisories: (runId: string) => listOpen(runId, { runStore }),
     });
 

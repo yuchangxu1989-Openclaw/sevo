@@ -51,12 +51,64 @@ const spawnRegistry = new Map();
 const labelEnrichmentCache = new Map();
 
 /**
- * Consume a pending advance (one-shot read + delete).
+ * Read a pending advance without consuming it. A pending advance is only cleared
+ * after the matching next-stage task is observed in subagent_spawned.
  */
-function consumePendingAdvance(pipelineRunId) {
-  const advance = pendingAdvances.get(pipelineRunId) || null;
-  if (advance) pendingAdvances.delete(pipelineRunId);
-  return advance;
+function getPendingAdvance(pipelineRunId) {
+  return pendingAdvances.get(pipelineRunId) || null;
+}
+
+function queuePendingAdvance(result) {
+  if (result?.advanceText && result?.runSnapshot?.pipelineRunId) {
+    pendingAdvances.set(result.runSnapshot.pipelineRunId, {
+      text: result.advanceText,
+      nextStageId: result.nextStageId || result.runSnapshot.currentStageId || null,
+      nextAction: result.nextAction || result.runSnapshot.nextAction || null,
+      advisories: Array.isArray(result.advisories) ? result.advisories : [],
+    });
+    return;
+  }
+  if (result?.advanceText && !result?.runSnapshot) {
+    pendingAdvances.set('__guidance__', {
+      text: result.advanceText,
+      nextStageId: null,
+      nextAction: null,
+      advisories: Array.isArray(result.advisories) ? result.advisories : [],
+    });
+  }
+}
+
+function clearPendingAdvanceForSpawn({ label, metadata, logger }) {
+  if (!label || !isSevoLabel(label)) return;
+  const sevoMeta = metadata?.sevo || metadata || {};
+  let pipelineRunId = sevoMeta.pipelineRunId || null;
+  let stageId = sevoMeta.stageId || null;
+
+  if (!pipelineRunId || !stageId) {
+    const { decoded } = classifyLabel(label);
+    if (!stageId) stageId = decoded?.stageId || null;
+    if (!pipelineRunId && decoded?.pipelineRunId) {
+      const run = resolveRunFromDecoded(decoded);
+      pipelineRunId = run?.pipelineRunId || null;
+    }
+    if (!pipelineRunId && decoded?.projectSlug && decoded?.stageId) {
+      const matches = runStore
+        .listActiveRuns(decoded.projectSlug)
+        .filter((run) => run.currentStageId === decoded.stageId && run.status === 'running');
+      if (matches.length === 1) pipelineRunId = matches[0].pipelineRunId;
+    }
+  }
+
+  if (!pipelineRunId || !stageId) return;
+  const pending = pendingAdvances.get(pipelineRunId);
+  if (!pending) return;
+  if (pending.nextStageId && pending.nextStageId !== stageId) return;
+  pendingAdvances.delete(pipelineRunId);
+  logger.info?.('[sevo] pending advance consumed by spawned next-stage task', {
+    pipelineRunId,
+    stageId,
+    label,
+  });
 }
 
 function parseActivityTimeMs(value) {
@@ -288,6 +340,8 @@ export default function sevoPlugin(api) {
         ? { ...(evt?.metadata || {}), sevo: enrichment }
         : (evt?.metadata || null);
 
+      clearPendingAdvanceForSpawn({ label, metadata, logger });
+
       logger.info('[sevo] subagent_spawned: caching spawn data', { sessionKey, label, hasEnrichment: !!enrichment });
       spawnRegistry.set(sessionKey, {
         label,
@@ -342,19 +396,7 @@ export default function sevoPlugin(api) {
           logger,
           inferProjectSlug: inferProjectFromRuns,
         });
-        if (fallbackResult?.advanceText && fallbackResult?.runSnapshot?.pipelineRunId) {
-          pendingAdvances.set(fallbackResult.runSnapshot.pipelineRunId, {
-            text: fallbackResult.advanceText,
-            nextStageId: fallbackResult.nextStageId || fallbackResult.runSnapshot.currentStageId || null,
-            advisories: Array.isArray(fallbackResult.advisories) ? fallbackResult.advisories : [],
-          });
-        } else if (fallbackResult?.advanceText && !fallbackResult?.runSnapshot) {
-          pendingAdvances.set('__guidance__', {
-            text: fallbackResult.advanceText,
-            nextStageId: null,
-            advisories: Array.isArray(fallbackResult.advisories) ? fallbackResult.advisories : [],
-          });
-        }
+        queuePendingAdvance(fallbackResult);
         return;
       }
 
@@ -378,20 +420,7 @@ export default function sevoPlugin(api) {
         logger,
         inferProjectSlug: inferProjectFromRuns,
       });
-
-      if (result?.advanceText && result?.runSnapshot?.pipelineRunId) {
-        pendingAdvances.set(result.runSnapshot.pipelineRunId, {
-          text: result.advanceText,
-          nextStageId: result.nextStageId || result.runSnapshot.currentStageId || null,
-          advisories: Array.isArray(result.advisories) ? result.advisories : [],
-        });
-      } else if (result?.advanceText && !result?.runSnapshot) {
-        pendingAdvances.set('__guidance__', {
-          text: result.advanceText,
-          nextStageId: null,
-          advisories: Array.isArray(result.advisories) ? result.advisories : [],
-        });
-      }
+      queuePendingAdvance(result);
     } catch (err) {
       logger.error(`[sevo] subagent_ended error: ${err.message}`);
     }
@@ -408,7 +437,7 @@ export default function sevoPlugin(api) {
 
       const injection = buildInjection(ctx, {
         listActiveRuns: (slug) => runStore.listActiveRuns(slug),
-        consumePendingAdvance,
+        getPendingAdvance,
         listOpenAdvisories: (runId) => listOpenAdvisories(runId, { runStore }),
         logger,
       });

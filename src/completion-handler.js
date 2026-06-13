@@ -759,12 +759,13 @@ function tryAutoCreateRun(label, decoded, evt, deps) {
   const projectSlug = inferred?.projectSlug || decoded.projectSlug;
 
   if (!projectSlug) {
+    const labelAdvisory = buildNonCanonicalAdvisory(label, deps?.labelClass || null, decoded);
     logger.info?.('completion-handler auto-create: cannot infer projectSlug', { label, decoded });
     return {
       advanceText: buildGuidanceAdvanceText(decoded.stageId, label),
       nextStageId: null,
       runSnapshot: null,
-      advisories: [],
+      advisories: labelAdvisory ? [labelAdvisory] : [],
     };
   }
 
@@ -867,24 +868,8 @@ export function handleCompletion(evt, deps = {}) {
     run = findRecentActiveRun(decoded, evt, runStore, logger);
   }
 
-  if (!run && labelClass !== LABEL_CLASS.CANONICAL) {
-    logger.info?.('completion-handler: non-canonical label without matching run, attempting auto-create', { label, labelClass, decoded });
-    return tryAutoCreateRun(label, decoded, evt, deps);
-  }
-
   if (!run) {
-    return {
-      advanceText: [
-        '[SEVO V2 advisory — pipeline run not found]',
-        `Label "${label}" is canonical but no active run matches pipelineRunId ${decoded.pipelineRunIdShort}.`,
-        '',
-        'Recommended action: verify the pipeline run exists or create one with:',
-        '  sevo:create <projectSlug> <goal>',
-      ].join('\n'),
-      nextStageId: null,
-      runSnapshot: null,
-      advisories: [{ type: 'no-run', severity: 'warn', stageId: decoded.stageId, message: `no run matches ${decoded.pipelineRunIdShort}` }],
-    };
+    return tryAutoCreateRun(label, decoded, evt, { ...deps, labelClass });
   }
 
   if (!stageMatches(run, decoded.stageId, decoded.attempt)) {

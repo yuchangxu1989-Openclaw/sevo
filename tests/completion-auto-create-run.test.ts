@@ -142,12 +142,27 @@ describe('completion-handler advances tolerant non-canonical labels', () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.nextStageId).toBe('review');
+    expect(result!.nextStageId).toBe('implement-review-gate');
     expect(result!.runSnapshot).not.toBeNull();
     expect(result!.runSnapshot.projectSlug).toBe('kivo');
     expect(runStore.runs.size).toBe(1);
   });
 
+  it('auto-creates run and advances for canonical completion labels missing from active index', () => {
+    const deps = makeDeps(runStore);
+    const result = handleCompletion(
+      { label: 'sevo:sevo:deadbeef:implement:1', status: 'passed', taskId: 'task-canonical-missing' },
+      deps,
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.nextStageId).toBe('implement-review-gate');
+    expect(result!.runSnapshot).not.toBeNull();
+    expect(result!.runSnapshot.projectSlug).toBe('sevo');
+    expect(result!.runSnapshot.currentStageId).toBe('implement-review-gate');
+    expect(result!.runSnapshot.entryType).toBe('auto-completion');
+    expect(runStore.runs.size).toBe(1);
+  });
   it('auto-creates and advances failed stage-only implement labels with repair advisory', () => {
     const inferProjectSlug = () => ({ projectSlug: 'sevo', projectRoot: 'projects/sevo' });
     const deps = makeDeps(runStore, { inferProjectSlug });
@@ -157,7 +172,7 @@ describe('completion-handler advances tolerant non-canonical labels', () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.nextStageId).toBe('review');
+    expect(result!.nextStageId).toBe('implement-review-gate');
     expect(result!.runSnapshot.projectSlug).toBe('sevo');
     expect(result!.runSnapshot.stages.implement.status).toBe('repairing');
     expect(runStore.runs.size).toBe(1);

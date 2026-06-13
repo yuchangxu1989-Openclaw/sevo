@@ -98,11 +98,7 @@ try {
   });
   const injection = buildInjection({}, {
     listActiveRuns: () => [run2],
-    consumePendingAdvance: (id) => {
-      const adv = pendingAdvances.get(id) || null;
-      if (adv) pendingAdvances.delete(id);
-      return adv;
-    },
+    getPendingAdvance: (id) => pendingAdvances.get(id) || null,
   });
   assert.ok(injection, 'injection should be generated');
   assert.match(injection.text, /Advance to implement stage/);
