@@ -392,7 +392,7 @@ function buildNonCanonicalAdvisory(label, labelClass, decoded) {
     stageId: decoded.stageId,
     message: `non-canonical label class: ${labelClass}`,
     label,
-    recommendation: 'Prefer sevo:<projectSlug>:<pipelineRunId-short>:<stageId>:<attempt> for precise dispatch identity.',
+    recommendation: 'Use a descriptive label (e.g. "sevo:<stageId> <goal>") and set metadata.sevo.trackingLabel for pipeline tracking.',
   };
 }
 
@@ -455,7 +455,8 @@ function buildNextActionText(nextAction) {
     `Project: ${nextAction.projectSlug}`,
     `Completed stage: ${nextAction.completedStageId} (${nextAction.completedStageStatus})`,
     `Next stage: ${nextAction.nextStageId}`,
-    `Label: ${nextAction.dispatch.label}`,
+    `Use a descriptive label starting with "sevo:" + stage + space + brief goal. Example: "sevo:${nextAction.nextStageId} <goal summary>"`,
+    `Set metadata.sevo = { trackingLabel: "${nextAction.dispatch.label}", projectSlug: "${nextAction.projectSlug}", pipelineRunId: "${nextAction.pipelineRunId}", stageId: "${nextAction.nextStageId}", attempt: ${nextAction.dispatch.attempt || 1} }`,
     `Timeout: ${nextAction.dispatch.timeout}s`,
     nextAction.dispatch.agentId
       ? `Recommended agentId: ${nextAction.dispatch.agentId}`
@@ -489,7 +490,8 @@ function buildFixLoopActionText(nextAction) {
     `Project: ${nextAction.projectSlug}`,
     `Review stage: ${nextAction.completedStageId} found actionable issues (round ${nextAction.fixRound})`,
     `Dispatching fix to: ${nextAction.nextStageId}`,
-    `Label: ${nextAction.dispatch.label}`,
+    `Use a descriptive label starting with "sevo:" + stage + space + brief goal. Example: "sevo:${nextAction.nextStageId} fix round ${nextAction.fixRound}"`,
+    `Set metadata.sevo = { trackingLabel: "${nextAction.dispatch.label}", projectSlug: "${nextAction.projectSlug}", pipelineRunId: "${nextAction.pipelineRunId}", stageId: "${nextAction.nextStageId}", attempt: ${nextAction.dispatch.attempt || 1} }`,
     `Timeout: ${nextAction.dispatch.timeout}s`,
     `After fix completes, re-review via: ${nextAction.reReviewTarget}`,
     nextAction.fixContext ? `\nFix context:\n${nextAction.fixContext}` : null,
@@ -515,7 +517,8 @@ function buildReReviewActionText(nextAction) {
     `Project: ${nextAction.projectSlug}`,
     `Fix stage: ${nextAction.completedStageId} completed (round ${nextAction.fixRound})`,
     `Dispatching re-review to: ${nextAction.nextStageId}`,
-    `Label: ${nextAction.dispatch.label}`,
+    `Use a descriptive label starting with "sevo:" + stage + space + brief goal. Example: "sevo:${nextAction.nextStageId} re-review round ${nextAction.fixRound}"`,
+    `Set metadata.sevo = { trackingLabel: "${nextAction.dispatch.label}", projectSlug: "${nextAction.projectSlug}", pipelineRunId: "${nextAction.pipelineRunId}", stageId: "${nextAction.nextStageId}", attempt: ${nextAction.dispatch.attempt || 1} }`,
     `Timeout: ${nextAction.dispatch.timeout}s`,
     nextAction.advisorySummary ? `Advisory: ${nextAction.advisorySummary}` : null,
   ].filter(Boolean).join('\n');

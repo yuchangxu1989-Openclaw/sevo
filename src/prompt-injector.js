@@ -112,7 +112,7 @@ function formatStatusReminder(run) {
 function formatInitialDispatch(run) {
   const stageId = run.currentStageId;
   const attempt = run.stages?.[stageId]?.attempt || 1;
-  const { label } = buildDispatchContract({
+  const { label: trackingLabel } = buildDispatchContract({
     projectSlug: run.projectSlug,
     pipelineRunId: run.pipelineRunId,
     stageId,
@@ -122,8 +122,9 @@ function formatInitialDispatch(run) {
   const goal = `Goal: ${(run.goal || '').slice(0, 80)}`;
   const action = [
     `Dispatch stage "${stageId}" (attempt ${attempt}).`,
-    `Label: ${label}`,
-    `Use this label when spawning the subagent task for this stage.`,
+    `Use a descriptive label starting with "sevo:" + stage + space + brief goal description.`,
+    `Example: "sevo:${stageId} ${(run.goal || run.projectSlug).slice(0, 30)}"`,
+    `Set metadata.sevo = { trackingLabel: "${trackingLabel}", projectSlug: "${run.projectSlug}", pipelineRunId: "${run.pipelineRunId}", stageId: "${stageId}", attempt: ${attempt} }`,
   ].join('\n');
   return [header, goal, action].join('\n');
 }

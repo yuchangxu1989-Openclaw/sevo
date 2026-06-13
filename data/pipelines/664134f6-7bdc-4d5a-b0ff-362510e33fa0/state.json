@@ -5,16 +5,16 @@
   "projectRoot": "projects/kivo",
   "goal": "## 目标\nKIVO 意图知识库（intents 表）已清空，需要从近 3 天的会话历史中重新提取高质量意图知识，写入 DB。\n\n## 背景\n- KIVO DB 路径：`/root/.openclaw/workspace/projects/kivo/kivo.db`\n- intents 表 schema：id, name, description, embedding, status, hit_c",
   "scopeFingerprint": "sha256:7e29b9ba506bf69aab2d57fd6b0194f92850346bdec5f02311b2244e44349bf3",
-  "status": "running",
+  "status": "completed",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-11T08:13:03.131Z",
     "startedAt": "2026-06-11T08:13:03.131Z",
-    "completedAt": null,
+    "completedAt": "2026-06-13T08:18:12.337Z",
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-13T00:55:19.618Z",
+    "lastActivityAt": "2026-06-13T08:18:12.337Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "all stages succeeded per kanban review 2026-06-13"
   },
   "stagePlan": {
     "ordered": [

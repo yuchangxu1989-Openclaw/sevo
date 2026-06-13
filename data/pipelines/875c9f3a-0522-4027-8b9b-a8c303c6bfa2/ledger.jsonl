@@ -1,1 +1,8 @@
 {"timestamp":"2026-06-11T10:07:55.978Z","type":"run-created","pipelineRunId":"875c9f3a-0522-4027-8b9b-a8c303c6bfa2","data":{"projectSlug":"kivo","currentStageId":"specify","entryType":"auto-dispatch","routeDecision":null}}
+{"timestamp":"2026-06-13T12:08:21.058Z","type":"run-patched","pipelineRunId":"875c9f3a-0522-4027-8b9b-a8c303c6bfa2","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-13T12:08:21.068Z","type":"stage-advanced","pipelineRunId":"875c9f3a-0522-4027-8b9b-a8c303c6bfa2","data":{"stageId":"specify","status":"passed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-13T12:08:21.070Z","type":"run-patched","pipelineRunId":"875c9f3a-0522-4027-8b9b-a8c303c6bfa2","data":{"fields":["nextAction"]}}
+{"timestamp":"2026-06-13T12:19:41.153Z","type":"run-patched","pipelineRunId":"875c9f3a-0522-4027-8b9b-a8c303c6bfa2","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-13T12:19:41.154Z","type":"stage-advanced","pipelineRunId":"875c9f3a-0522-4027-8b9b-a8c303c6bfa2","data":{"stageId":"review","status":"passed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-13T12:19:41.155Z","type":"run-closed","pipelineRunId":"875c9f3a-0522-4027-8b9b-a8c303c6bfa2","data":{"status":"completed","reason":"all V2 stages completed or recorded as advisory"}}
+{"timestamp":"2026-06-13T12:19:41.156Z","type":"run-patched","pipelineRunId":"875c9f3a-0522-4027-8b9b-a8c303c6bfa2","data":{"fields":["nextAction"]}}

@@ -12,8 +12,8 @@ import { handleCompletion } from './completion-handler.js';
 import { buildInjection } from './prompt-injector.js';
 import { handleCommand } from './pipeline-commands.js';
 import { append as appendAdvisory, listOpen as listOpenAdvisories } from './advisory-ledger.js';
-import { isSevoLabel } from './label-protocol.js';
-import { classifyLabel, LABEL_CLASS, buildDispatchContract } from './stage-dispatch-contract.js';
+import { isSevoLabel, decode as decodeLabel } from './label-protocol.js';
+import { classifyLabel, LABEL_CLASS } from './stage-dispatch-contract.js';
 import { buildSpecCoverageAdvisory } from './spec-coverage-check.js';
 import { FULL_PIPELINE_STAGES } from './stage-policy.js';
 import { existsSync } from 'node:fs';
@@ -29,6 +29,7 @@ const MAX_ADVANCES_PER_ROUND = 3;
 const pendingAdvances = new Map();
 const advanceDepthByRun = new Map();
 const spawnRegistry = new Map();
+const labelEnrichmentCache = new Map();
 
 /**
  * Consume a pending advance (one-shot read + delete).
@@ -151,15 +152,25 @@ export default function sevoPlugin(api) {
 
   // --- Hook: subagent_spawned ---
   // Cache spawn-time label + metadata for later use in subagent_ended.
+  // Merges any enrichment from before_tool_call so subagent_ended can resolve
+  // natural labels (e.g. "sevo:fix KIVO意图知识库重新提取") to their pipeline run.
   api.on('subagent_spawned', (evt) => {
     try {
       const sessionKey = evt?.childSessionKey;
       const label = evt?.label;
       if (!sessionKey || !isSevoLabel(label)) return;
-      logger.info('[sevo] subagent_spawned: caching spawn data', { sessionKey, label });
+
+      const enrichment = labelEnrichmentCache.get(label);
+      if (enrichment) labelEnrichmentCache.delete(label);
+
+      const metadata = enrichment
+        ? { ...(evt?.metadata || {}), sevo: enrichment }
+        : (evt?.metadata || null);
+
+      logger.info('[sevo] subagent_spawned: caching spawn data', { sessionKey, label, hasEnrichment: !!enrichment });
       spawnRegistry.set(sessionKey, {
         label,
-        metadata: evt?.metadata || null,
+        metadata,
         agentId: evt?.agentId || null,
         spawnedAt: Date.now(),
       });
@@ -181,7 +192,48 @@ export default function sevoPlugin(api) {
       if (spawnData) spawnRegistry.delete(sessionKey);
 
       if (!spawnData) {
-        logger.debug('[sevo] subagent_ended: no cached spawn data, skipping', { sessionKey });
+        const evtLabel = evt?.label || evt?.metadata?.label || null;
+        if (!evtLabel || !isSevoLabel(evtLabel)) {
+          logger.debug('[sevo] subagent_ended: no cached spawn data and no sevo label, skipping', { sessionKey });
+          return;
+        }
+        const decoded = decodeLabel(evtLabel);
+        if (!decoded) {
+          logger.debug('[sevo] subagent_ended: sevo label unparseable, skipping', { sessionKey, label: evtLabel });
+          return;
+        }
+        logger.info('[sevo] subagent_ended: fallback from evt.label (spawn-cache miss)', {
+          sessionKey,
+          label: evtLabel,
+          decoded,
+          outcome: evt?.outcome,
+        });
+        const fallbackEvt = {
+          ...evt,
+          label: evtLabel,
+          metadata: { ...(evt?.metadata || {}), projectSlug: decoded.projectSlug, stageId: decoded.stageId, pipelineRunIdShort: decoded.pipelineRunIdShort },
+          status: evt?.outcome === 'ok' ? 'passed' : (evt?.outcome || 'failed'),
+        };
+        const fallbackResult = handleCompletion(fallbackEvt, {
+          runStore,
+          advanceDepthByRun,
+          maxAdvancesPerRunRound: MAX_ADVANCES_PER_ROUND,
+          logger,
+          inferProjectSlug: inferProjectFromRuns,
+        });
+        if (fallbackResult?.advanceText && fallbackResult?.runSnapshot?.pipelineRunId) {
+          pendingAdvances.set(fallbackResult.runSnapshot.pipelineRunId, {
+            text: fallbackResult.advanceText,
+            nextStageId: fallbackResult.nextStageId || fallbackResult.runSnapshot.currentStageId || null,
+            advisories: Array.isArray(fallbackResult.advisories) ? fallbackResult.advisories : [],
+          });
+        } else if (fallbackResult?.advanceText && !fallbackResult?.runSnapshot) {
+          pendingAdvances.set('__guidance__', {
+            text: fallbackResult.advanceText,
+            nextStageId: null,
+            advisories: Array.isArray(fallbackResult.advisories) ? fallbackResult.advisories : [],
+          });
+        }
         return;
       }
 
@@ -273,25 +325,26 @@ export default function sevoPlugin(api) {
 
   // --- Hook: before_tool_call ---
   // Auto-creates pipeline run when sessions_spawn carries a sevo label.
-  // Enriches metadata with canonical dispatch contract.
-  // Advisory-only: never prevents the tool call from proceeding.
+  // Marks the new stage as 'active' so prompt-injector stops emitting DISPATCH NEEDED.
+  // Caches enrichment data for subagent_spawned to merge into spawnRegistry.
+  // Advisory-only: observes labels for tracking and never mutates tool arguments.
   api.on('before_tool_call', (evt) => {
     try {
       const toolName = String(evt?.toolName || '');
-      if (toolName !== 'sessions_spawn') return null;
+      if (toolName !== 'sessions_spawn') return undefined;
 
       const params = evt?.params || {};
       const label = String(params.label || '');
-      if (!isSevoLabel(label)) return null;
+      if (!isSevoLabel(label)) return undefined;
 
       const { class: labelClass, decoded } = classifyLabel(label);
       if (labelClass === LABEL_CLASS.CANONICAL) {
         const run = resolveRunFromDecoded(decoded);
         if (run) appendSpecCoverageAdvisoryIfNeeded(run, decoded.stageId, logger);
-        return null;
+        return undefined;
       }
 
-      if (!decoded?.stageId) return null;
+      if (!decoded?.stageId) return undefined;
 
       const taskText = String(
         params.prompt || params.taskDescription || params.task || params.message || '',
@@ -302,36 +355,43 @@ export default function sevoPlugin(api) {
         projectSlug: decoded.projectSlug || inferProjectFromRuns(`${label} ${taskText}`)?.projectSlug,
       };
 
-      if (!identity.projectSlug) return null;
+      if (!identity.projectSlug) return undefined;
 
       const run = autoCreateRunOnDispatch(identity, taskText, logger);
-      if (!run) return null;
+      if (!run) return undefined;
 
       appendSpecCoverageAdvisoryIfNeeded(run, identity.stageId, logger);
-      const canonical = buildDispatchContract({
-        projectSlug: run.projectSlug,
-        pipelineRunId: run.pipelineRunId,
-        stageId: identity.stageId,
-        attempt: run.stages?.[identity.stageId]?.attempt || 1,
+
+      // Mark stage as dispatched so prompt-injector won't emit DISPATCH NEEDED
+      runStore.advanceStage(run.pipelineRunId, identity.stageId, {
+        status: 'active',
+        dispatchId: `natural-label:${Date.now()}`,
       });
 
-      return {
-        params: {
-          ...params,
-          metadata: {
-            ...(params.metadata || {}),
-            sevo: {
-              ...canonical.fields,
-              pipelineRunIdShort: run.pipelineRunId.slice(0, 8),
-              canonicalLabel: canonical.label,
-              originalLabel: label,
-            },
-          },
-        },
-      };
+      // Cache enrichment keyed by original label for subagent_spawned to pick up
+      labelEnrichmentCache.set(label, {
+        projectSlug: run.projectSlug,
+        pipelineRunId: run.pipelineRunId,
+        pipelineRunIdShort: run.pipelineRunId.slice(0, 8),
+        stageId: identity.stageId,
+        attempt: run.stages?.[identity.stageId]?.attempt || 1,
+        originalLabel: label,
+      });
+      if (labelEnrichmentCache.size > 100) {
+        const oldest = labelEnrichmentCache.keys().next().value;
+        labelEnrichmentCache.delete(oldest);
+      }
+
+      logger.info('[sevo] before_tool_call: cached enrichment for natural label', {
+        label,
+        pipelineRunId: run.pipelineRunId,
+        stageId: identity.stageId,
+      });
+
+      return undefined;
     } catch (err) {
       logger.error(`[sevo] before_tool_call error: ${err.message}`);
-      return null;
+      return undefined;
     }
   });
 

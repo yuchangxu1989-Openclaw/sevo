@@ -5,16 +5,16 @@
   "projectRoot": "projects/kivo",
   "goal": "## 目标\n优化 KIVO 知识提取 prompt，使 LLM 产出的 intent 标题从当前的 AI 味短标题（如\"语义禁用规则凑\"\"知识对齐策略\"）变为 10-25 字的人话完整句（如\"对话中涉及知识点时自动注入相关上下文\"\"提取知识时标题要像人说话一样具体\"）。\n\n## 背景\n- KIVO spec 刚补了 FR-A09（知识提取产出质量契约），定义了标题质量标准：10-25 字、完整句、",
   "scopeFingerprint": "sha256:7f7d37fc2e30e8a740c2512e86346d84462f5e55cdf5111be71e2938416af44d",
-  "status": "running",
+  "status": "completed",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-11T10:28:13.650Z",
     "startedAt": "2026-06-11T10:28:13.650Z",
-    "completedAt": null,
+    "completedAt": "2026-06-13T08:18:12.335Z",
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-13T07:46:19.787Z",
+    "lastActivityAt": "2026-06-13T08:18:12.335Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "all stages succeeded per kanban review 2026-06-13"
   },
   "stagePlan": {
     "ordered": [

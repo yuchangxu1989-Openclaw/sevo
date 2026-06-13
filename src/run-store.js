@@ -113,6 +113,19 @@ function updateActivePipelineCompatibilityIndex(run) {
   });
 }
 
+function compatEntryEqual(a, b) {
+  if (!a || !b) return false;
+  return (
+    a.projectSlug === b.projectSlug &&
+    a.projectRoot === b.projectRoot &&
+    a.status === b.status &&
+    a.currentStage === b.currentStage &&
+    a.currentStageId === b.currentStageId &&
+    a.lastAdvancedAt === b.lastAdvancedAt &&
+    a.source === b.source
+  );
+}
+
 function reconcileActivePipelineCompatibilityIndex() {
   const active = readActiveIndex();
   const compat = readJson(COMPAT_ACTIVE_PIPELINES_PATH, {
@@ -127,11 +140,14 @@ function reconcileActivePipelineCompatibilityIndex() {
   for (const pipelineRunId of activeIds) {
     const run = getRun(pipelineRunId);
     if (!run || !ACTIVE_STATUSES.has(run.status)) continue;
-    pipelines[pipelineRunId] = {
+    const newEntry = {
       ...(pipelines[pipelineRunId] || {}),
       ...toCompatibilityEntry(run),
     };
-    dirty = true;
+    if (!compatEntryEqual(pipelines[pipelineRunId], newEntry)) {
+      pipelines[pipelineRunId] = newEntry;
+      dirty = true;
+    }
   }
 
   for (const [pipelineRunId, entry] of Object.entries(pipelines)) {
