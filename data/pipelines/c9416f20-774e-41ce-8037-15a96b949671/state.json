@@ -12,7 +12,7 @@
     "startedAt": "2026-06-11T10:28:13.650Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T10:28:13.650Z",
+    "lastActivityAt": "2026-06-13T07:46:19.787Z",
     "staleDetectedAt": null,
     "terminalReason": null
   },
@@ -155,5 +155,21 @@
     "maintenanceRun": false,
     "parentRunId": null,
     "routeDecision": null
-  }
+  },
+  "openAdvisories": [
+    {
+      "id": "936fbf39-35d5-4c2a-939c-b2d37068dd6a",
+      "runId": "c9416f20-774e-41ce-8037-15a96b949671",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for kivo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/kivo/docs/product-requirements.md",
+        "goalTokens=kivo,知识提取,prompt,intent,标题从当前的,味短标题,语义禁用规则凑,知识对齐策略,10-25,字的人话完整句,对话中涉及知识点时自动注入相关上下文,提取知识时标题要像人说话一样具体,spec,fr-a09,知识提取产出质量契约,定义了标题质量标准"
+      ],
+      "createdAt": "2026-06-13T07:46:19.787Z",
+      "resolvedAt": null
+    }
+  ]
 }

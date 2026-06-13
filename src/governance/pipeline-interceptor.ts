@@ -126,7 +126,7 @@ export interface PipelineInterceptorConfig {
 
 /**
  * PipelineInterceptor evaluates spawn requests and determines whether
- * they should be blocked because they bypass the SEVO pipeline.
+ * they should receive an advisory because they bypass the SEVO pipeline.
  *
  * Uses LLM semantic analysis (AC-35.7) — no keyword matching or regex.
  */

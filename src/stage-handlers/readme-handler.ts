@@ -66,7 +66,7 @@ export const readmeHandler: StageHandler = async (ctx) => {
     ],
     summary: result.verdict === 'pass'
       ? `README already covers ${result.coverage.length} changed FR(s).`
-      : `README sync blocked: ${result.missingFrs.length} changed FR(s) need documentation updates. Follow ${README_STANDARD_RELATIVE_PATH}.`,
+      : `README sync needs fix: ${result.missingFrs.length} changed FR(s) need documentation updates. Follow ${README_STANDARD_RELATIVE_PATH}.`,
     issues: result.missingFrs.map((frId) => `README missing coverage for ${frId}`),
     metadata: {
       changedFrs: result.ledgerEntry.changedFRs,

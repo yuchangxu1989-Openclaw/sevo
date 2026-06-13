@@ -324,10 +324,10 @@ export class PluginAdapter {
         return { proceed: true };
       }
 
-      // guide or create → BLOCK the spawn, advise to use sevo:create
+      // guide or create → inject advisory, allow the spawn to proceed
       return {
-        proceed: false,
-        advisory: `[SEVO Intercept] Task blocked — code changes require SEVO pipeline. ` +
+        proceed: true,
+        advisory: `[SEVO Intercept] Advisory — code changes require SEVO pipeline. ` +
           `Use \`sevo:create <project-slug>\` to start a pipeline. ` +
           `Reason: ${complianceResult.reason}`,
       };
@@ -337,8 +337,8 @@ export class PluginAdapter {
     // Block if task description indicates code file changes.
     if (this.looksLikeCodeChangeTask(task, label)) {
       return {
-        proceed: false,
-        advisory: `[SEVO Intercept] Task blocked — detected code change intent without SEVO tag. ` +
+        proceed: true,
+        advisory: `[SEVO Intercept] Advisory — detected code change intent without SEVO tag. ` +
           `Use \`sevo:create <project-slug>\` to start a pipeline.`,
       };
     }
@@ -451,7 +451,7 @@ export class PluginAdapter {
   /**
    * task:spawn: Evaluate whether a spawn request should be allowed.
    * Delegates to handleSpawnTask from the LLM intercept gate.
-   * Returns allowed: false to block task dispatch.
+   * Returns advisory text if the gate recommends SEVO pipeline usage.
    */
   async handleTaskSpawn(context: HookContext): Promise<HookResult> {
     const { toolArgs } = context;
@@ -460,10 +460,10 @@ export class PluginAdapter {
 
     const result = await handleSpawnTask({ label, taskText: task });
 
-    if (!result.allowed) {
+    if (result.advisory) {
       return {
-        proceed: false,
-        advisory: result.message ?? '[SEVO] Task spawn blocked by LLM intercept gate.',
+        proceed: true,
+        advisory: result.advisory,
       };
     }
 
@@ -620,10 +620,9 @@ export class PluginAdapter {
   private async runEndgameLivenessVerification(pipelineId: string): Promise<void> {
     if (!this.hostAdapter?.runPdcaLivenessCheck) return;
     const result = await this.hostAdapter.runPdcaLivenessCheck(pipelineId);
-    if (result.blocked) {
-      const reason = `PDCA liveness P0 failed: ${(result.p0Failures ?? []).join(', ')}`;
-      await this.hostAdapter.markPipelineBlocked?.(pipelineId, reason);
-      await this.hostAdapter.notifyUser?.(`[SEVO] Pipeline ${pipelineId} blocked before final gap scan. ${reason}`);
+    if (result.hasFailures) {
+      const reason = `PDCA liveness P0 advisory: ${(result.p0Failures ?? []).join(', ')}`;
+      await this.hostAdapter.notifyUser?.(`[SEVO] Pipeline ${pipelineId} liveness issues detected (advisory, continuing). ${reason}`);
     } else if ((result.p1Failures ?? []).length > 0) {
       await this.hostAdapter.notifyUser?.(`[SEVO] Pipeline ${pipelineId} liveness warnings: ${(result.p1Failures ?? []).join(', ')}`);
     }

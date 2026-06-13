@@ -12,7 +12,7 @@ export function registerGate(program: Command): void {
 
   gate
     .command('retry <instanceId> <gateName>')
-    .description('Retry a blocked governance gate')
+    .description('Retry a pending governance gate')
     .option('--skip-stranger-verify', 'Skip stranger-ready verification and record skipped reason', false)
     .action(async (instanceId: string, gateName: string, opts: { skipStrangerVerify?: boolean }) => {
       if (gateName !== 'stranger-ready') {
@@ -46,7 +46,7 @@ export function registerGate(program: Command): void {
         return;
       }
 
-      instance.status = 'publish-blocked';
+      instance.status = 'gate-pending';
       instance.updatedAt = new Date().toISOString();
       instance.gateFailure = {
         gate: gateName,
@@ -55,7 +55,7 @@ export function registerGate(program: Command): void {
         suggestions: gateResult.fixSuggestions,
       };
       writeInstance(instancePath, instance);
-      console.error(`Gate ${gateName} failed; pipeline ${instanceId} remains publish-blocked.`);
+      console.error(`Gate ${gateName} failed; pipeline ${instanceId} remains gate-pending.`);
       process.exitCode = 1;
     });
 }
@@ -74,7 +74,7 @@ function findInstanceFile(root: string, instanceId: string): string {
 }
 
 function readInstance(filePath: string, instanceId: string): StoredInstance {
-  if (!fs.existsSync(filePath)) return { instanceId, status: 'publish-blocked' };
+  if (!fs.existsSync(filePath)) return { instanceId, status: 'gate-pending' };
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as StoredInstance;
 }
 

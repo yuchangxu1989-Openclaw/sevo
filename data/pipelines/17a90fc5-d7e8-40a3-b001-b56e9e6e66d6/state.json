@@ -12,7 +12,7 @@
     "startedAt": "2026-06-11T11:31:11.129Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T11:31:11.129Z",
+    "lastActivityAt": "2026-06-13T07:46:20.068Z",
     "staleDetectedAt": null,
     "terminalReason": null
   },
@@ -155,5 +155,21 @@
     "maintenanceRun": true,
     "parentRunId": null,
     "routeDecision": null
-  }
+  },
+  "openAdvisories": [
+    {
+      "id": "71230121-b821-4f2a-bd81-74c38fe566f7",
+      "runId": "17a90fc5-d7e8-40a3-b001-b56e9e6e66d6",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for sevo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/sevo/docs/product-requirements.md",
+        "goalTokens=按照刚更新的,sevo,spec,已去除所有阻断式,gate,sevo-pipeline,插件代码,使其与新,pipeline,永不阻断,advisory,block,stale,自动清理,飞书已更新,pm-01,今天完成,blocked,pause,gate-fail"
+      ],
+      "createdAt": "2026-06-13T07:46:20.068Z",
+      "resolvedAt": null
+    }
+  ]
 }

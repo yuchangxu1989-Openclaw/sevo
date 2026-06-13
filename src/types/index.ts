@@ -381,7 +381,7 @@ export interface KeyResult {
   description: string;
   measure: string;
   threshold?: string;
-  status: 'not-started' | 'in-progress' | 'achieved' | 'blocked';
+  status: 'not-started' | 'in-progress' | 'achieved' | 'at-risk';
 }
 
 /** Objective + Key Results node (FR-18, AC-18.3). */

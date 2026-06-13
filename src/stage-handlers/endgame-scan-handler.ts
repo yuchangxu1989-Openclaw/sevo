@@ -135,7 +135,7 @@ export const endgameScanHandler: StageHandler = async (ctx): Promise<StageHandle
     summary:
       verdict === 'pass'
         ? `Endgame scan passed: ${usable}/${total} FR usable (score ${(score * 100).toFixed(0)}%).`
-        : `Endgame scan blocked: only ${usable}/${total} FR usable (score ${(score * 100).toFixed(0)}% < threshold ${(threshold * 100).toFixed(0)}%).`,
+        : `Endgame scan needs fix: only ${usable}/${total} FR usable (score ${(score * 100).toFixed(0)}% < threshold ${(threshold * 100).toFixed(0)}%).`,
     issues: rows
       .filter((r) => !r.usable)
       .slice(0, 30)

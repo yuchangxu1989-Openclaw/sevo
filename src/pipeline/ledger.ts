@@ -18,7 +18,7 @@ export interface LedgerEvent {
     | 'pipeline_running'
     | 'pipeline_completed'
     | 'pipeline_failed'
-    | 'pipeline_blocked'
+    | 'pipeline_advisory'
     | 'pipeline_paused'
     | 'pipeline_resumed'
     | 'pipeline_cancelled'
@@ -26,7 +26,6 @@ export interface LedgerEvent {
     | 'stage_completed'
     | 'stage_failed'
     | 'stage_advisory'
-    | 'stage_blocked'
     | 'stage_rolled_back'
     | 'clarification_opened'
     | 'clarification_resolved'
@@ -51,10 +50,10 @@ function mapToNotificationEvent(
   switch (type) {
     case 'stage_completed':     return 'stage_completed';
     case 'gate_passed':         return 'gate_passed';
-    case 'gate_rejected':       return 'gate_blocked';
+    case 'gate_rejected':       return 'gate_advisory';
     case 'pipeline_completed':  return 'pipeline_completed';
-    case 'pipeline_blocked':    return 'pipeline_blocked';
-    case 'stage_blocked':       return 'gate_blocked';
+    case 'pipeline_advisory':   return 'pipeline_advisory';
+    case 'stage_advisory':      return 'gate_advisory';
     default:                    return null;
   }
 }

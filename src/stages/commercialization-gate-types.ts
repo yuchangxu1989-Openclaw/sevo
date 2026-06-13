@@ -80,7 +80,7 @@ export interface PublishCheckResult {
 }
 
 /** @deprecated Use CommercializationGateResult */
-export type PublishGateConclusion = 'passed' | 'blocked' | 'skipped';
+export type PublishGateConclusion = 'passed' | 'failed' | 'skipped';
 
 /** @deprecated Use CommercializationGateResult */
 export interface PublishGateResult {

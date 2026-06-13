@@ -17,8 +17,8 @@
  *   - Writes a placeholder artifact file under
  *     `<basePath>/<pipelineId>/artifacts/<stage>/<stage>-output.md` so every
  *     stage produces evidence on disk.
- *   - Returns a `StageHandlerResult` (passed | failed | gate_blocked).
- *     Legacy gate_blocked outcomes are persisted as repairing advisories so
+ *   - Returns a `StageHandlerResult` (passed | failed | gate_advisory).
+ *     Legacy gate_advisory outcomes are persisted as repairing advisories so
  *     the pipeline itself keeps running.
  *
  * The handlers are deliberately thin: they prove the engine drives every
@@ -155,7 +155,7 @@ export interface StageHandlerContext {
 }
 
 export interface StageHandlerResult {
-  outcome: 'passed' | 'failed' | 'gate_blocked';
+  outcome: 'passed' | 'failed' | 'gate_advisory';
   artifacts: EngineArtifactRef[];
   reason?: string;
 }
@@ -507,7 +507,7 @@ export class PipelineEngine {
     }
     if (result.outcome === 'passed') {
       stageRecord.status = 'passed';
-    } else if (result.outcome === 'gate_blocked') {
+    } else if (result.outcome === 'gate_advisory') {
       stageRecord.status = 'repairing';
       stageRecord.advisoryReason = result.reason ?? 'gate returned repair-required advisory';
     } else {

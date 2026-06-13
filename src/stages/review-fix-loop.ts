@@ -228,7 +228,7 @@ export class ReviewFixLoop {
       const blockers: string[] = [];
       if (pendingP0 > 0) blockers.push(`${pendingP0} P0 open`);
       if (pendingP1 > 0) blockers.push(`${pendingP1} P1 open`);
-      message = `Gate blocked: ${blockers.join(', ')}`;
+      message = `Gate advisory: ${blockers.join(', ')}`;
     }
 
     return {

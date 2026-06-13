@@ -52,8 +52,8 @@ export function registerStatus(program: Command): void {
           const stageEntries = Object.entries(data.stages) as Array<[string, { status: string }]>;
           const passed = stageEntries.filter(([, v]) => v.status === 'passed').length;
           const active = stageEntries.filter(([, v]) => v.status === 'active').length;
-          const blocked = stageEntries.filter(([, v]) => v.status === 'blocked' || v.status === 'clarification-blocked').length;
-          rows.push(['Stages', `${passed}/${stageEntries.length} passed, ${active} active, ${blocked} blocked`]);
+          const stalled = stageEntries.filter(([, v]) => v.status === 'blocked' || v.status === 'clarification-blocked').length;
+          rows.push(['Stages', `${passed}/${stageEntries.length} passed, ${active} active, ${stalled} stalled`]);
         }
 
         printTable(rows);

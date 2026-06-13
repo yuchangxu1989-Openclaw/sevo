@@ -150,7 +150,7 @@ export const deployHandler: StageHandler = async (ctx): Promise<StageHandlerResu
         ? publishResult.executed
           ? `Deploy executed: ${pkg?.name}@${nextVersion} (exit ${publishResult.exitCode}).`
           : `Deploy intent recorded: ${pkg?.name} ${pkg?.version} -> ${nextVersion} (dry-run).`
-        : `Deploy blocked: ${issues.length} issue(s).`,
+        : `Deploy needs fix: ${issues.length} issue(s).`,
     issues,
     metadata: {
       proposedVersion: nextVersion,

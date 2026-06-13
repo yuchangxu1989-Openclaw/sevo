@@ -113,15 +113,15 @@ export function registerDoctor(program: Command): void {
                 strictRoleMatching,
                 fallbackAgentId: roleAssignment.fallbackAgentId ?? agentIds[0],
               });
-              const blocked = report.matrix.filter(c => c.decision === 'blocked');
+              const denied = report.matrix.filter(c => c.decision === 'denied');
               const degraded = report.matrix.filter(c => c.decision === 'role-degraded');
               const warned = report.matrix.filter(c => c.decision === 'warned');
 
-              if (blocked.length > 0) {
+              if (denied.length > 0) {
                 checks.push({
                   name: 'role-matching',
                   status: 'error',
-                  message: `${blocked.length} blocked dispatch(es): ${blocked.map(b => `${b.agentId}→${b.stageId}`).slice(0, 3).join(', ')}. 当前 strictRoleMatching=true，需补齐角色映射或改为 false。`,
+                  message: `${denied.length} denied dispatch(es): ${denied.map(b => `${b.agentId}→${b.stageId}`).slice(0, 3).join(', ')}. 当前 strictRoleMatching=true，需补齐角色映射或改为 false。`,
                 });
               } else if (agentIds.length === 1 || roleAssignment.autoFallback) {
                 checks.push({

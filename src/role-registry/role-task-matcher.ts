@@ -49,7 +49,7 @@ export interface DispatchMatrixCell {
   agentId: string;
   requiredRole: PipelineRole;
   actualRole: PipelineRole | null;
-  decision: 'allowed' | 'warned' | 'blocked' | 'role-degraded';
+  decision: 'allowed' | 'warned' | 'denied' | 'role-degraded';
   dispatchAgentId: string;
   trustLevel: 'normal' | 'low';
 }
@@ -125,7 +125,7 @@ export class RoleTaskMatcher {
         stage: request.stageId,
         requiredRole: result.requiredRole,
         actualRole: result.actualRole,
-        action: 'blocked',
+        action: 'denied',
         reason: `Agent '${request.agentId}' cannot run stage '${request.stageId}'`,
       });
     }
@@ -154,7 +154,7 @@ export class RoleTaskMatcher {
       let stageHasMatch = false;
       for (const agentId of agentIds) {
         const result = this.match({ agentId, stageId: stageId as StageId });
-        let decision: 'allowed' | 'warned' | 'blocked' | 'role-degraded';
+        let decision: 'allowed' | 'warned' | 'denied' | 'role-degraded';
         if (result.allowed && !result.mismatchEvent) {
           decision = 'allowed';
           stageHasMatch = true;
@@ -163,7 +163,7 @@ export class RoleTaskMatcher {
           stageHasMatch = true;
           violations.push(result.mismatchEvent);
         } else {
-          decision = 'blocked';
+          decision = 'denied';
           if (result.mismatchEvent) violations.push(result.mismatchEvent);
         }
         matrix.push({

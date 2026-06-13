@@ -184,7 +184,7 @@ export const reviewHandler: StageHandler = async (ctx): Promise<StageHandlerResu
     summary:
       verdict === 'pass'
         ? `Review passed: ${matrix.length} FR fully covered (${sourceFiles.length} source files).`
-        : `Review blocked: ${blocking.length} P0/P1 finding(s) out of ${findings.length}.`,
+        : `Review needs fix: ${blocking.length} P0/P1 finding(s) out of ${findings.length}.`,
     issues: blocking.map((f) => `${f.severity} ${f.frId}: ${f.description}`),
     metadata: {
       frCount: frIds.length,

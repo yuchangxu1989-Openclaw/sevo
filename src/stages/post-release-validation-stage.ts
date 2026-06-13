@@ -242,7 +242,7 @@ export class PostReleaseValidationStage {
   }
 
   private mapKrStatus(
-    krStatus: 'not-started' | 'in-progress' | 'achieved' | 'blocked',
+    krStatus: 'not-started' | 'in-progress' | 'achieved' | 'at-risk',
   ): { status: KrGapStatus; achievementPct: number } {
     switch (krStatus) {
       case 'achieved':
@@ -251,7 +251,7 @@ export class PostReleaseValidationStage {
         return { status: 'partial', achievementPct: 50 };
       case 'not-started':
         return { status: 'not-achieved', achievementPct: 0 };
-      case 'blocked':
+      case 'at-risk':
         return { status: 'not-achieved', achievementPct: 0 };
     }
   }
@@ -266,8 +266,8 @@ export class PostReleaseValidationStage {
       case 'partial':
         return `${kr.krId} is in-progress, not yet fully achieved`;
       case 'not-achieved':
-        return kr.status === 'blocked'
-          ? `${kr.krId} is blocked and not achieved`
+        return kr.status === 'at-risk'
+          ? `${kr.krId} is at-risk and not achieved`
           : `${kr.krId} has not been started`;
     }
   }

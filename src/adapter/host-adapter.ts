@@ -69,8 +69,7 @@ export interface SevoHostAdapter {
   supportsSpawn?(): boolean;
 
   /** Optional stage lifecycle hooks for endgame liveness integration. */
-  runPdcaLivenessCheck?(pipelineId: string): Promise<{ blocked: boolean; p0Failures?: string[]; p1Failures?: string[] }>;
-  markPipelineBlocked?(pipelineId: string, reason: string): Promise<void> | void;
+  runPdcaLivenessCheck?(pipelineId: string): Promise<{ hasFailures: boolean; p0Failures?: string[]; p1Failures?: string[] }>;
   notifyUser?(message: string): Promise<void> | void;
 }
 

@@ -43,7 +43,7 @@ export interface RollbackDecision {
   failedStage: StageId;
   targetStage: StageId | null;
   reason: string;
-  blocked: boolean;
+  halted: boolean;
 }
 
 // ── StageRollback ───────────────────────────────────────────────
@@ -105,7 +105,7 @@ export class StageRollback {
         failedStage,
         targetStage: target,
         reason: `Stage record not found for '${!failedRecord ? failedStage : target}'`,
-        blocked: false,
+        halted: false,
       };
     }
 
@@ -130,7 +130,7 @@ export class StageRollback {
       failedStage,
       targetStage: target,
       reason,
-      blocked: false,
+      halted: false,
     };
   }
 

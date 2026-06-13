@@ -177,7 +177,7 @@ export const specReviewGateHandler: StageHandler = async (ctx): Promise<StageHan
     summary:
       verdict === 'pass'
         ? `Spec review passed: 4/4 sections, ${frCount} FR, ${acCount} AC.`
-        : `Spec review blocked: ${issues.length} issue(s).`,
+        : `Spec review needs fix: ${issues.length} issue(s).`,
     issues,
     metadata: { frCount, acCount, sections, reportPath },
   };

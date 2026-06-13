@@ -776,7 +776,7 @@ export class CommercializationGate
     }));
     const legacyFailed = legacyChecks.filter((c) => !c.passed);
     const legacyResult: PublishGateResult = {
-      conclusion: legacyFailed.length === 0 ? 'passed' : 'blocked',
+      conclusion: legacyFailed.length === 0 ? 'passed' : 'failed',
       checks: legacyChecks,
       failedChecks: legacyFailed,
     };

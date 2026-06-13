@@ -24,14 +24,14 @@ export interface OpenClawNotificationOptions {
 const EVENT_LABELS: Record<PipelineNotificationEvent, { emoji: string; label: string }> = {
   stage_completed:    { emoji: '✅', label: '阶段完成' },
   gate_passed:        { emoji: '🟢', label: '门禁通过' },
-  gate_blocked:       { emoji: '🔴', label: '门禁阻断' },
+  gate_advisory:      { emoji: '🟡', label: '门禁建议' },
   publish_success:    { emoji: '🚀', label: '发布成功' },
   publish_failed:     { emoji: '❌', label: '发布失败' },
   liveness_passed:    { emoji: '💚', label: 'Liveness 通过' },
   liveness_p0_failed: { emoji: '🚨', label: 'Liveness P0 失败' },
   gap_scan_result:    { emoji: '🔍', label: '差距扫描' },
   pipeline_completed: { emoji: '🎉', label: '流水线完成' },
-  pipeline_blocked:   { emoji: '⛔', label: '流水线阻断' },
+  pipeline_advisory:  { emoji: '🟡', label: '流水线建议' },
 };
 
 /** Format a PipelineNotification into a user-friendly markdown string. */

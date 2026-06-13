@@ -126,7 +126,7 @@ export const contractReviewGateHandler: StageHandler = async (ctx): Promise<Stag
     summary:
       verdict === 'pass'
         ? `Contract review passed: ${contractFiles.length} contracts cover ${frIds.length} FR.`
-        : `Contract review blocked: ${issues.length} issue(s).`,
+        : `Contract review needs fix: ${issues.length} issue(s).`,
     issues,
     metadata: {
       frCount: frIds.length,

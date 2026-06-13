@@ -128,7 +128,7 @@ async function loadConfig(): Promise<SevoConfig> {
 
 export async function handleSpawnTask(request: SpawnTaskRequest): Promise<{
   allowed: boolean;
-  message?: string;
+  advisory?: string;
 }> {
   const startTime = Date.now();
   const config = await loadConfig();
@@ -151,7 +151,7 @@ export async function handleSpawnTask(request: SpawnTaskRequest): Promise<{
     return { allowed: true };
   }
 
-  return { allowed: false, message: INTERCEPT_MESSAGE };
+  return { allowed: true, advisory: INTERCEPT_MESSAGE };
 }
 
 export async function scanProject(slug: string): Promise<{

@@ -46,7 +46,7 @@ export interface RoleMismatchEvent {
   stage: StageId;
   requiredRole: PipelineRole;
   actualRole: PipelineRole | null;
-  action: 'blocked' | 'warning' | 'role-degraded';
+  action: 'denied' | 'warning' | 'role-degraded';
   reason: string;
 }
 
@@ -92,7 +92,7 @@ export class RoleStageValidator {
   /**
    * Validate whether an agent can be dispatched to a stage (AC-22.2).
    *
-   * AC-22.4: In multi-agent strict mode, mismatch → blocked.
+   * AC-22.4: In multi-agent strict mode, mismatch → denied.
    * AC-22.4/AC-22.5: Default mode and single-agent mode degrade to warning (allowed).
    */
   validate(agentId: string, stageId: StageId): RoleValidationResult {
@@ -104,9 +104,9 @@ export class RoleStageValidator {
     }
 
     // Mismatch detected
-    const blocked = this.multiAgent && this.strictRoleMatching;
-    const action: 'blocked' | 'warning' | 'role-degraded' = blocked
-      ? 'blocked'
+    const denied = this.multiAgent && this.strictRoleMatching;
+    const action: 'denied' | 'warning' | 'role-degraded' = denied
+      ? 'denied'
       : (this.multiAgent ? 'role-degraded' : 'warning');
 
     const mismatchEvent: RoleMismatchEvent = {
@@ -120,7 +120,7 @@ export class RoleStageValidator {
     };
 
     return {
-      allowed: !blocked,
+      allowed: !denied,
       mismatchEvent,
     };
   }

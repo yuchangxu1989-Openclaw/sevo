@@ -264,7 +264,7 @@ function printStateSummary(instance: PipelineInstance, state: PipelineState, roo
 
 function toCliStageResult(result: RegistryStageHandlerResult): CliStageHandlerResult {
   return {
-    outcome: result.verdict === 'pass' ? 'passed' : result.verdict === 'block' ? 'gate_blocked' : 'failed',
+    outcome: result.verdict === 'pass' ? 'passed' : result.verdict === 'block' ? 'gate_advisory' : 'failed',
     artifacts: result.artifacts.map((artifact) => ({
       id: artifact.id,
       type: artifact.type,

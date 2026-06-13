@@ -138,7 +138,7 @@ export const publishGeneralizationGateHandler: StageHandler = async (
     summary:
       verdict === 'pass'
         ? `Generalization gate passed: 0 hard-coded leaks across ${scannedFiles} files.`
-        : `Generalization gate blocked: ${matches.length} hard-coded leak(s).`,
+        : `Generalization gate needs fix: ${matches.length} hard-coded leak(s).`,
     issues: matches.slice(0, 20).map((m) => `${m.pattern} ${m.file}:${m.line} — ${m.preview}`),
     metadata: { matches: matches.length, scannedFiles, reportPath },
   };

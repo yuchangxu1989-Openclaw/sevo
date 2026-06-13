@@ -62,7 +62,7 @@ export function registerShow(program: Command): void {
         console.log('\nStages:');
         for (const [stageId, record] of Object.entries(data.stages) as Array<[string, Record<string, unknown>]>) {
           const status = (record.status as string) ?? 'unknown';
-          const icon = status === 'passed' ? '✓' : status === 'active' ? '▶' : status === 'blocked' ? '✗' : status === 'skipped' ? '⊘' : '·';
+          const icon = status === 'passed' ? '✓' : status === 'active' ? '▶' : status === 'blocked' ? '⚠' : status === 'skipped' ? '⊘' : '·';
           console.log(`  ${icon} ${stageId}: ${status}`);
         }
       }

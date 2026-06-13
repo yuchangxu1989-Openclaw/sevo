@@ -282,7 +282,7 @@ export class PipelineEngine {
         failedStage,
         targetStage: null,
         reason: 'Rollback budget exhausted — repair-required advisory recorded',
-        blocked: false,
+        halted: false,
       };
     }
 
@@ -303,7 +303,7 @@ export class PipelineEngine {
         failedStage,
         targetStage: null,
         reason: `First stage '${failedStage}' has no rollback target — repair-required advisory recorded`,
-        blocked: false,
+        halted: false,
       };
     }
 
@@ -810,7 +810,7 @@ export class PipelineEngine {
 
 // ── Pipeline-level status (distinct from stage-level StageStatus) ──
 
-export type PipelineLifecycle = 'created' | 'running' | 'completed' | 'failed' | 'blocked' | 'paused' | 'cancelled' | 'awaiting-clarification';
+export type PipelineLifecycle = 'created' | 'running' | 'completed' | 'failed' | 'paused' | 'cancelled' | 'awaiting-clarification';
 
 export interface PipelineSummary {
   pipelineId: string;
@@ -1022,7 +1022,7 @@ export class PipelineEngineFacade {
     record.updatedAt = new Date().toISOString();
     record.state.updatedAt = record.updatedAt;
 
-    this.ledger.append(pipelineId, { type: 'pipeline_pause_advisory' });
+    this.ledger.append(pipelineId, { type: 'pipeline_paused' });
     return this.toSummary(record);
   }
 

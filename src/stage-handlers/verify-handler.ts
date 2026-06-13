@@ -179,7 +179,7 @@ export const verifyHandler: StageHandler = async (ctx): Promise<StageHandlerResu
     summary:
       verdict === 'pass'
         ? `Verify passed: ${checks.length} check(s) all green. Standard: ${HEALTHCHECK_STANDARD_RELATIVE_PATH}.`
-        : `Verify blocked: ${checks.filter((c) => !c.passed).length} check(s) failed. Follow ${HEALTHCHECK_STANDARD_RELATIVE_PATH}.`,
+        : `Verify needs fix: ${checks.filter((c) => !c.passed).length} check(s) failed. Follow ${HEALTHCHECK_STANDARD_RELATIVE_PATH}.`,
     issues: checks.filter((c) => !c.passed).map((c) => `${c.name}: ${c.detail}`),
     metadata: { checks, reportPath, standardPath: HEALTHCHECK_STANDARD_RELATIVE_PATH },
   };

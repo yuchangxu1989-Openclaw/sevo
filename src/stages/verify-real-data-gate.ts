@@ -653,7 +653,7 @@ export const verifyWithRealDataHandler: StageHandler = async (ctx) => {
   const gate = new VerifyWithRealDataGate();
   const report = await gate.execute(ctx);
   const dbResult = report.databaseAuthenticity;
-  const blockedTables = (dbResult?.tables ?? []).filter((table) => !table.pass);
+  const failedTables = (dbResult?.tables ?? []).filter((table) => !table.pass);
 
   const artifacts: ArtifactRef[] = [];
   if (report.reportPath) {
@@ -669,7 +669,7 @@ export const verifyWithRealDataHandler: StageHandler = async (ctx) => {
     stageId: 'verify' as import('../types/index.js').StageId,
     verdict: report.pass ? 'pass' : 'block',
     artifacts,
-    summary: `Verify-with-real-data: ${report.successCount}/${report.totalMaterials} materials processed (failure rate: ${(report.failureRate * 100).toFixed(1)}%), DB tables blocked: ${blockedTables.length}`,
+    summary: `Verify-with-real-data: ${report.successCount}/${report.totalMaterials} materials processed (failure rate: ${(report.failureRate * 100).toFixed(1)}%), DB tables failed: ${failedTables.length}`,
     issues: report.pass
       ? []
       : [
@@ -681,7 +681,7 @@ export const verifyWithRealDataHandler: StageHandler = async (ctx) => {
               ]
             : []),
           ...(report.totalMaterials === 0 ? ['No real materials were discovered for verify-with-real-data'] : []),
-          ...blockedTables.map(
+          ...failedTables.map(
             (table) =>
               `DB FAIL: ${path.basename(table.databasePath)}:${table.tableName} flagged ${(table.issueRatio * 100).toFixed(1)}% of ${table.rowCount} rows`,
           ),
