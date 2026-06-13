@@ -1,0 +1,14 @@
+{"timestamp":"2026-06-13T05:01:36.564Z","type":"run-created","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"projectSlug":"test-rfloop-v3","currentStageId":"specify","entryType":"manual","routeDecision":null}}
+{"timestamp":"2026-06-13T05:01:36.565Z","type":"stage-advanced","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"stageId":"specify","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T05:01:36.566Z","type":"stage-advanced","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"stageId":"spec-review","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T05:01:36.567Z","type":"stage-advanced","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"stageId":"design","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T05:01:36.568Z","type":"stage-advanced","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"stageId":"design-review","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T05:01:36.569Z","type":"stage-advanced","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"stageId":"implement","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T05:01:36.572Z","type":"run-patched","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-13T05:01:36.573Z","type":"run-patched","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-13T05:01:36.575Z","type":"stage-advanced","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"stageId":"code-review","status":"repairing","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-13T05:01:36.576Z","type":"run-patched","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"fields":["stages"]}}
+{"timestamp":"2026-06-13T05:01:36.577Z","type":"run-patched","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"fields":["currentStageId","stages"]}}
+{"timestamp":"2026-06-13T05:01:36.578Z","type":"run-patched","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"fields":["nextAction"]}}
+{"timestamp":"2026-06-13T05:01:36.581Z","type":"stage-advanced","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"stageId":"implement","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T05:01:36.584Z","type":"run-closed","pipelineRunId":"6e1673d7-36c4-43df-bd01-181bbe1d5c21","data":{"status":"completed","reason":"debug cleanup"}}

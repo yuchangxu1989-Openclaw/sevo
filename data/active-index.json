@@ -128,7 +128,7 @@
     "664134f6-7bdc-4d5a-b0ff-362510e33fa0": {
       "projectSlug": "kivo",
       "status": "running",
-      "currentStageId": "fix"
+      "currentStageId": "smoke-test"
     },
     "f9fd8480-98af-44ac-afc1-d5ded0500da1": {
       "projectSlug": "sevo",

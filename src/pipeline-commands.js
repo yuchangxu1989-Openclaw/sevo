@@ -73,10 +73,7 @@ function scopeFingerprint(goal) {
 }
 
 function validateStagePlanSkips(stagePlan) {
-  const protectedStage = protectedSkippedStage(stagePlan);
-  return protectedStage
-    ? `Error: stage "${protectedStage}" is mandatory and cannot be pre-skipped.`
-    : null;
+  return null;
 }
 /**
  * Format a run into a one-line status summary.
@@ -203,7 +200,13 @@ function cmdSkip(args, deps) {
   const stageState = run.stages?.[targetStage];
   if (!stageState) return `Error: stage "${targetStage}" not found in run.`;
   if (isProtectedStage(targetStage)) {
-    return `Error: stage "${targetStage}" is mandatory and cannot be skipped.`;
+    appendAdvisory(run.pipelineRunId, {
+      stageId: targetStage,
+      type: 'skip-advisory',
+      severity: 'warn',
+      message: `review stage "${targetStage}" skipped — findings may be missed`,
+      evidence: ['cmdSkip: user-requested skip of review stage'],
+    }, deps);
   }
   if (stageState.status === 'passed' || stageState.status === 'skipped') {
     return `Error: stage "${targetStage}" already ${stageState.status}.`;

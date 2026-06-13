@@ -21,6 +21,7 @@ state/
 !src/stage-policy.js
 !src/stage-pipeline-config.js
 !src/advisory-ledger.js
+!src/review-fix-loop.js
 !src/consistency-check-plan.js
 !src/context-injection/*.js
 !index.js

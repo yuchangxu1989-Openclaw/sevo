@@ -11,14 +11,14 @@
 export type PipelineNotificationEvent =
   | 'stage_completed'
   | 'gate_passed'
-  | 'gate_blocked'
+  | 'gate_advisory'
   | 'publish_success'
   | 'publish_failed'
   | 'liveness_passed'
   | 'liveness_p0_failed'
   | 'gap_scan_result'
   | 'pipeline_completed'
-  | 'pipeline_blocked';
+  | 'pipeline_advisory';
 
 /** Payload delivered to a NotificationAdapter. */
 export interface PipelineNotification {

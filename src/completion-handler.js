@@ -5,6 +5,7 @@ import { append as appendAdvisory } from './advisory-ledger.js';
 import { getStageMapping } from '../task-mapper.js';
 import { FULL_PIPELINE_STAGES } from './stage-policy.js';
 import { getStageConfig, getEntryCriteria, getExitCriteria, getRoleHint } from './stage-pipeline-config.js';
+import { evaluateReviewFixLoop, incrementFixLoopRound, isReviewFixCycle } from './review-fix-loop.js';
 
 const DEFAULT_MAX_ADVANCES_PER_RUN_ROUND = 3;
 const COMPLETED_STAGE_STATUSES = new Set(['passed', 'completed', 'repairing', 'cancelled', 'skipped']);
@@ -481,11 +482,202 @@ function buildAdvisorySummary(findingsInfo, advisoryCount) {
   return parts.join('; ') || null;
 }
 
+function buildFixLoopActionText(nextAction) {
+  return [
+    '[SEVO V2 nextAction — review-fix loop]',
+    `Pipeline run ${nextAction.pipelineRunId}`,
+    `Project: ${nextAction.projectSlug}`,
+    `Review stage: ${nextAction.completedStageId} found actionable issues (round ${nextAction.fixRound})`,
+    `Dispatching fix to: ${nextAction.nextStageId}`,
+    `Label: ${nextAction.dispatch.label}`,
+    `Timeout: ${nextAction.dispatch.timeout}s`,
+    `After fix completes, re-review via: ${nextAction.reReviewTarget}`,
+    nextAction.fixContext ? `\nFix context:\n${nextAction.fixContext}` : null,
+    nextAction.advisorySummary ? `Advisory: ${nextAction.advisorySummary}` : null,
+  ].filter(Boolean).join('\n');
+}
+
+function buildFixLoopBailText(nextAction) {
+  return [
+    '[SEVO V2 nextAction — review-fix loop EXHAUSTED]',
+    `Pipeline run ${nextAction.pipelineRunId}`,
+    `Project: ${nextAction.projectSlug}`,
+    `Review stage: ${nextAction.completedStageId} — fix loop exhausted after ${nextAction.round} rounds`,
+    `Manual decision required. Pipeline paused (advisory-only, not blocked).`,
+    nextAction.advisorySummary ? `Advisory: ${nextAction.advisorySummary}` : null,
+  ].filter(Boolean).join('\n');
+}
+
+function buildReReviewActionText(nextAction) {
+  return [
+    '[SEVO V2 nextAction — re-review after fix]',
+    `Pipeline run ${nextAction.pipelineRunId}`,
+    `Project: ${nextAction.projectSlug}`,
+    `Fix stage: ${nextAction.completedStageId} completed (round ${nextAction.fixRound})`,
+    `Dispatching re-review to: ${nextAction.nextStageId}`,
+    `Label: ${nextAction.dispatch.label}`,
+    `Timeout: ${nextAction.dispatch.timeout}s`,
+    nextAction.advisorySummary ? `Advisory: ${nextAction.advisorySummary}` : null,
+  ].filter(Boolean).join('\n');
+}
+
+function findActiveFixLoopReviewStage(run, completedStageId) {
+  const configs = FULL_PIPELINE_STAGES
+    .map((sid) => ({ stageId: sid, config: getStageConfig(sid) }))
+    .filter((entry) => entry.config?.isReviewPhase && entry.config.cycleTarget === completedStageId);
+  for (const { stageId } of configs) {
+    const stage = run.stages?.[stageId];
+    if (stage && Number(stage.fixLoopRound || 0) > 0 && stage.status === 'repairing') {
+      return stageId;
+    }
+  }
+  return null;
+}
+
 function computeAdvance(run, completedStageId, deps = {}) {
   const runStore = deps.runStore || defaultRunStore;
   const completedStageStatus = run.stages?.[completedStageId]?.status || 'completed';
   const nextStageId = getNextStageId(run, completedStageId, completedStageStatus);
   const advisorySummary = buildAdvisorySummary(deps._findingsSummary, deps._completionAdvisoryCount || 0);
+
+  const stageConfig = getStageConfig(completedStageId);
+  if (stageConfig?.isReviewPhase && nextStageId && isReviewFixCycle(completedStageId, nextStageId, stageConfig)) {
+    const loopResult = evaluateReviewFixLoop(
+      run, completedStageId, completedStageStatus, stageConfig, deps._findingsSummary, { maxFixRounds: deps.maxFixRounds }
+    );
+
+    if (loopResult.action === 'dispatch-fix') {
+      const fixAttempt = (run.stages?.[loopResult.cycleTarget]?.attempt || 1) + 1;
+      if (typeof runStore.patchRun === 'function') {
+        const stages = { ...(run.stages || {}) };
+        stages[completedStageId] = {
+          ...(stages[completedStageId] || {}),
+          fixLoopRound: (Number(stages[completedStageId]?.fixLoopRound || 0)) + 1,
+        };
+        stages[loopResult.cycleTarget] = {
+          ...(stages[loopResult.cycleTarget] || {}),
+          status: 'active',
+          startedAt: new Date().toISOString(),
+          completedAt: null,
+          attempt: fixAttempt,
+        };
+        runStore.patchRun(run.pipelineRunId, { currentStageId: loopResult.cycleTarget, stages });
+      }
+      const dispatchParams = resolveStageDispatchParams(nextStageId, deps);
+      const { label } = buildDispatchContract({
+        projectSlug: run.projectSlug,
+        pipelineRunId: run.pipelineRunId,
+        stageId: nextStageId,
+        attempt: fixAttempt,
+      });
+      const nextAction = {
+        kind: 'dispatch-fix',
+        pipelineRunId: run.pipelineRunId,
+        projectSlug: run.projectSlug,
+        completedStageId,
+        completedStageStatus,
+        nextStageId,
+        fixRound: loopResult.round,
+        fixContext: loopResult.fixContext,
+        reReviewTarget: completedStageId,
+        dispatch: {
+          label,
+          agentId: dispatchParams.agentId || null,
+          tier: dispatchParams.tier || null,
+          timeout: Number(dispatchParams.timeout || 1200),
+        },
+        entryCriteria: getEntryCriteria(nextStageId) || null,
+        exitCriteria: getExitCriteria(nextStageId) || null,
+        advisorySummary,
+        createdAt: new Date().toISOString(),
+      };
+      const persistedRun = persistNextAction(run, nextAction, runStore);
+      return {
+        advanceText: buildFixLoopActionText(nextAction),
+        nextAction,
+        nextStageId,
+        runSnapshot: persistedRun,
+        dispatchHint: nextAction.dispatch,
+      };
+    }
+
+    if (loopResult.action === 'bail-advisory') {
+      appendAdvisory(run.pipelineRunId, loopResult.advisory, { runStore });
+      const nextAction = {
+        kind: 'review-fix-bail',
+        pipelineRunId: run.pipelineRunId,
+        projectSlug: run.projectSlug,
+        completedStageId,
+        completedStageStatus,
+        round: loopResult.round,
+        reason: loopResult.reason,
+        advisorySummary,
+        createdAt: new Date().toISOString(),
+      };
+      const persistedRun = persistNextAction(run, nextAction, runStore);
+      return {
+        advanceText: buildFixLoopBailText(nextAction),
+        nextAction,
+        nextStageId: null,
+        runSnapshot: persistedRun,
+      };
+    }
+  }
+
+  // Fix-completion detection: if this stage is a cycleTarget of a review stage
+  // that's in an active fix loop, route back to re-review
+  if (completedStageStatus === 'passed' && !stageConfig?.isReviewPhase) {
+    const reviewStageForFixLoop = findActiveFixLoopReviewStage(run, completedStageId);
+    if (reviewStageForFixLoop) {
+      const reviewAttempt = (run.stages?.[reviewStageForFixLoop]?.attempt || 1) + 1;
+      if (typeof runStore.patchRun === 'function') {
+        const stages = { ...(run.stages || {}) };
+        stages[reviewStageForFixLoop] = {
+          ...(stages[reviewStageForFixLoop] || {}),
+          status: 'active',
+          startedAt: new Date().toISOString(),
+          completedAt: null,
+          attempt: reviewAttempt,
+        };
+        runStore.patchRun(run.pipelineRunId, { currentStageId: reviewStageForFixLoop, stages });
+      }
+      const dispatchParams = resolveStageDispatchParams(reviewStageForFixLoop, deps);
+      const { label } = buildDispatchContract({
+        projectSlug: run.projectSlug,
+        pipelineRunId: run.pipelineRunId,
+        stageId: reviewStageForFixLoop,
+        attempt: reviewAttempt,
+      });
+      const round = run.stages?.[reviewStageForFixLoop]?.fixLoopRound || 1;
+      const nextAction = {
+        kind: 'dispatch-re-review',
+        pipelineRunId: run.pipelineRunId,
+        projectSlug: run.projectSlug,
+        completedStageId,
+        completedStageStatus,
+        nextStageId: reviewStageForFixLoop,
+        fixRound: round,
+        dispatch: {
+          label,
+          agentId: dispatchParams.agentId || null,
+          tier: dispatchParams.tier || null,
+          timeout: Number(dispatchParams.timeout || 1200),
+        },
+        entryCriteria: getEntryCriteria(reviewStageForFixLoop) || null,
+        exitCriteria: getExitCriteria(reviewStageForFixLoop) || null,
+        advisorySummary,
+        createdAt: new Date().toISOString(),
+      };
+      const persistedRun = persistNextAction(run, nextAction, runStore);
+      return {
+        advanceText: buildReReviewActionText(nextAction),
+        nextAction,
+        nextStageId: reviewStageForFixLoop,
+        runSnapshot: persistedRun,
+        dispatchHint: nextAction.dispatch,
+      };
+    }
+  }
 
   if (!nextStageId) {
     const completedRun = markRunCompleteIfPossible(run, runStore);

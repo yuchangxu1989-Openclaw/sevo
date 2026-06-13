@@ -10,15 +10,14 @@ SEVO 只有一条完整阶段链，所有入口统一使用同一阶段队列。
 
 当前代码中的 ALL_STAGES 主链阶段顺序为：
 
-spec -> spec-review-gate -> test-case-authoring -> ux-acceptance-authoring -> commercial-acceptance-authoring -> ux-interaction-design -> architecture-design -> contract -> contract-review-gate -> implement -> review -> smoke-test -> ux-acceptance -> pm-commercial-review -> regression -> publish-generalization-gate -> deploy -> verify -> readme -> post-release-validation -> clean-install-verification -> ledger。
+specify -> spec-review -> design -> design-review -> implement -> code-review -> smoke -> publish -> post-release-verify -> ledger。
 
 阶段说明：
 
-- `publish-generalization-gate` 是主链中的发布通用化门禁，同时负责通用化检查与发布分流；不得拆成代码不可解析的独立阶段。
-- `readme` 由终局链补齐，位置在 verify 之后、post-release-validation 之前；若 README 无需变更，也必须写出不变更理由和证据。
+- `code-review` 是 implement 后的审计阶段，review-fix loop 是其衍生循环（fix 不是主链阶段）。
+- `publish` 包含通用化检查与发布，不拆独立 gate。
 - ALL_STAGES 中的阶段必须按上述名称和顺序执行；设计审计、review-fix loop、e2e 验证和 convergence gap 扫描是派生/辅助处理规则，不得写入主链阶段总览。
-- 设计审计衍生阶段：ux-interaction-design-design-review-*、architecture-design-*-design-review-* 以及对应 fix 阶段，由设计产物完成后自动排队；它们是 implement 的准入门禁。
-- review-fix loop 衍生阶段：*-rfl-fix-*、*-rfl-reval-*，由审计阻断项触发；修复和复验闭环完成前不得继续下游。
+- review-fix loop 衍生循环：由 review 阶段产出 findings 后自动回到对应实现阶段修复，修复后重新进入 review；闭环完成前以 advisory 方式提示，不阻断主线。
 
 只要 SEVO advance prompt 要求某阶段，主 Agent 直接执行，不二次判断阶段是否应存在。
 

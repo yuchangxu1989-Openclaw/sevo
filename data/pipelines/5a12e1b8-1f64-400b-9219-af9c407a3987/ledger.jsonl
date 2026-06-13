@@ -1,0 +1,12 @@
+{"timestamp":"2026-06-13T04:53:22.613Z","type":"run-created","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"projectSlug":"test-review-fix-loop","currentStageId":"specify","entryType":"manual","routeDecision":null}}
+{"timestamp":"2026-06-13T04:53:22.614Z","type":"stage-advanced","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"stageId":"specify","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T04:53:22.615Z","type":"stage-advanced","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"stageId":"spec-review","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T04:53:22.615Z","type":"stage-advanced","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"stageId":"design","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T04:53:22.616Z","type":"stage-advanced","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"stageId":"design-review","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T04:53:22.617Z","type":"stage-advanced","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"stageId":"implement","status":"passed","artifacts":[]}}
+{"timestamp":"2026-06-13T04:53:22.619Z","type":"run-patched","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-13T04:53:22.622Z","type":"run-patched","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-13T04:53:22.623Z","type":"stage-advanced","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"stageId":"code-review","status":"repairing","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-13T04:53:22.624Z","type":"run-patched","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"fields":["stages"]}}
+{"timestamp":"2026-06-13T04:53:22.625Z","type":"run-patched","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"fields":["nextAction"]}}
+{"timestamp":"2026-06-13T04:53:22.629Z","type":"run-closed","pipelineRunId":"5a12e1b8-1f64-400b-9219-af9c407a3987","data":{"status":"completed","reason":"test cleanup"}}

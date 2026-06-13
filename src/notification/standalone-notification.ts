@@ -12,14 +12,14 @@ import type { NotificationAdapter, PipelineNotification, PipelineNotificationEve
 const EVENT_ICONS: Record<PipelineNotificationEvent, string> = {
   stage_completed:    '[DONE]',
   gate_passed:        '[PASS]',
-  gate_blocked:       '[BLOCK]',
+  gate_advisory:      '[ADVISORY]',
   publish_success:    '[PUBLISH OK]',
   publish_failed:     '[PUBLISH FAIL]',
   liveness_passed:    '[LIVENESS OK]',
   liveness_p0_failed: '[LIVENESS P0 FAIL]',
   gap_scan_result:    '[GAP SCAN]',
   pipeline_completed: '[PIPELINE OK]',
-  pipeline_blocked:   '[PIPELINE BLOCK]',
+  pipeline_advisory:  '[PIPELINE ADVISORY]',
 };
 
 function formatStdout(n: PipelineNotification): string {

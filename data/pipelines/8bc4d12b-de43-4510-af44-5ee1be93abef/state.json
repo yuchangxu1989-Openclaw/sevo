@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "8bc4d12b-de43-4510-af44-5ee1be93abef",
+  "projectSlug": "test-rfloop-v4",
+  "projectRoot": "projects/test-rfloop",
+  "goal": "test review-fix loop v4",
+  "scopeFingerprint": "sha256:814ab9f4fce5539845b9b7ccdb44e42ecda968f2c48d8348b36fb5b1bee1a385",
+  "status": "completed",
+  "entryType": "manual",
+  "lifecycle": {
+    "createdAt": "2026-06-13T05:03:55.494Z",
+    "startedAt": "2026-06-13T05:03:55.494Z",
+    "completedAt": "2026-06-13T05:03:55.516Z",
+    "cancelledAt": null,
+    "archivedAt": null,
+    "lastActivityAt": "2026-06-13T05:03:55.516Z",
+    "staleDetectedAt": null,
+    "terminalReason": "test cleanup"
+  },
+  "stagePlan": {
+    "ordered": [
+      "specify",
+      "spec-review",
+      "design",
+      "design-review",
+      "implement",
+      "code-review",
+      "smoke",
+      "publish",
+      "post-release-verify",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "smoke",
+  "stages": {
+    "specify": {
+      "status": "passed",
+      "startedAt": "2026-06-13T05:03:55.494Z",
+      "completedAt": "2026-06-13T05:03:55.498Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "spec-review": {
+      "status": "passed",
+      "startedAt": "2026-06-13T05:03:55.498Z",
+      "completedAt": "2026-06-13T05:03:55.498Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "design": {
+      "status": "passed",
+      "startedAt": "2026-06-13T05:03:55.498Z",
+      "completedAt": "2026-06-13T05:03:55.499Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "design-review": {
+      "status": "passed",
+      "startedAt": "2026-06-13T05:03:55.499Z",
+      "completedAt": "2026-06-13T05:03:55.500Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "passed",
+      "startedAt": "2026-06-13T05:03:55.505Z",
+      "completedAt": "2026-06-13T05:03:55.510Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 2
+    },
+    "code-review": {
+      "status": "passed",
+      "startedAt": "2026-06-13T05:03:55.511Z",
+      "completedAt": "2026-06-13T05:03:55.514Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 2,
+      "fixLoopRound": 1
+    },
+    "smoke": {
+      "status": "active",
+      "startedAt": "2026-06-13T05:03:55.504Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "publish": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "post-release-verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "77c38e4c-caef-4c3e-9de8-d26fffd4fb2a",
+      "runId": "8bc4d12b-de43-4510-af44-5ee1be93abef",
+      "stageId": "code-review",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"code-review\".",
+      "evidence": [],
+      "createdAt": "2026-06-13T05:03:55.502Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "57570173-9e1b-4aa5-a29c-8a5ca2283cdf",
+      "runId": "8bc4d12b-de43-4510-af44-5ee1be93abef",
+      "stageId": "code-review",
+      "type": "gate-advisory",
+      "severity": "must-review",
+      "message": "Stage \"code-review\" completed with repair-required advisory (source status: failed) findings: 2 (p0:1, p1:1)",
+      "evidence": [],
+      "createdAt": "2026-06-13T05:03:55.503Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "0ca7a46e-f60b-4142-935d-f0593d70dfd7",
+      "runId": "8bc4d12b-de43-4510-af44-5ee1be93abef",
+      "stageId": "implement",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"implement\" is missing required evidence fields: codeChanges, testRun",
+      "evidence": [
+        "codeChanges",
+        "testRun"
+      ],
+      "createdAt": "2026-06-13T05:03:55.510Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "eca67377-f663-4a21-9d9d-98c744e053c0",
+      "runId": "8bc4d12b-de43-4510-af44-5ee1be93abef",
+      "stageId": "code-review",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"code-review\".",
+      "evidence": [],
+      "createdAt": "2026-06-13T05:03:55.513Z",
+      "resolvedAt": null
+    }
+  ],
+  "nextAction": {
+    "kind": "dispatch-stage",
+    "pipelineRunId": "8bc4d12b-de43-4510-af44-5ee1be93abef",
+    "projectSlug": "test-rfloop-v4",
+    "completedStageId": "code-review",
+    "completedStageStatus": "passed",
+    "nextStageId": "smoke",
+    "dispatch": {
+      "label": "sevo:test-rfloop-v4:8bc4d12b:smoke:1",
+      "agentId": null,
+      "tier": "audit",
+      "timeout": 1200
+    },
+    "entryCriteria": "code-review 通过",
+    "exitCriteria": "冒烟测试全部通过",
+    "advisorySummary": "openAdvisories+=1",
+    "createdAt": "2026-06-13T05:03:55.515Z"
+  }
+}
