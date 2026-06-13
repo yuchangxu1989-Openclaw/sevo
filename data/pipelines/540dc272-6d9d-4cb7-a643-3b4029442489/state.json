@@ -5,16 +5,17 @@
   "projectRoot": "projects/sevo",
   "goal": "## 目标\n在 projects/sevo/CHANGELOG.md 中补充 2026-06-10 的修复记录。\n\n## 具体内容\n新增一个 2026-06-10 条目，包含：\n- dispatch 时自动创建 pipeline run（before_tool_call hook）\n- WORKSPACE_PROJECTS 作用域 bug 修复\n- completion-handler fallb",
   "scopeFingerprint": "sha256:4de851c711ee7c0049ba80a3a0e6e344a4ddbdcdd83eec7f8e0d71e0f6bca601",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-10T15:48:40.044Z",
     "startedAt": "2026-06-10T15:48:40.044Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-10T15:59:46.866Z",
+    "lastActivityAt": "2026-06-13T17:24:17.217Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.217Z"
   },
   "stagePlan": {
     "ordered": [

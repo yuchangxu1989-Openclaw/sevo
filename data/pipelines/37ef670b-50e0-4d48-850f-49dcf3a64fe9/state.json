@@ -5,16 +5,17 @@
   "projectRoot": "projects/e2e-cycle",
   "goal": "测试 review-fix 循环",
   "scopeFingerprint": "sha256:32a388e84448bf9bde76f1f9228843064be72659c351b73a05aebaa5af6350f2",
-  "status": "running",
+  "status": "archived",
   "entryType": "create",
   "lifecycle": {
     "createdAt": "2026-06-09T16:10:00.566Z",
     "startedAt": "2026-06-09T16:10:00.566Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-09T16:10:00.568Z",
+    "lastActivityAt": "2026-06-13T17:24:17.198Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.198Z"
   },
   "stagePlan": {
     "ordered": [

@@ -5,16 +5,17 @@
   "projectRoot": "projects/aco-notify",
   "goal": "## 目标\n修复 aco-notify 插件的 FR-F08 实现时序 bug：当前实现用 message_sending hook 做事后检查，但 spec 要求在 completion event 到达主会话时通过 before_prompt_build hook 注入强制提示到主会话上下文中。\n\n## 问题根因\ncompletion event 和主 Agent 回复在同一个 turn 内处",
   "scopeFingerprint": "sha256:e2250c3f05dd52a037196fcdf1dbda6329c9e8f154513ce1afa0e56dcd9babf5",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-11T07:57:37.145Z",
     "startedAt": "2026-06-11T07:57:37.145Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T07:57:37.145Z",
+    "lastActivityAt": "2026-06-13T17:24:17.240Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.240Z"
   },
   "stagePlan": {
     "ordered": [

@@ -5,16 +5,17 @@
   "projectRoot": "projects/kivo-reextract-and-web-verify",
   "goal": "## 目标\n用新的提取 prompt 重新跑一轮 KIVO 知识提取（覆盖最近 3 天会话），确保 DB 数据质量好（有描述性标题 + 有 why），然后 build KIVO Web 并重启服务，确保 Web 端正确显示意图知识库。\n\n## 方法论\n1. 先确认 KIVO 代码是否需要 build（检查 src mtime vs dist mtime）\n2. 如果需要 build：`cd /ro",
   "scopeFingerprint": "sha256:badff748e8ca65ac7540911684d8efbb1952c105019ec76b42705b2a49de4546",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-11T04:13:24.280Z",
     "startedAt": "2026-06-11T04:13:24.280Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T04:13:24.280Z",
+    "lastActivityAt": "2026-06-13T17:24:17.232Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.232Z"
   },
   "stagePlan": {
     "ordered": [

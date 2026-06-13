@@ -1,1 +1,2 @@
 {"timestamp":"2026-06-11T07:37:15.329Z","type":"run-created","pipelineRunId":"0d60d64a-8a5c-484f-83f5-f69838e18880","data":{"projectSlug":"sevo","currentStageId":"specify","entryType":"auto-dispatch","routeDecision":null}}
+{"timestamp":"2026-06-13T17:24:17.239Z","type":"run-closed","pipelineRunId":"0d60d64a-8a5c-484f-83f5-f69838e18880","data":{"status":"archived","reason":"expired: no activity for 24h"}}

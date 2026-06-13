@@ -5,16 +5,17 @@
   "projectRoot": "projects/test",
   "goal": "Test findings in cycle",
   "scopeFingerprint": "sha256:6f5d6f30c61085d4d90e7a66f158da14bdf0b8742c40cc741dd3f2c242e77519",
-  "status": "running",
+  "status": "archived",
   "entryType": "create",
   "lifecycle": {
     "createdAt": "2026-06-10T11:54:40.363Z",
     "startedAt": "2026-06-10T11:54:40.363Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-10T11:54:40.373Z",
+    "lastActivityAt": "2026-06-13T17:24:17.203Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.203Z"
   },
   "stagePlan": {
     "ordered": [

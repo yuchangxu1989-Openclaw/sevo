@@ -1,1 +1,2 @@
 {"timestamp":"2026-06-10T15:17:23.445Z","type":"run-created","pipelineRunId":"773b4b93-0965-4e2b-9627-75157b96f6c5","data":{"projectSlug":"completion-handler","currentStageId":"fix","entryType":"auto-dispatch","routeDecision":null}}
+{"timestamp":"2026-06-13T17:24:17.212Z","type":"run-closed","pipelineRunId":"773b4b93-0965-4e2b-9627-75157b96f6c5","data":{"status":"archived","reason":"expired: no activity for 24h"}}

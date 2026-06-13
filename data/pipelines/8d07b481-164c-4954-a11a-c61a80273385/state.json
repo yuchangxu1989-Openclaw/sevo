@@ -5,16 +5,17 @@
   "projectRoot": "projects/sevo",
   "goal": "## 目标\n在 SEVO 操作手册（projects/sevo/docs/sevo-operations-guide.md）中补充一段\"dispatch 自动创建 pipeline run\"的操作说明。\n\n## 具体任务\n找到操作手册中\"advisory handshake\"相关段落，在其后新增一段说明：\n- dispatch 带 sevo: label 时，SEVO 插件 before_tool",
   "scopeFingerprint": "sha256:3b4481b71b7d4bf3119ea443ae2e79a05b39814ab09536e7b1b129c08b68b45a",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-10T15:03:53.338Z",
     "startedAt": "2026-06-10T15:03:53.338Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-10T15:38:10.568Z",
+    "lastActivityAt": "2026-06-13T17:24:17.210Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.210Z"
   },
   "stagePlan": {
     "ordered": [

@@ -22,7 +22,7 @@ const SPAWN_DISCIPLINE_TEXT = [
   '- 所有研发活动（需求/设计/实现/审计/发布）通过 sevo:<stage> label 进入流水线',
   '- SEVO advance prompt = 用户指令，收到即执行，不二次判断',
   '- 永远向前走：SEVO 只产出 advisory，不阻断主会话行动',
-  '- 单一阶段链（10阶段）：specify→spec-review→design→design-review→implement→code-review→smoke→publish→post-release-verify→ledger，不跳阶段',
+  '- 单一阶段链（10阶段）：spec→spec-review-gate→plan→plan-review-gate→implement→implement-review-gate→regression→deploy→verify→ledger，不跳阶段',
   '- Spec-first：派发前确认 FR/AC 覆盖，缺口作为 advisory 记录',
   '- 一致性闭环：审计偏差→回对应阶段修复→复验通过才继续',
   '- 目标不清时先澄清再行动，用户确认后才收敛',

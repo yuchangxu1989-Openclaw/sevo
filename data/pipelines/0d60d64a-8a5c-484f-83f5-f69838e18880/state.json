@@ -5,16 +5,17 @@
   "projectRoot": "projects/sevo",
   "goal": "## 目标\n重写 SEVO spec 飞书文档中的「核心设计原则」段落，替换现有的\"SEVO 流水线五条原则\"为新的 7 条原则。\n\n## 操作顺序（强制）\n1. 先用 `lark-cli docs +update` 直接改飞书真相源（doc token: Upo4d1Jucora14xAKVVcEdSInSb）\n2. 改完后 `lark-cli docs +fetch --doc Upo4d1J",
   "scopeFingerprint": "sha256:cdfaedafe80ca2f6a40a059c59407051fe34d7750c4c36e55ae70cb57ca37d90",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-11T07:37:15.327Z",
     "startedAt": "2026-06-11T07:37:15.327Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T07:37:15.327Z",
+    "lastActivityAt": "2026-06-13T17:24:17.238Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.238Z"
   },
   "stagePlan": {
     "ordered": [

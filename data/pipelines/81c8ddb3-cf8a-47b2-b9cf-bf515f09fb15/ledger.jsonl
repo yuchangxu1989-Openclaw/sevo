@@ -1,1 +1,2 @@
 {"timestamp":"2026-06-11T04:13:24.282Z","type":"run-created","pipelineRunId":"81c8ddb3-cf8a-47b2-b9cf-bf515f09fb15","data":{"projectSlug":"kivo-reextract-and-web-verify","currentStageId":"fix","entryType":"auto-dispatch","routeDecision":null}}
+{"timestamp":"2026-06-13T17:24:17.232Z","type":"run-closed","pipelineRunId":"81c8ddb3-cf8a-47b2-b9cf-bf515f09fb15","data":{"status":"archived","reason":"expired: no activity for 24h"}}

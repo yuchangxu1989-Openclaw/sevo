@@ -5,16 +5,17 @@
   "projectRoot": "projects/aco",
   "goal": "## 目标\n把 ACO 项目（projects/aco/src/）中所有用 LLM 做语义分类/路由判断的地方，统一替换为向量化模型（volcengine-ark doubao-embedding-vision-251215）做 cosine similarity 匹配。\n\n## 背景\n用户指令：\"做路由的语义分类应该用向量化模型，用向量检索或者向量匹配来判断。不应该用LLM了！所有插件都是！包括",
   "scopeFingerprint": "sha256:348dbc6bf6da07cb85cf7bee77956b784c3224fdb4441faeb9aaa31b02678016",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-10T16:25:01.217Z",
     "startedAt": "2026-06-10T16:25:01.217Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-10T16:25:01.217Z",
+    "lastActivityAt": "2026-06-13T17:24:17.218Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.218Z"
   },
   "stagePlan": {
     "ordered": [

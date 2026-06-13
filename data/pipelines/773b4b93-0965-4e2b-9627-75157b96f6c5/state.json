@@ -5,16 +5,17 @@
   "projectRoot": "projects/completion-handler",
   "goal": "## 目标\n修复 SEVO V2 completion-handler 在 subagent_ended 时报 \"pipeline-not-found\" 的问题，让 implement 阶段完成后能自动 advance 到 review。\n\n## 问题描述\n实际验证发现：dispatch 时 before_tool_call 正确创建了 run（日志证实 `[sevo-v2] auto-creat",
   "scopeFingerprint": "sha256:dc35b2559dfed1dfcf2998a65099c78f8c08d33ef8bb382f3afbb79c63bb2cfe",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-10T15:17:23.444Z",
     "startedAt": "2026-06-10T15:17:23.444Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-10T15:17:23.444Z",
+    "lastActivityAt": "2026-06-13T17:24:17.211Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.211Z"
   },
   "stagePlan": {
     "ordered": [

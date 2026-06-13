@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 export const PIPELINE_STAGES = [
-  'specify',
+  'spec',
   'plan',
   'implement',
   'review',
@@ -137,7 +137,7 @@ export class ContextInjector {
     const srcDir = join(resolved, 'src');
 
     switch (stage) {
-      case 'specify':
+      case 'spec':
         return this.buildSpecifyContext(specPath, arcPath);
       case 'plan':
         return this.buildPlanContext(specPath, adrDir);
@@ -152,7 +152,7 @@ export class ContextInjector {
 
   buildSpecifyContext(specPath, arcPath) {
     const blocks = [];
-    blocks.push('## Context Injection (Stage: specify)');
+    blocks.push('## Context Injection (Stage: spec)');
 
     const spec = safeReadFile(specPath);
     if (spec) {

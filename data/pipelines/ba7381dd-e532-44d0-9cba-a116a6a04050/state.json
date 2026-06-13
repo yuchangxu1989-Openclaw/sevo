@@ -5,16 +5,17 @@
   "projectRoot": "projects/sevo-completion-handler-lookup-v3",
   "goal": "## 目标\n彻底修复 SEVO completion-handler 在真实运行时报 pipeline-not-found 的问题。dispatch 阶段能 auto-create pipeline run，但 completion 阶段找不到它。\n\n## 事实证据\n- dispatch 时 auto-create 成功（日志：pipelineRunId=540dc272 projectSlug=",
   "scopeFingerprint": "sha256:a46ab25c70f0bd80549935d8085eed325e22f5396a21ea875ab22660a61c273c",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-11T04:10:56.240Z",
     "startedAt": "2026-06-11T04:10:56.240Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T04:10:56.240Z",
+    "lastActivityAt": "2026-06-13T17:24:17.230Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.230Z"
   },
   "stagePlan": {
     "ordered": [

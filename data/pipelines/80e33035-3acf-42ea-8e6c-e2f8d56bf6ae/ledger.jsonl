@@ -6,3 +6,4 @@
 {"timestamp":"2026-06-10T11:54:40.372Z","type":"run-patched","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"fields":["openAdvisories"]}}
 {"timestamp":"2026-06-10T11:54:40.373Z","type":"stage-advanced","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"stageId":"review","status":"failed","artifacts":[],"dispatchId":null}}
 {"timestamp":"2026-06-10T11:54:40.374Z","type":"stage-reset-for-retry","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"stageId":"fix","attempt":2}}
+{"timestamp":"2026-06-13T17:24:17.203Z","type":"run-closed","pipelineRunId":"80e33035-3acf-42ea-8e6c-e2f8d56bf6ae","data":{"status":"archived","reason":"expired: no activity for 24h"}}

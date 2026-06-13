@@ -1,3 +1,4 @@
 {"timestamp":"2026-06-10T15:03:53.340Z","type":"run-created","pipelineRunId":"8d07b481-164c-4954-a11a-c61a80273385","data":{"projectSlug":"sevo","currentStageId":"implement","entryType":"auto-dispatch","routeDecision":null}}
 {"timestamp":"2026-06-10T15:38:10.568Z","type":"run-patched","pipelineRunId":"8d07b481-164c-4954-a11a-c61a80273385","data":{"fields":["openAdvisories"]}}
 {"timestamp":"2026-06-10T15:38:10.569Z","type":"stage-advanced","pipelineRunId":"8d07b481-164c-4954-a11a-c61a80273385","data":{"stageId":"implement","status":"passed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-13T17:24:17.210Z","type":"run-closed","pipelineRunId":"8d07b481-164c-4954-a11a-c61a80273385","data":{"status":"archived","reason":"expired: no activity for 24h"}}

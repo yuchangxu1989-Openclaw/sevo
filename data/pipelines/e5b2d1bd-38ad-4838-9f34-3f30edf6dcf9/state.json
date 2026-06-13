@@ -5,16 +5,17 @@
   "projectRoot": "projects/kivo",
   "goal": "kivo 修复问题",
   "scopeFingerprint": "sha256:e57c5dc05d535fb748bcd8171b949e792f459a271eaeed138a28211ffc865ec2",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-completion",
   "lifecycle": {
     "createdAt": "2026-06-10T14:32:32.637Z",
     "startedAt": "2026-06-10T14:32:32.637Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-10T14:32:32.640Z",
+    "lastActivityAt": "2026-06-13T17:24:17.206Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.206Z"
   },
   "stagePlan": {
     "ordered": [

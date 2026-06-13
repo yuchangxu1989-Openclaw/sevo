@@ -5,16 +5,17 @@
   "projectRoot": "projects/kivo",
   "goal": "## 目标\n修复两个问题：\n1. KIVO 知识提取脚本跑完后，意图知识库里 why 字段全部为\"暂无 why\"——提取 prompt 可能没要求生成 why 或 why 没正确写入 DB\n2. 官网 SEVO 页面（agentos.site/sevo.html）品字形布局上面那个大卡片缺少标题栏（深色横条 + \"SEVO Pipeline 运行面板\" + LIVE 标签）\n\n## 方法论\n问题 ",
   "scopeFingerprint": "sha256:17f7a2ff9eaa69d49387b7faf427ad845ccf1f7b0921200c2747c1002e97ac23",
-  "status": "running",
+  "status": "archived",
   "entryType": "auto-dispatch",
   "lifecycle": {
     "createdAt": "2026-06-11T03:13:36.353Z",
     "startedAt": "2026-06-11T03:13:36.353Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-11T04:32:53.650Z",
+    "lastActivityAt": "2026-06-13T17:24:17.228Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.228Z"
   },
   "stagePlan": {
     "ordered": [

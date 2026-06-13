@@ -1,3 +1,4 @@
 {"timestamp":"2026-06-11T03:13:36.355Z","type":"run-created","pipelineRunId":"aed6c0eb-5811-4be4-98fc-838738fe5ed3","data":{"projectSlug":"kivo","currentStageId":"fix","entryType":"auto-dispatch","routeDecision":null}}
 {"timestamp":"2026-06-11T04:32:53.649Z","type":"run-patched","pipelineRunId":"aed6c0eb-5811-4be4-98fc-838738fe5ed3","data":{"fields":["openAdvisories"]}}
 {"timestamp":"2026-06-11T04:32:53.651Z","type":"stage-advanced","pipelineRunId":"aed6c0eb-5811-4be4-98fc-838738fe5ed3","data":{"stageId":"fix","status":"passed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-13T17:24:17.229Z","type":"run-closed","pipelineRunId":"aed6c0eb-5811-4be4-98fc-838738fe5ed3","data":{"status":"archived","reason":"expired: no activity for 24h"}}

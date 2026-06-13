@@ -40,8 +40,8 @@
     "hash": "60bc0041ab244c7331679b1d0d1b565e"
   },
   "/root/.openclaw/workspace/projects/sevo/vitest.config.ts": {
-    "mtime": 1781024940.3955996,
-    "hash": "fb24fb701c391bf2f5410fd4eadc545e"
+    "mtime": 1781155882.9663687,
+    "hash": "263d410304bce59b4c613dd8041a038a"
   },
   "/root/.openclaw/workspace/projects/sevo/progress.js": {
     "mtime": 1777247873.4083927,
@@ -60,16 +60,16 @@
     "hash": "53a64d81bd4f977b6742b43698d20885"
   },
   "/root/.openclaw/workspace/projects/sevo/index.js": {
-    "mtime": 1781044721.496533,
-    "hash": "33d70a47fe861d4ece98717530fefa78"
+    "mtime": 1781262428.4309492,
+    "hash": "db2bbe20132fcfbe9c1edf230ce5e64f"
   },
   "/root/.openclaw/workspace/projects/sevo/bridge.js": {
     "mtime": 1780357063.0157986,
     "hash": "815de755b53e92620e069b6deda0e20c"
   },
   "/root/.openclaw/workspace/projects/sevo/test-e2e.mjs": {
-    "mtime": 1777337816.178075,
-    "hash": "06606a54de08639bafb0157150981b3e"
+    "mtime": 1781262428.2219455,
+    "hash": "d4ddcc43585d9a397d6ec801b9be9ccf"
   },
   "/root/.openclaw/workspace/projects/sevo/convergence.js": {
     "mtime": 1777247918.6645527,
@@ -92,44 +92,52 @@
     "hash": "8b72983bf5e48219b28c1e5b5f4c264a"
   },
   "/root/.openclaw/workspace/projects/sevo/bin/sevo.js": {
-    "mtime": 1777779951.6116347,
-    "hash": "748e901123e1b50cfe8d28b8e7829212"
+    "mtime": 1781200500.4691412,
+    "hash": "fa937c1c63cb1b205a6d4aed8ea138ad"
   },
   "/root/.openclaw/workspace/projects/sevo/src/prompt-injector.js": {
-    "mtime": 1781047086.1245394,
-    "hash": "35de938e0a0ecd8e435d978b96d00273"
+    "mtime": 1781365981.925124,
+    "hash": "a2d2a2dc2d60f51d1fa9eede7ac3f2a5"
+  },
+  "/root/.openclaw/workspace/projects/sevo/src/spec-coverage-check.js": {
+    "mtime": 1781367627.1882145,
+    "hash": "a1892905a08507550eefd485de2b510f"
   },
   "/root/.openclaw/workspace/projects/sevo/src/sevo.ts": {
     "mtime": 1779598937.7421722,
     "hash": "41f050c59d4ef78ef7b922d2caa271f9"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-policy.js": {
-    "mtime": 1781046712.3103707,
-    "hash": "1e40e7c9ac2cecbbc7099d370adb7b2a"
+    "mtime": 1781365317.9951854,
+    "hash": "54553c74c27aea5d1c87b9c0a5bbc778"
+  },
+  "/root/.openclaw/workspace/projects/sevo/src/stage-dispatch-contract.js": {
+    "mtime": 1781232274.3603332,
+    "hash": "7b13aa9edb2a1b93eeb1080993413fc8"
   },
   "/root/.openclaw/workspace/projects/sevo/src/pipeline-commands.js": {
-    "mtime": 1781046929.9109616,
-    "hash": "41adc366a006a70ef1fa37c7328f6965"
+    "mtime": 1781325651.4404144,
+    "hash": "edd1ecc638221a2f0154b7d5115141e3"
   },
   "/root/.openclaw/workspace/projects/sevo/src/constants.ts": {
     "mtime": 1780153723.0860548,
     "hash": "862bf569ce3b1c1700ea1c27bcc896d6"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/advance-prompt-templates.ts": {
-    "mtime": 1780909115.7423453,
-    "hash": "565dca6e0d65dc3e822b0a441f8b2f0f"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/label-protocol.js": {
-    "mtime": 1781071457.842911,
-    "hash": "4c8428de78acc40a2bd4878124ee672a"
+    "mtime": 1781365981.248113,
+    "hash": "19ad04b72a12506474c9f1092e780bea"
+  },
+  "/root/.openclaw/workspace/projects/sevo/src/stage-pipeline-config.js": {
+    "mtime": 1781365361.5299027,
+    "hash": "478c2b01481303e2ad642badfbe8e4a9"
   },
   "/root/.openclaw/workspace/projects/sevo/src/run-store.js": {
-    "mtime": 1781046796.6007617,
-    "hash": "95746a78331ae8691a60fa97c3be646c"
+    "mtime": 1781338650.1945949,
+    "hash": "5b0358c9eb5474a55515672a5d239117"
   },
   "/root/.openclaw/workspace/projects/sevo/src/index.js": {
-    "mtime": 1781075787.4690504,
-    "hash": "03b2d811a51e008bab589cb1149a84fd"
+    "mtime": 1781370050.1791337,
+    "hash": "17caec3fa14b03f4c7c0bd9858858984"
   },
   "/root/.openclaw/workspace/projects/sevo/src/index.ts": {
     "mtime": 1780886559.7857654,
@@ -151,6 +159,14 @@
     "mtime": 1781047818.929633,
     "hash": "1293974928f89dd4feff1cac4b2d5d41"
   },
+  "/root/.openclaw/workspace/projects/sevo/src/fr37-audit-reminder.js": {
+    "mtime": 1781155374.356998,
+    "hash": "f7024910808f564c099790dd69b4f65b"
+  },
+  "/root/.openclaw/workspace/projects/sevo/src/review-fix-loop.js": {
+    "mtime": 1781326184.089183,
+    "hash": "bf3d4abfa35149a7a4e1ab7bdea95418"
+  },
   "/root/.openclaw/workspace/projects/sevo/src/advance-prompt-contract.js": {
     "mtime": 1781048764.4062362,
     "hash": "4182af9c865ccd1bdec0a5ae45c5d154"
@@ -160,12 +176,12 @@
     "hash": "3bbbedc64cb6eea248bac25d2a568dc0"
   },
   "/root/.openclaw/workspace/projects/sevo/src/completion-handler.js": {
-    "mtime": 1781075714.3028443,
-    "hash": "3b0329efab6ae9ba58f55e7fc8756da7"
+    "mtime": 1781354121.9680912,
+    "hash": "ebebda7da0f2667a20a9aef6caf7b1d4"
   },
   "/root/.openclaw/workspace/projects/sevo/src/route-classifier.js": {
-    "mtime": 1781044837.4104438,
-    "hash": "2e3feb89bf557ba4a936459dbcc9944a"
+    "mtime": 1781153869.8402414,
+    "hash": "34c1f7128a22b1744cfcfb94d986a35d"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-export.ts": {
     "mtime": 1780886756.2829974,
@@ -192,32 +208,32 @@
     "hash": "83c958f11c698670bdad327016c08467"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-gate.ts": {
-    "mtime": 1780886756.2829974,
-    "hash": "3aec349ef73698a5d6c4c56b537bb652"
+    "mtime": 1781330969.3569822,
+    "hash": "e800d3004c33f807478ab204d9560bec"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-fr.ts": {
     "mtime": 1780886756.2829974,
     "hash": "fc8a7ffc1cb46ecae20c65e2a2c5936b"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/index.ts": {
-    "mtime": 1780886756.2859974,
-    "hash": "3301c2489d6d9e58de92b176f5647882"
+    "mtime": 1781262428.2199457,
+    "hash": "ddde60a6a12523e661210dee29e7f0a7"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-advance.ts": {
-    "mtime": 1780886756.2809973,
-    "hash": "47f97551f8b6ba318457b875ae58e370"
+    "mtime": 1781330995.4284117,
+    "hash": "a6d4b83d1a83e6ff127fffb9709b1696"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-doctor.ts": {
-    "mtime": 1780886756.2829974,
-    "hash": "a5bb7d060e67a0f6f26340a8873930d4"
+    "mtime": 1781331888.4181232,
+    "hash": "aee392728bd9106444c2fe1c7f716c7a"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-create.ts": {
     "mtime": 1780886756.2809973,
     "hash": "1a375ede7331694cc2f7b2ece536843c"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-pause.ts": {
-    "mtime": 1780886756.2849975,
-    "hash": "a405c9ed748ae03a5fe03dd61da3c958"
+    "mtime": 1781179290.708681,
+    "hash": "646bafa07b78c1948557360b010aeefd"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-scan.ts": {
     "mtime": 1780938988.8348212,
@@ -244,52 +260,20 @@
     "hash": "322b67a2a6e1c038cb7e483a02d46c81"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-show.ts": {
-    "mtime": 1780886756.2849975,
-    "hash": "718d14b3854b2f5c58c0626e96efce9d"
+    "mtime": 1781331092.4080095,
+    "hash": "52f1f97afbba6fe73b5703a6c5177d0f"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-init.ts": {
-    "mtime": 1780886756.2839975,
-    "hash": "c42f3258435b3d11439392b92facf84b"
+    "mtime": 1781262428.2189455,
+    "hash": "c550d3e51def2e3ad3e4e98aeabdfed0"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-from.ts": {
     "mtime": 1780886756.2829974,
     "hash": "4ce6f8f647334488e55f9d740c83ccfd"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/cmd-status.ts": {
-    "mtime": 1780886756.2849975,
-    "hash": "7de6ea24e41a981e716465c5c3142ada"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/cli/__tests__/cli-new-commands.test.ts": {
-    "mtime": 1780886756.3279982,
-    "hash": "7d2a456f5d85d13aa1981b80ff90658e"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/cli/__tests__/role-matching-adaptive.test.ts": {
-    "mtime": 1780886756.3279982,
-    "hash": "0be68c60578c7f121f4e079e316371a7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/cli/__tests__/cli-helpers.test.ts": {
-    "mtime": 1780886756.3279982,
-    "hash": "5cab89acfa6a2db4654b298975cacfec"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/cli/__tests__/cli-goal.test.ts": {
-    "mtime": 1780886756.3269982,
-    "hash": "ac2c5afeebf0a4c62a86e19839592961"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/cli/__tests__/cli-commands.test.ts": {
-    "mtime": 1780886756.3269982,
-    "hash": "44529c5f2e373631af04630885e1141c"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/cli/__tests__/cli-init.test.ts": {
-    "mtime": 1780886756.3279982,
-    "hash": "2969b81ea702066473282005077a5b2f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/cli/__tests__/cmd-init-single-agent.test.ts": {
-    "mtime": 1780886756.3279982,
-    "hash": "f763bfdd8a47fd7dfd471bddc01e624a"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/cli/__tests__/cli-demo.test.ts": {
-    "mtime": 1780886756.3269982,
-    "hash": "aaef5e33d2846fb7433d8f36bfea9552"
+    "mtime": 1781331129.9796283,
+    "hash": "b3d847feb7c093f5ec468ac57b8a0fc0"
   },
   "/root/.openclaw/workspace/projects/sevo/src/cli/demo-fixtures/requirements.ts": {
     "mtime": 1780886756.328998,
@@ -300,12 +284,8 @@
     "hash": "ea0fb07526b79c29e1edca46236857f0"
   },
   "/root/.openclaw/workspace/projects/sevo/src/plugin-adapter/plugin-adapter.ts": {
-    "mtime": 1780886756.3029978,
-    "hash": "47e050683d3a91e52047eec2aeb71541"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/plugin-adapter/__tests__/plugin-adapter.test.ts": {
-    "mtime": 1780886756.3349984,
-    "hash": "e15e665143acbbc52cc8c7ee0f44eabe"
+    "mtime": 1781330663.8349514,
+    "hash": "48511b982e874ab52434b027729d45cd"
   },
   "/root/.openclaw/workspace/projects/sevo/src/llm/index.ts": {
     "mtime": 1780886756.2989976,
@@ -322,134 +302,6 @@
   "/root/.openclaw/workspace/projects/sevo/src/task-dag/task-dag.ts": {
     "mtime": 1780886756.3249981,
     "hash": "32268cda83f9eeabc45b206c4808aec5"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/ac-gap-close.test.ts": {
-    "mtime": 1780886756.2689972,
-    "hash": "b1ec5cc148a3967a9b4cd4d6d763dc86"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/sevo-intercept.test.ts": {
-    "mtime": 1780886756.2729971,
-    "hash": "d5e8eb236f18c00c3f0d32a52f5a67a9"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/full-pipeline-e2e.test.ts": {
-    "mtime": 1780886756.2709973,
-    "hash": "3989b1495c15b26b338f0891e3557ea7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/facade.test.ts": {
-    "mtime": 1780886756.2699971,
-    "hash": "68e95528d5d12b08d86988a2787241c4"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/real-pipeline-lifecycle.test.ts": {
-    "mtime": 1780886800.7767293,
-    "hash": "39759f02a9222a3a960690a50835c7e9"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/role-knowledge-injector.test.ts": {
-    "mtime": 1780886756.2729971,
-    "hash": "11fbeabf242c1472ec31ea2c744dfbf3"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/context-injection.test.ts": {
-    "mtime": 1780886756.2699971,
-    "hash": "d84a5dd809516c613bf03e1fe6827c8f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/spec-review-gate-runtime-wire.test.ts": {
-    "mtime": 1780886756.2729971,
-    "hash": "7384b3566eceebf90c4cd4bf944a2cf6"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/pipeline-from.test.ts": {
-    "mtime": 1780908130.3692384,
-    "hash": "e0e71dc08ae5894abed4562360d115a1"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/e2e.test.ts": {
-    "mtime": 1780886756.2699971,
-    "hash": "29711577be6076131bd885928f4d8696"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/router.test.ts": {
-    "mtime": 1780886756.2729971,
-    "hash": "94d54e3ce5c1926797eedb2438679a11"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/stranger-ready-gate.test.ts": {
-    "mtime": 1780886756.2739973,
-    "hash": "f387a577d08da7e8f63fef6e27a5af96"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/adapter.test.ts": {
-    "mtime": 1780886756.2699971,
-    "hash": "d48071e151fce962017ee46b0722e0a5"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/integration.test.ts": {
-    "mtime": 1780908130.3682382,
-    "hash": "94fa583fc253fc251fee427326653031"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/pipeline-interceptor.test.ts": {
-    "mtime": 1780886756.2719972,
-    "hash": "520e499bfaaa1457884d62655856b306"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/gate.test.ts": {
-    "mtime": 1780886756.2709973,
-    "hash": "5fe0e3aaa634d558da343660ed88481a"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/e2e-full-lifecycle.test.ts": {
-    "mtime": 1780886800.7767293,
-    "hash": "c23c0fc0fb2d2e2527e39c7492292165"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/compliance-router.test.ts": {
-    "mtime": 1780886756.2699971,
-    "hash": "ed9ce6c63eb3b7817b58b4b212f2e5b4"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/role-task-matching.test.ts": {
-    "mtime": 1780886756.2729971,
-    "hash": "34b85098feb521d9e26d1c1f44bfb887"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/acceptance-stages.test.ts": {
-    "mtime": 1780886756.2689972,
-    "hash": "3b444b83a34fac4fd7fe7aa0ac6ec6e7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/__tests__/orchestrator.test.ts": {
-    "mtime": 1780886756.2719972,
-    "hash": "40c8ddde440b8afe1e87f99a8b651b67"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/pdca-auto-driver.ts": {
-    "mtime": 1780886756.2869976,
-    "hash": "2ca4fa516e75f26734f4fbcbe4a767fa"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/okr-periodic-checker.ts": {
-    "mtime": 1780886756.2869976,
-    "hash": "e76432e328283c64b6fd3d2cce905fe7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/stage-transition-trigger.ts": {
-    "mtime": 1780886756.2879975,
-    "hash": "55d35d2ceb9ecc0e9190ca6b3b71c7b1"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/spec-gap-detector.ts": {
-    "mtime": 1780886756.2879975,
-    "hash": "3116eae0ebf123378a8876d17b9441f7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/proactive-drive-engine.ts": {
-    "mtime": 1780886756.2879975,
-    "hash": "ecc82897ef5ab178274344c67412cecf"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/index.ts": {
-    "mtime": 1780886756.2869976,
-    "hash": "22faab485b5acd39fb131d5e42d816ce"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/types.ts": {
-    "mtime": 1780886756.2879975,
-    "hash": "b0a95fdf1daa1102017a5381e8139b03"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/post-release-auto-scanner.ts": {
-    "mtime": 1780886756.2879975,
-    "hash": "1522f9292ac5238435e5d77ff097ae1e"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/__tests__/pdca-auto-driver.test.ts": {
-    "mtime": 1780886756.328998,
-    "hash": "c1100a58644538e32a1081968d87aa7d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/__tests__/proactive-drive.test.ts": {
-    "mtime": 1780886756.3299983,
-    "hash": "ba519e478d90f14f2d033d98ce6ca9cb"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/drive/__tests__/okr-periodic-checker.test.ts": {
-    "mtime": 1780886756.328998,
-    "hash": "c711f6204f6a8dd4e7fcc3a681090ecb"
   },
   "/root/.openclaw/workspace/projects/sevo/src/gate/gate-engine.ts": {
     "mtime": 1780886756.2949977,
@@ -495,26 +347,6 @@
     "mtime": 1780886756.3309982,
     "hash": "cd0246bf5c56f0688111233f6633587e"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/gate/__tests__/fr-traceability-rule.test.ts": {
-    "mtime": 1780886756.3309982,
-    "hash": "2b4b9631a476c2f361a4790c2fc4d730"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/gate/__tests__/gate-engine-async-rule.test.ts": {
-    "mtime": 1780886756.3309982,
-    "hash": "5582e8f5f489e4864c664d1fdeb105b4"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/gate/__tests__/gate-engine.test.ts": {
-    "mtime": 1780886756.3309982,
-    "hash": "7bb3cbacc274a55ca8613fd772e0fbe2"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/gate/__tests__/spec-sections-rule.test.ts": {
-    "mtime": 1780886756.3309982,
-    "hash": "89bbe209393356c5d8a0f855992cedf2"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/gate/__tests__/fr-validation-criteria-rule.test.ts": {
-    "mtime": 1780886756.3309982,
-    "hash": "b9cad88b39980af870b1624b8cad0aa0"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/stages/review-types.ts": {
     "mtime": 1780886756.320998,
     "hash": "b327396bc3387e76da58271f6679f327"
@@ -528,12 +360,8 @@
     "hash": "7c8395190d75af57f09cbe73dfb108dd"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/commercialization-gate.ts": {
-    "mtime": 1780886756.314998,
-    "hash": "82ed518b8cc5f7276587f3fc02966d58"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/publish-generalization-gate-types.ts": {
-    "mtime": 1780886756.319998,
-    "hash": "1518f63f2d8578e9c59b0d8deca6682a"
+    "mtime": 1781331236.661386,
+    "hash": "330a3d27e8a22437ba55dbd786ef6157"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/readme-sync-types.ts": {
     "mtime": 1780886756.320998,
@@ -587,10 +415,6 @@
     "mtime": 1780886756.319998,
     "hash": "569e7b9e487768cd4d4ace62770de6da"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/publish-generalization-gate.ts": {
-    "mtime": 1780886756.319998,
-    "hash": "26e4e70a72296c4e3dd931e1e7eadf5d"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/stages/implement-stage.ts": {
     "mtime": 1780886756.317998,
     "hash": "de72cdf01e65fce9e7bf72368ed5c0dc"
@@ -604,8 +428,8 @@
     "hash": "742cd36da4fce1838578d0af1727cfaf"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/clean-install-verification-stage.ts": {
-    "mtime": 1780886756.3129978,
-    "hash": "37eb85c47e445cc99d3720067b2a1777"
+    "mtime": 1781262428.2209456,
+    "hash": "8843d01465b34680a58859f6b6574ffe"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/commercial-acceptance-types.ts": {
     "mtime": 1780886756.313998,
@@ -644,8 +468,8 @@
     "hash": "a62c0e0abf3376ffb0e8312809cd86e1"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/review-fix-loop.ts": {
-    "mtime": 1780886756.320998,
-    "hash": "96fb715b4dadc8735bb9e3daa0e46176"
+    "mtime": 1781331201.7148101,
+    "hash": "249c2861ff787c2c228fdb87280a9327"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/commercial-acceptance-stage.ts": {
     "mtime": 1780886756.313998,
@@ -668,8 +492,8 @@
     "hash": "1122643969805147658c0fc197c03ec7"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/commercialization-gate-types.ts": {
-    "mtime": 1780886756.313998,
-    "hash": "3ab308dba2c705e9c0fcf63b270e1392"
+    "mtime": 1781331281.8011296,
+    "hash": "3c46b5781b5118adc425f5b12dabfd7a"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/post-release-validation-types.ts": {
     "mtime": 1780886756.319998,
@@ -688,8 +512,8 @@
     "hash": "11bd1c14e53ac6195da61f1aa7f1c52e"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/smoke-test-types.ts": {
-    "mtime": 1780886756.3219981,
-    "hash": "2ba0a389f819f540de1f95a78bd524cb"
+    "mtime": 1781262428.2209456,
+    "hash": "b5430ba1059df57942f785a76a9c7e98"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/debugging-stage.ts": {
     "mtime": 1780886756.314998,
@@ -720,12 +544,12 @@
     "hash": "5c8b40f83760381dcdfd9916a1014abd"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/post-release-validation-stage.ts": {
-    "mtime": 1780886756.319998,
-    "hash": "ed16027a1b6ad0244d9acbe8f96d117f"
+    "mtime": 1781331448.8818822,
+    "hash": "6dde26f206195e793895200255fe1d01"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/verify-real-data-gate.ts": {
-    "mtime": 1780886756.323998,
-    "hash": "af4b6ff6b0b3e83633a61bcfcb4b97c7"
+    "mtime": 1781331382.3027854,
+    "hash": "f7d1a0fdc33e584ea7182d97ed439038"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stages/smoke-test-stage.ts": {
     "mtime": 1780886756.3219981,
@@ -751,105 +575,9 @@
     "mtime": 1780886756.318998,
     "hash": "e3338b540a8a001a58fa11ca8e00d54a"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/readme-sync-stage.test.ts": {
-    "mtime": 1780886756.3409984,
-    "hash": "5a4c88a2ac274b9dd25c2e2541855b81"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/stage-graph-backedge.test.ts": {
-    "mtime": 1780886756.3429985,
-    "hash": "3fd056c583f5b5d49d8655dbefc8d9e2"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/contract-stage.test.ts": {
-    "mtime": 1780886756.3389983,
-    "hash": "8bfc202db41572d344f1d9950cd65b89"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/fr17-pdca-liveness-extended.test.ts": {
-    "mtime": 1780886756.3399982,
-    "hash": "b21372036993d115e40d5b0a0a31966d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/fr18-batch-a.test.ts": {
-    "mtime": 1780886756.3399982,
-    "hash": "e00269c3169b6582d9086ace73756f13"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/post-release-validation-okr.test.ts": {
-    "mtime": 1780886756.3409984,
-    "hash": "9124e007831fb4dc93d701a5285f8ce9"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/test-case-stage.test.ts": {
-    "mtime": 1780886756.3429985,
-    "hash": "94c251fadead9a48455855d7a9ca4805"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/fr18-batch-b.test.ts": {
-    "mtime": 1780886756.3399982,
-    "hash": "02700c18890976a8458c52106a70d1e9"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/deploy-stage.test.ts": {
-    "mtime": 1780886756.3389983,
-    "hash": "1d2f490e5c01b32a0bc0ead7f61e5006"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/review-fix-loop.test.ts": {
-    "mtime": 1780886756.3409984,
-    "hash": "9f4cb2ab6cf05a878314096828dafcaa"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/post-release-validation-stage.test.ts": {
-    "mtime": 1780886756.3409984,
-    "hash": "278fdbaf4eeed10d9876034e873b90ee"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/fr19-okr-smart.test.ts": {
-    "mtime": 1780886756.3399982,
-    "hash": "99637e3ccab7b75e4da899a60398421d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/verify-stage.test.ts": {
-    "mtime": 1780886756.3429985,
-    "hash": "afb24c7d1cbef0c0e093800689c083b7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/fr17-pdca-liveness.test.ts": {
-    "mtime": 1780886756.3399982,
-    "hash": "3c87b1667b3cd96a6b38bced29121474"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/debugging-stage.test.ts": {
-    "mtime": 1780886756.3389983,
-    "hash": "453ac99a0c477045b6337e225eac7a47"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/implement-stage.test.ts": {
-    "mtime": 1780886756.3399982,
-    "hash": "3520c4905e140343f8d659da9fd54871"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/review-stage.test.ts": {
-    "mtime": 1780886756.3419983,
-    "hash": "5028189be31375686b06aa63f6ccb3be"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/smoke-test-stage.test.ts": {
-    "mtime": 1780886756.3419983,
-    "hash": "6426541172cedaffefab19e93419a158"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/publish-generalization-gate.test.ts": {
-    "mtime": 1780886756.3409984,
-    "hash": "152705ba031541e80bddfa13fc6dfe94"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/ledger-stage.test.ts": {
-    "mtime": 1780886756.3409984,
-    "hash": "2265e1e117a5b9966f98694c9a923018"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/regression-stage.test.ts": {
-    "mtime": 1780886756.3409984,
-    "hash": "e20934f5329018d7f88f45706c259e7a"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/cmd-demo-okr.test.ts": {
-    "mtime": 1780886756.3389983,
-    "hash": "18851de5b46a17d69e6c4232d997f8f6"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/spec-stage.test.ts": {
-    "mtime": 1780886756.3419983,
-    "hash": "af3cfd1cbc632f6d1a728bf2b6232983"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stages/__tests__/clean-install-verification-stage.test.ts": {
-    "mtime": 1780886756.3389983,
-    "hash": "6f00e4c6e47d40c464c0d503cf99ad62"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/compliance/compliance-router.ts": {
-    "mtime": 1780886756.2859974,
-    "hash": "91b98f51606060c85aa34b30a671c744"
+    "mtime": 1781153869.8392413,
+    "hash": "4827913ef685233adbcb04a5217eaecb"
   },
   "/root/.openclaw/workspace/projects/sevo/src/compliance/index.ts": {
     "mtime": 1780886756.2859974,
@@ -875,14 +603,6 @@
     "mtime": 1780886756.3049977,
     "hash": "b19dfda7521bd8a847be97a9ae11a43b"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/progressive-disclosure/__tests__/custom-stage.test.ts": {
-    "mtime": 1780886756.3359983,
-    "hash": "55f27bd64a3bf28b8fbcbecf94cd41c4"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/progressive-disclosure/__tests__/sdk.test.ts": {
-    "mtime": 1780940428.9230618,
-    "hash": "3b4bd6c2ae3d6490887d1ac40dd724da"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/orchestrator/pipeline-run.ts": {
     "mtime": 1780886756.3009977,
     "hash": "f02a873f9d86ef3be210d2fe7b3ccb42"
@@ -891,17 +611,9 @@
     "mtime": 1780886756.3009977,
     "hash": "0b5aa12b68ab0e477f8ecc6aa520893c"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/orchestrator/index.ts": {
-    "mtime": 1780886756.2999976,
-    "hash": "6f25d7189330d036216934db640f1faa"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/orchestrator/task-orchestrator.ts": {
     "mtime": 1780886756.3009977,
     "hash": "89fd75ae813215e91ef399c1a5b1a25d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/orchestrator/__tests__/orchestrator-clarification.test.ts": {
-    "mtime": 1780886756.3339982,
-    "hash": "da03dd3f21a4931593980984c6549c7b"
   },
   "/root/.openclaw/workspace/projects/sevo/src/gates/gate-types.ts": {
     "mtime": 1780886756.2959976,
@@ -931,21 +643,9 @@
     "mtime": 1780886756.2959976,
     "hash": "0f02bb4bf1a7619795e3ff2535415b5e"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/gates/__tests__/implementation-review-gate.test.ts": {
-    "mtime": 1780886756.331998,
-    "hash": "0df2b845e0e82365396b2b210f7d1d7c"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/gates/__tests__/spec-review-gate.test.ts": {
-    "mtime": 1780886756.331998,
-    "hash": "3e7e2fda0c4f439c1970487dfdfed1f7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/gates/__tests__/contract-review-gate.test.ts": {
-    "mtime": 1780886756.331998,
-    "hash": "cee893c26ac03a6f651972255a3b5d45"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/gates/llm-intercept/index.ts": {
-    "mtime": 1780886756.3329983,
-    "hash": "3d79990e6750536855135cd2bd5f14b5"
+    "mtime": 1781330543.9629781,
+    "hash": "d3a96fe25bef67fe3d67e50af3f3afb4"
   },
   "/root/.openclaw/workspace/projects/sevo/src/gates/llm-intercept/types.ts": {
     "mtime": 1780886756.3329983,
@@ -968,36 +668,32 @@
     "hash": "2acc32cea3b2e2ae496e0ddf2414c8b7"
   },
   "/root/.openclaw/workspace/projects/sevo/src/notification/standalone-notification.ts": {
-    "mtime": 1780886756.2999976,
-    "hash": "920a44316cfec5c3459b7d3753b23700"
+    "mtime": 1781330121.057016,
+    "hash": "150734f6032842b9336516133ccc9f0f"
   },
   "/root/.openclaw/workspace/projects/sevo/src/notification/openclaw-notification.ts": {
-    "mtime": 1780886756.2999976,
-    "hash": "3b86d6a7722aa754dfad3db2aec7b7fd"
+    "mtime": 1781330184.6950636,
+    "hash": "d5c516436ec12fb11259dd2dd390e47e"
   },
   "/root/.openclaw/workspace/projects/sevo/src/notification/notification-adapter.ts": {
-    "mtime": 1780886756.2999976,
-    "hash": "2f59d1e4918664ca82ca29521a0373c7"
+    "mtime": 1781330089.8145015,
+    "hash": "4686918656b636034239b87227e7a382"
   },
   "/root/.openclaw/workspace/projects/sevo/src/role-registry/index.ts": {
     "mtime": 1780886756.3049977,
     "hash": "9cb8516e9f70dce2805390732ef3d449"
   },
   "/root/.openclaw/workspace/projects/sevo/src/role-registry/role-stage-validator.ts": {
-    "mtime": 1780886756.3049977,
-    "hash": "c4e2effb04f0b7f691dccb51c09e5836"
+    "mtime": 1781331678.9706728,
+    "hash": "9a123b8f70f042718256ba133d906583"
   },
   "/root/.openclaw/workspace/projects/sevo/src/role-registry/role-task-matcher.ts": {
-    "mtime": 1780886756.3049977,
-    "hash": "c4c99c3112a6d24ecc7fb6e6799d09f6"
+    "mtime": 1781331863.8687189,
+    "hash": "6fafb438c7432b886e1e9dcbd2d4c43f"
   },
   "/root/.openclaw/workspace/projects/sevo/src/role-registry/role-registry.ts": {
     "mtime": 1780886756.3049977,
     "hash": "793bbea61baf8cd654588be68367daa7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/role-registry/__tests__/role-task-matcher.test.ts": {
-    "mtime": 1780886756.3359983,
-    "hash": "1eec37fa55bcaf675110427244b308ee"
   },
   "/root/.openclaw/workspace/projects/sevo/src/utils/event-log.ts": {
     "mtime": 1780907940.5671294,
@@ -1006,14 +702,6 @@
   "/root/.openclaw/workspace/projects/sevo/src/utils/path-defaults.ts": {
     "mtime": 1780886756.3249981,
     "hash": "359983cd1a84b8552683672c852b1b40"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/utils/__tests__/path-defaults.test.ts": {
-    "mtime": 1780886756.3439984,
-    "hash": "ad7fe39bc760a45d7db5f1e5af75ceb1"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/utils/__tests__/event-log.test.ts": {
-    "mtime": 1780908176.031985,
-    "hash": "25da33081d3619f68cf13e83b74062d3"
   },
   "/root/.openclaw/workspace/projects/sevo/src/evaluators/hybrid-gate.ts": {
     "mtime": 1780886756.2929976,
@@ -1039,25 +727,17 @@
     "mtime": 1780886756.2929976,
     "hash": "1ba8635100b87443ffa59080aa0c336c"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/evaluators/__tests__/fr23-evaluator-runner-supplementary.test.ts": {
-    "mtime": 1780886756.3299983,
-    "hash": "9e4410b452f9e51bf48506e206fa0f73"
+  "/root/.openclaw/workspace/projects/sevo/src/embedding/embedding-classifier.ts": {
+    "mtime": 1781112961.5162613,
+    "hash": "b59ba64dfad61e8b0d028f0103bc1f98"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/evaluators/__tests__/fr23-evaluator-runner.test.ts": {
-    "mtime": 1780886756.3299983,
-    "hash": "875d399862487f6f34292feb325025b4"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/evaluators/builtins/lint-score.js": {
-    "mtime": 1777914568.7486436,
-    "hash": "e196863d601763286b293773bb9cbb85"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/evaluators/builtins/spec-ac-coverage.js": {
-    "mtime": 1777914589.257723,
-    "hash": "294f40c717f20650b788f38a86e90ab8"
+  "/root/.openclaw/workspace/projects/sevo/src/embedding/index.ts": {
+    "mtime": 1781109357.6638343,
+    "hash": "330d207323134c72e22970a74a0db81c"
   },
   "/root/.openclaw/workspace/projects/sevo/src/router/design-need-classifier.ts": {
-    "mtime": 1780886756.3059978,
-    "hash": "b2f0153b44ecbd694a16d525212f9db7"
+    "mtime": 1781153869.8412414,
+    "hash": "c5f105eb34a45a057941b2ef4eadfc5c"
   },
   "/root/.openclaw/workspace/projects/sevo/src/router/router.ts": {
     "mtime": 1780886756.3059978,
@@ -1072,8 +752,8 @@
     "hash": "b05ef46fb53a0b290f80d05e9f6a2052"
   },
   "/root/.openclaw/workspace/projects/sevo/src/router/description-scope-inferrer.ts": {
-    "mtime": 1780886756.3049977,
-    "hash": "8242c39bbc20ce9802df428c2b474048"
+    "mtime": 1781153869.8402414,
+    "hash": "b3fc7cf2b099f27c344532997e09c0d9"
   },
   "/root/.openclaw/workspace/projects/sevo/src/router/stage-router.ts": {
     "mtime": 1780886756.3059978,
@@ -1087,17 +767,17 @@
     "mtime": 1780886756.3059978,
     "hash": "7782c4637d2c08624c01326bae69d2d4"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/router/__tests__/level-classifier-description-aware.test.ts": {
-    "mtime": 1780886756.3359983,
-    "hash": "8db18d38a2a3bf559ddf1cd0efd09fd6"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/router/__tests__/router.test.ts": {
-    "mtime": 1780886756.3359983,
-    "hash": "a693825d1351bacfd2317a3b5f2e7aa3"
+  "/root/.openclaw/workspace/projects/sevo/src/context-injection/context-injector.js": {
+    "mtime": 1781367204.7942555,
+    "hash": "da34022d89d654be1d8247ad6b61749b"
   },
   "/root/.openclaw/workspace/projects/sevo/src/context-injection/context-injector.ts": {
     "mtime": 1780886756.2859974,
     "hash": "39781fd27aebf9e5af24b436e05a06b0"
+  },
+  "/root/.openclaw/workspace/projects/sevo/src/context-injection/index.js": {
+    "mtime": 1781192647.025578,
+    "hash": "451c25f4c87499a382b2d288d432fbb4"
   },
   "/root/.openclaw/workspace/projects/sevo/src/context-injection/index.ts": {
     "mtime": 1780886756.2869976,
@@ -1112,8 +792,8 @@
     "hash": "92e58c88964b986a7fb8c7a0fbeebd46"
   },
   "/root/.openclaw/workspace/projects/sevo/src/adapter/host-adapter.ts": {
-    "mtime": 1780886756.2739973,
-    "hash": "319a629ea21983c89bb6aa0bc6938a59"
+    "mtime": 1781330701.3195686,
+    "hash": "9ad3c6d7cf0e24564c0517b8bcfbc705"
   },
   "/root/.openclaw/workspace/projects/sevo/src/adapter/openclaw-adapter.ts": {
     "mtime": 1780886756.2749972,
@@ -1128,24 +808,24 @@
     "hash": "1fc6c3becbcb426e5ff88f507f0f8e6d"
   },
   "/root/.openclaw/workspace/projects/sevo/src/pipeline/pipeline-engine.ts": {
-    "mtime": 1780908003.0711532,
-    "hash": "0347f24f371b68897dc9c6d7a948e4d5"
+    "mtime": 1781333079.8527503,
+    "hash": "1cb8b4064fb7d967cfba7c1d5d23f12e"
   },
   "/root/.openclaw/workspace/projects/sevo/src/pipeline/stage-machine.ts": {
     "mtime": 1780886756.3019977,
     "hash": "fa90019a0a832fccbb41e7de73028857"
   },
   "/root/.openclaw/workspace/projects/sevo/src/pipeline/ledger.ts": {
-    "mtime": 1780886756.3009977,
-    "hash": "86f5b83b8753f5ff7ac2a53591d12431"
+    "mtime": 1781330346.6827302,
+    "hash": "263457ea4e530be9187219b4e829242e"
   },
   "/root/.openclaw/workspace/projects/sevo/src/pipeline/pipeline-from.ts": {
     "mtime": 1780886756.3019977,
     "hash": "40eaadbdf57d23a43ff41d8a6cdd97db"
   },
   "/root/.openclaw/workspace/projects/sevo/src/pipeline/stage-rollback.ts": {
-    "mtime": 1780886756.3019977,
-    "hash": "aa6de941cf8090a8d6229539f656f082"
+    "mtime": 1781332811.162322,
+    "hash": "82ab480e6a8c48feb8e6c1c10a72e2a5"
   },
   "/root/.openclaw/workspace/projects/sevo/src/pipeline/index.ts": {
     "mtime": 1780886756.3009977,
@@ -1175,33 +855,9 @@
     "mtime": 1780886756.3009977,
     "hash": "e57083cf4255ec7bc4a69084375d6709"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/pipeline/__tests__/pipeline.test.ts": {
-    "mtime": 1780886800.7757292,
-    "hash": "5951479c862fe441c9135649611a0a42"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/pipeline/__tests__/ledger.test.ts": {
-    "mtime": 1780886756.3339982,
-    "hash": "1a39b09699110ce6473615a38d08cfc1"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/pipeline/__tests__/pipeline-facade-lifecycle.test.ts": {
-    "mtime": 1781024940.3955996,
-    "hash": "53c760eaeaf38b8eb631d7d8bc57de27"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/pipeline/__tests__/pipeline-lifecycle.test.ts": {
-    "mtime": 1780909217.954021,
-    "hash": "2912f6a9a19e3d1ac6c06ce826decde8"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/pipeline/__tests__/pipeline-engine-facade.test.ts": {
-    "mtime": 1780940325.941338,
-    "hash": "c9d8e542e66a401836af5915271e438d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/pipeline/__tests__/pipeline-create.test.ts": {
-    "mtime": 1780886852.5335805,
-    "hash": "a89597f095807bd11d5a0cacbc79426d"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/engine/pipeline-engine.ts": {
-    "mtime": 1780908007.884232,
-    "hash": "c4deb7e26d0a16f45f2e58e762dbbb40"
+    "mtime": 1781332269.188395,
+    "hash": "b7ab6ed966deb464a57a7b0878a0f2e4"
   },
   "/root/.openclaw/workspace/projects/sevo/src/engine/advance-on-complete.ts": {
     "mtime": 1780908039.1607444,
@@ -1223,14 +879,6 @@
     "mtime": 1780908020.6614413,
     "hash": "bcb73b7f89c21e8bac0f259bd1ddac36"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/engine/__tests__/cli-pipeline-engine.test.ts": {
-    "mtime": 1780891571.5652826,
-    "hash": "019be23d0b616833df149b4137a86557"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/engine/__tests__/advance-on-complete.test.ts": {
-    "mtime": 1780886756.3299983,
-    "hash": "a3949c9899abd15cc8c314ae7f2b75fe"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/ledger/ledger-engine.ts": {
     "mtime": 1780886756.2989976,
     "hash": "11e99060771790afbef072945589f2e2"
@@ -1243,17 +891,9 @@
     "mtime": 1780886756.2989976,
     "hash": "0bd910b01b2d0fe9c2ac2cbdadb9281a"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/ledger/__tests__/collect-clarification-refs.test.ts": {
-    "mtime": 1780886756.3339982,
-    "hash": "82ca2d50bc2b41af74e9235f2a4458dc"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/ledger/__tests__/ledger.test.ts": {
-    "mtime": 1780886852.5335805,
-    "hash": "13e12c0e42f50ebaa603a6643731fdb3"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/types/index.ts": {
-    "mtime": 1780886756.3249981,
-    "hash": "70b70ab1518ebe1b82851535ae0d6ddc"
+    "mtime": 1781331502.2597616,
+    "hash": "c2f053c723b8de2708f8a50bbc918aa5"
   },
   "/root/.openclaw/workspace/projects/sevo/src/clarification/resolution-writer.ts": {
     "mtime": 1780886756.2769973,
@@ -1291,30 +931,6 @@
     "mtime": 1780886756.2759974,
     "hash": "2af4f5ed319d8c8b6bd38acff6abc061"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/clarification/__tests__/clarification-core-flow.test.ts": {
-    "mtime": 1780886756.3249981,
-    "hash": "406f2f252f817b219fc6108c1173e27b"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/clarification/__tests__/resolution-writer.test.ts": {
-    "mtime": 1780886756.325998,
-    "hash": "3f71431b6b747208d7af0646b411691f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/clarification/__tests__/clarification-coordinator.test.ts": {
-    "mtime": 1780886756.3249981,
-    "hash": "81c9ffa150636dceb917529e7988f437"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/clarification/__tests__/clarification.test.ts": {
-    "mtime": 1780886756.325998,
-    "hash": "1c1dddb7d653bee70e49621cff48e973"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/clarification/__tests__/llm-semantic-detector.test.ts": {
-    "mtime": 1780886756.325998,
-    "hash": "f994f13d95e0212b3620b82be16b240f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/clarification/__tests__/stage-scan-rules.test.ts": {
-    "mtime": 1780886756.325998,
-    "hash": "59c843b9732ea4e9b99a832329c4f4cb"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/scan/l1-file-scanner.ts": {
     "mtime": 1780886756.3069978,
     "hash": "9bb66327eb15c1f7cd494b89d8c7024d"
@@ -1330,10 +946,6 @@
   "/root/.openclaw/workspace/projects/sevo/src/scan/scan-report.ts": {
     "mtime": 1780886756.3079977,
     "hash": "659dd1db4e6b8a5e0ade4bb58d9bb962"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/scan/l1-llm-scanner.ts": {
-    "mtime": 1780886756.3069978,
-    "hash": "d6ef663c3a4cc46537c0dcdd2c68e93f"
   },
   "/root/.openclaw/workspace/projects/sevo/src/scan/l2-ac-semantic-scanner.ts": {
     "mtime": 1780886756.3069978,
@@ -1371,30 +983,6 @@
     "mtime": 1780886756.3069978,
     "hash": "1715c6a30f5746b0ea537ce5638d6929"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/scan/__tests__/commercialization-scanners.test.ts": {
-    "mtime": 1780886756.3359983,
-    "hash": "566edeaec3da0feea6e29940c85e3840"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/scan/__tests__/l2-ac-semantic-scanner.test.ts": {
-    "mtime": 1780886756.3369982,
-    "hash": "e73ed0c3a85c92218c4969662903c566"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/scan/__tests__/l1-llm-scanner.test.ts": {
-    "mtime": 1780886756.3369982,
-    "hash": "9c597300b597d83046daaeec0aaf72a0"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/scan/__tests__/l3-runtime-verifier.test.ts": {
-    "mtime": 1780886756.3369982,
-    "hash": "696b85aa3e69a89c5b09b48df69619d0"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/scan/__tests__/tiered-scan-orchestrator.test.ts": {
-    "mtime": 1780886756.3369982,
-    "hash": "60eb6a1de3548808a7fa77523bda5bc8"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/scan/__tests__/l1-file-scanner.test.ts": {
-    "mtime": 1780886756.3369982,
-    "hash": "4bc5d3f049dbd9b9368641471cd217fb"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/utils.ts": {
     "mtime": 1780886756.311998,
     "hash": "330f61f85d5d2b21d7694149ec36cc0f"
@@ -1404,32 +992,32 @@
     "hash": "3d00f8da55e329ccfc07dc8842ff36f2"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/spec-review-gate-handler.ts": {
-    "mtime": 1780886756.310998,
-    "hash": "f8fe256f4eb2ddba197156400ef5dc16"
+    "mtime": 1781333704.8230567,
+    "hash": "334f0ceb812b5711e82f4757cdaaca26"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/implement-handler.ts": {
     "mtime": 1780886756.3099978,
     "hash": "d5857028e75abc11fdfe69be83b9dc54"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/endgame-scan-handler.ts": {
-    "mtime": 1780886756.3099978,
-    "hash": "c95cbfe9cd8fd678ef56f99c743fad55"
+    "mtime": 1781333704.8160565,
+    "hash": "a1421e86a27a846ee2ddea7dcb759f84"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/publish-generalization-gate-handler.ts": {
-    "mtime": 1780886756.3099978,
-    "hash": "05a09e8dfa5b7a59077e80448ac5fee6"
+    "mtime": 1781333704.8170567,
+    "hash": "90597db11057222beb9b26f3ab3342c8"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/readme-handler.ts": {
-    "mtime": 1780886756.310998,
-    "hash": "4c686713c866ba8a66e6b98feb96652d"
+    "mtime": 1781333704.8200567,
+    "hash": "237dbe6aaac8c27aa2c8c5fc8183bd89"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/contract-review-gate-handler.ts": {
-    "mtime": 1780886756.3089979,
-    "hash": "b6688a5ef4a01eefc1918b628d3ee0da"
+    "mtime": 1781333704.8120565,
+    "hash": "ce84b85db7e0804ef8374803c4de6aa9"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/review-handler.ts": {
-    "mtime": 1780886756.310998,
-    "hash": "bc99892871aa51ecfcbfd2b1402f8cbf"
+    "mtime": 1781333704.8210566,
+    "hash": "d6e5a0e60c9e57a37712485f70ab5e4e"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/test-case-authoring-handler.ts": {
     "mtime": 1780886756.310998,
@@ -1448,8 +1036,8 @@
     "hash": "723171f64ce7a57ac477c9acb1f3d3e3"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/verify-handler.ts": {
-    "mtime": 1780886756.311998,
-    "hash": "bf09ac702da514b725705b8724f3a64f"
+    "mtime": 1781333704.8250568,
+    "hash": "614cd630a208877f4850df6395be52e9"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/types.ts": {
     "mtime": 1780886756.310998,
@@ -1464,20 +1052,8 @@
     "hash": "3625247a62358ab2a55c05cd28137f83"
   },
   "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/deploy-handler.ts": {
-    "mtime": 1780886756.3099978,
-    "hash": "dd9f7973c414430d4f6f49dd8aff2011"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/__tests__/stage-handlers-e2e.test.ts": {
-    "mtime": 1780886756.3379984,
-    "hash": "b622fa58e864fc06d3ae093a8335d65c"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/__tests__/verify-real-data-gate.test.ts": {
-    "mtime": 1780886756.3389983,
-    "hash": "95291077600055adc253f1936ec65b57"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stage-handlers/__tests__/per-stage.test.ts": {
-    "mtime": 1780886756.3379984,
-    "hash": "8ca230cd6133fa68ae86f3a07b548497"
+    "mtime": 1781333704.8140566,
+    "hash": "f1c4e355db178d62b596486787802920"
   },
   "/root/.openclaw/workspace/projects/sevo/src/governance/rules.ts": {
     "mtime": 1780886756.2969975,
@@ -1500,8 +1076,8 @@
     "hash": "cf45e79ef326991996eb3833605d5a70"
   },
   "/root/.openclaw/workspace/projects/sevo/src/governance/pipeline-interceptor.ts": {
-    "mtime": 1780886756.2969975,
-    "hash": "9b724e1746e4231654b0dab4bbf4bb44"
+    "mtime": 1781333949.5510924,
+    "hash": "08e1181a61e0e3e54183558fb18e4c8a"
   },
   "/root/.openclaw/workspace/projects/sevo/src/governance/check-sevo-exemption.ts": {
     "mtime": 1780886756.2959976,
@@ -1515,14 +1091,6 @@
     "mtime": 1780886756.2979977,
     "hash": "b46d283372157b725078adfe5b27f0f5"
   },
-  "/root/.openclaw/workspace/projects/sevo/src/governance/__tests__/governance-injection.test.ts": {
-    "mtime": 1780886756.3329983,
-    "hash": "26e34f48e919ab6dd07e6a9e25143db7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/governance/__tests__/pipeline-interceptor.test.ts": {
-    "mtime": 1780886756.3339982,
-    "hash": "2f77b7324a5c6dac494932d89d3144b6"
-  },
   "/root/.openclaw/workspace/projects/sevo/src/init/index.ts": {
     "mtime": 1780886756.2979977,
     "hash": "134780de53f79e30e9b3e8e47af33ec0"
@@ -1530,10 +1098,6 @@
   "/root/.openclaw/workspace/projects/sevo/src/init/register-hooks.ts": {
     "mtime": 1780886756.2979977,
     "hash": "97ead2130e4eed4684ff05d4d1e0f134"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/tests/stages/all-stages.test.ts": {
-    "mtime": 1780886756.3429985,
-    "hash": "fcdf1fc6d215f438f23e0ccb6173ac16"
   },
   "/root/.openclaw/workspace/projects/sevo/src/knowledge/role-knowledge-injector.ts": {
     "mtime": 1780886756.2989976,
@@ -1550,10 +1114,6 @@
   "/root/.openclaw/workspace/projects/sevo/src/stage-runner/index.ts": {
     "mtime": 1780886756.311998,
     "hash": "9c0b51eee184de51a6ce9b5f9f6948fd"
-  },
-  "/root/.openclaw/workspace/projects/sevo/src/stage-runner/__tests__/stage-runner.test.ts": {
-    "mtime": 1780886756.3389983,
-    "hash": "9cf929998122628958ed2ad36aeffeb7"
   },
   "/root/.openclaw/workspace/projects/sevo/scripts/regenerate-route-vectors.mjs": {
     "mtime": 1781044151.5521374,
@@ -1574,6 +1134,10 @@
   "/root/.openclaw/workspace/projects/sevo/scripts/copy-assets.js": {
     "mtime": 1779649588.2568135,
     "hash": "685ffdcecd3dd0a3fe0a252f572d54f0"
+  },
+  "/root/.openclaw/workspace/projects/sevo/scripts/seed-vectors.mjs": {
+    "mtime": 1781112952.9641204,
+    "hash": "2fa635da9d35abcc40fe8039514881a5"
   },
   "/root/.openclaw/workspace/projects/sevo/scripts/smoke-stage-handlers.ts": {
     "mtime": 1779566605.4088707,
@@ -1879,33 +1443,29 @@
     "mtime": 1780767458.205404,
     "hash": "a1575b5d32e4920ba202aaf2b9e47b22"
   },
-  "/root/.openclaw/workspace/projects/sevo/tests/artifact-skip-and-advance-persist.test.ts": {
-    "mtime": 1781087652.1164114,
-    "hash": "b9e1cf7efeed2181d733fd3b545ba644"
+  "/root/.openclaw/workspace/projects/sevo/lib/index.js": {
+    "mtime": 1781200426.0389135,
+    "hash": "587c3c7c2cc18507d0f5173977f56fdf"
   },
-  "/root/.openclaw/workspace/projects/sevo/tests/stage-order-advisory.test.ts": {
-    "mtime": 1780909764.2070177,
-    "hash": "9aefb204d500920002b80b69d2ff3151"
+  "/root/.openclaw/workspace/projects/sevo/lib/index.d.ts": {
+    "mtime": 1781200357.1887777,
+    "hash": "3cdcbbd720e9011b7f9e050d1733ccac"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/run-store-smoke.mjs": {
-    "mtime": 1780992900.1414766,
-    "hash": "248d45ba3fd9c4fbb2b592aaea34a4ee"
+    "mtime": 1781191071.843629,
+    "hash": "679521e941cc2dd143f084d4c2618eea"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/v2-contracts.test.ts": {
     "mtime": 1781047876.1275768,
     "hash": "d030973c206f6b3c1ed4308712461307"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/route-await.test.ts": {
-    "mtime": 1780457924.5767267,
-    "hash": "706c3bdc9a6ef5982f9a9342bf856173"
+    "mtime": 1781155759.0363276,
+    "hash": "4a81d9e09538d71022e4719bc30f6e52"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/fr37-audit-reminder.test.ts": {
     "mtime": 1781024791.3631396,
     "hash": "e06511ed8425d20712f09c316df9b06a"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/prompt-injection-triplet.test.ts": {
-    "mtime": 1780814596.7257123,
-    "hash": "eedaceaf1e6d580d891b1ba9d4ad4bd3"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/fr44-doctor.test.ts": {
     "mtime": 1780153729.4531596,
@@ -1915,6 +1475,10 @@
     "mtime": 1780908078.330386,
     "hash": "b45fd53c2c07950e59c140373d70d393"
   },
+  "/root/.openclaw/workspace/projects/sevo/tests/v2-full-stage-advance.test.ts": {
+    "mtime": 1781262428.5199509,
+    "hash": "262d2d1f671be311b3dc0ba29b3f855d"
+  },
   "/root/.openclaw/workspace/projects/sevo/tests/advisory-closedloop-integration.test.ts": {
     "mtime": 1781049525.9088063,
     "hash": "43cd59d12a19ae8f45137d4bdd8baafa"
@@ -1922,10 +1486,6 @@
   "/root/.openclaw/workspace/projects/sevo/tests/advisory-ledger.test.ts": {
     "mtime": 1781047137.3343844,
     "hash": "300aaf1b4468d6033347319979ace0ef"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/p1-durable-runtime.test.ts": {
-    "mtime": 1781087628.2310178,
-    "hash": "b26bf935a9279201e81bd7e796b13a9f"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/label-protocol.test.ts": {
     "mtime": 1781071536.4452019,
@@ -1935,22 +1495,6 @@
     "mtime": 1781048788.3286312,
     "hash": "27fc3765d11f7def1ca6ea51d9a613b6"
   },
-  "/root/.openclaw/workspace/projects/sevo/tests/fr50-route-vector-classifier.test.ts": {
-    "mtime": 1781044664.8195987,
-    "hash": "bd5601fb537de1bc0d45ba6e22124a6d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/spec-gap-auto-advance.test.ts": {
-    "mtime": 1780877187.5793805,
-    "hash": "976c6d2fccc12d345c1e556440aeb80e"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/fr-d06-design-review.test.ts": {
-    "mtime": 1780849778.4699185,
-    "hash": "bf56ce512b3188957603889744bfc737"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/plan-c-injection-ownership.test.ts": {
-    "mtime": 1780824482.6706083,
-    "hash": "737e9b65906ff23357451ad2f643648b"
-  },
   "/root/.openclaw/workspace/projects/sevo/tests/prompt-injector-smoke.mjs": {
     "mtime": 1780993594.8169394,
     "hash": "1183ddc37183d3d7f3ac4dc9d28ab0c2"
@@ -1958,18 +1502,6 @@
   "/root/.openclaw/workspace/projects/sevo/tests/stage-policy.test.ts": {
     "mtime": 1781047097.126721,
     "hash": "9dc3c445d9ad7d69dd41d0bae80bdb0f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/p1-gate-fail-closed.test.ts": {
-    "mtime": 1780906570.4096365,
-    "hash": "9b92f946a060ec2b236da3778f2369f7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/spec-sync-reminder.test.ts": {
-    "mtime": 1780150223.9464483,
-    "hash": "5bad98e619175ec05e478607fab7780e"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/all-stages-single-source.test.ts": {
-    "mtime": 1780900325.5567322,
-    "hash": "e58799846762d6cfa6ff2f4e256d4a6f"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/spec-sync-reminder.test.js": {
     "mtime": 1780047335.982677,
@@ -1979,69 +1511,41 @@
     "mtime": 1780994253.179795,
     "hash": "aa6614e4178015b33ffffe926ba8d0a4"
   },
-  "/root/.openclaw/workspace/projects/sevo/tests/fr38a-spec-gap-advisory.test.ts": {
-    "mtime": 1781024791.3641396,
-    "hash": "be84f4a5f7f64d5f8d770194323ef80e"
-  },
   "/root/.openclaw/workspace/projects/sevo/tests/advance-prompt-templates.test.ts": {
     "mtime": 1780909168.0782008,
     "hash": "bb160abac587cd0aa85860e86b547914"
   },
-  "/root/.openclaw/workspace/projects/sevo/tests/p1-completion-idempotency.test.ts": {
-    "mtime": 1780906045.7839937,
-    "hash": "b819dceec372b4386105585d87d6a0c7"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/stage-prefix-commands.test.ts": {
-    "mtime": 1780852922.8189442,
-    "hash": "b75005d7c07eb5141342905d444f2235"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/fr38b-stage-route-advisory.test.ts": {
-    "mtime": 1780934777.9977093,
-    "hash": "6387422c9c202d8951d50010d505d25e"
-  },
   "/root/.openclaw/workspace/projects/sevo/tests/v2-route-classifier.test.ts": {
-    "mtime": 1781044808.1689618,
-    "hash": "b092bfcc612f9a0731132fbf013c13d5"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/fr02d-fr02e-task-mapper.test.ts": {
-    "mtime": 1780941476.233723,
-    "hash": "31305929c4c6109d03517e84ba787de2"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/stage-auto-advance-reconcile.test.ts": {
-    "mtime": 1780910055.7818198,
-    "hash": "eb1117ffad27142f194a51c6938adebe"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/fr38c-precise-route-hint.test.ts": {
-    "mtime": 1780919573.8704486,
-    "hash": "04b866bc7a960895888340033d7d2f0e"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/fr48-fr49-publish-gate.test.ts": {
-    "mtime": 1780845184.3453667,
-    "hash": "6238ff8db0cafdec2ccb0bf90ea9e9e3"
+    "mtime": 1781180607.8273911,
+    "hash": "8fa3035b474c458c13fdc49329885f00"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/completion-auto-create-run.test.ts": {
-    "mtime": 1781075893.5257986,
-    "hash": "ccf8f8374d656df9631df06116f3fd06"
-  },
-  "/root/.openclaw/workspace/projects/sevo/tests/completion-dedupe.test.ts": {
-    "mtime": 1780469630.1023993,
-    "hash": "76ee18bd33d8e9e952ab25b87b482071"
+    "mtime": 1781262555.1721463,
+    "hash": "416245f41c0809c518c3342d9f821c63"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/completion-handler-smoke.mjs": {
-    "mtime": 1780993622.4803953,
-    "hash": "8102bd690a8cb224836dce7ac2bb0968"
+    "mtime": 1781178046.9741855,
+    "hash": "d6acbf92765c1b052db0cee51f5d081a"
   },
-  "/root/.openclaw/workspace/projects/sevo/tests/from-entry-no-skip.test.ts": {
-    "mtime": 1780900442.371659,
-    "hash": "89fb3d9c6f9aa5f6c385ae3ecf70ecd5"
+  "/root/.openclaw/workspace/projects/sevo/tests/v2-dispatch-completion-advance.test.ts": {
+    "mtime": 1781189399.6460462,
+    "hash": "a458553462027c58dcd6cd9f61cc8336"
   },
-  "/root/.openclaw/workspace/projects/sevo/tests/completion-recovery-visible.test.ts": {
-    "mtime": 1780900764.7149758,
-    "hash": "1607dbdafd54867112bcaeec997d9147"
+  "/root/.openclaw/workspace/projects/sevo/tests/v2-cli-entry.test.ts": {
+    "mtime": 1781200287.072621,
+    "hash": "7cf0f28db6bd9c7944309485a51917c5"
+  },
+  "/root/.openclaw/workspace/projects/sevo/tests/completion-handler-disk-run.test.ts": {
+    "mtime": 1781152336.3810055,
+    "hash": "c7170df6b2d25b4ed3a7573dc532be2e"
+  },
+  "/root/.openclaw/workspace/projects/sevo/tests/run-store-active-compat.test.ts": {
+    "mtime": 1781107752.182382,
+    "hash": "9b67c10b791fc9376bd6205a8fa43e79"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/v2-advance-chain.test.mjs": {
-    "mtime": 1781006026.6874766,
-    "hash": "792f5164899244950368554e92363934"
+    "mtime": 1781178140.7287304,
+    "hash": "74a8309fadf253e3a1f0970c0f594d14"
   },
   "/root/.openclaw/workspace/projects/sevo/tests/e2e/verify.test.ts": {
     "mtime": 1777097742.9693668,
@@ -2108,232 +1612,32 @@
     "hash": "b3c49a7d798e31e4b9d9e46fec49d01f"
   },
   "/root/.openclaw/workspace/projects/sevo/README.md": {
-    "mtime": 1780767185.0599291,
-    "hash": "00f8769e659acc6353c8eda74bb32aca"
+    "mtime": 1781104233.188597,
+    "hash": "bec3bbc053573fdfe9c2369c5a9c6cd2"
   },
   "/root/.openclaw/workspace/projects/sevo/CHANGELOG.md": {
-    "mtime": 1778377817.4976459,
-    "hash": "46a31c390fa3efaf34728f4bf0c523df"
+    "mtime": 1781106542.965541,
+    "hash": "64196df2af6f5e2442e92c72687e402d"
   },
   "/root/.openclaw/workspace/projects/sevo/src/__tests__/fixtures/kivo-product-requirements.md": {
     "mtime": 1780163979.7523649,
     "hash": "1644fd46e5f8629ced2a83181f49ddd4"
   },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture-standard-draft.md": {
-    "mtime": 1780141779.5630968,
-    "hash": "db504476c5d20f84840a0083768327ca"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture.md": {
-    "mtime": 1780852543.6336915,
-    "hash": "a7bec768cae371192fcbf7d30baab1c1"
-  },
   "/root/.openclaw/workspace/projects/sevo/docs/product-requirements.md": {
-    "mtime": 1780962204.896385,
-    "hash": "2a8362320bbf87bbcdb046ba7c3bb6e6"
+    "mtime": 1781272777.6924868,
+    "hash": "7b35957a32555ad02535246025cc5e5b"
   },
   "/root/.openclaw/workspace/projects/sevo/docs/sevo-operations-guide.md": {
-    "mtime": 1780892585.2089746,
-    "hash": "a4ff34b799310c5aef8cf7838cd8d590"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/interaction-design-standard.md": {
-    "mtime": 1780141846.9102151,
-    "hash": "1cdc511089733c62541b89640a2c048e"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/arc42-architecture.md": {
-    "mtime": 1780505664.0276704,
-    "hash": "fdab0c743802e93f66bea553be35498f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/backlog-endgame-auto-fix.md": {
-    "mtime": 1779378960.5065289,
-    "hash": "df5e89b2bbf971960d8aa9bd8c7ef471"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/standalone-guide.md": {
-    "mtime": 1780504090.9517903,
-    "hash": "fe202a565bbd3d3f4d6eb73dad2dd27b"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture-standard.md": {
-    "mtime": 1780141822.821816,
-    "hash": "4bfdbb6a5fa8a867bb5a8ceb4d02d57a"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/readme-standard.md": {
-    "mtime": 1780165641.4126801,
-    "hash": "c457d6281bc7ea13fce0fc7637c3e7fc"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/interaction-design.md": {
-    "mtime": 1780147889.1879542,
-    "hash": "8afe42fb468a5ada4f67ef5754fa1927"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/test-cases-new-frs.md": {
-    "mtime": 1777097742.9543667,
-    "hash": "0b77279657cc3b766a53d1d7be72b2d8"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/SOURCE-OF-TRUTH.md": {
-    "mtime": 1780146047.0805578,
-    "hash": "bd0b3bad3b8887b7bbee601820d2b750"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/spec.md": {
-    "mtime": 1778377817.5016458,
-    "hash": "6c549c179305a3a88d1d1bc639e9e369"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture-map-index-js.md": {
-    "mtime": 1780884863.4948673,
-    "hash": "33af06bd01841cb37feef280cc6f9a10"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/v2-stage-gate-architecture.md": {
-    "mtime": 1781044132.8048284,
-    "hash": "781fe94642db16d52a8915943380a12f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/web-dashboard-guide.md": {
-    "mtime": 1777392329.3094287,
-    "hash": "f89ad2359d45ff7bfb92591906a4337f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/healthcheck-standard.md": {
-    "mtime": 1780166884.0651793,
-    "hash": "f7ce106b80dcb43c648b6bd17e90bd0b"
+    "mtime": 1781325695.1841342,
+    "hash": "8f3ce224eb89439ed7a6538d5ac44bee"
   },
   "/root/.openclaw/workspace/projects/sevo/docs/spec-writing-standard.md": {
-    "mtime": 1781015376.0655932,
-    "hash": "2a8362320bbf87bbcdb046ba7c3bb6e6"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/phase2-inputs.md": {
-    "mtime": 1777097742.9533668,
-    "hash": "bc16b456b5d80bbc50c0c38a388b4b82"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/fr29-tiered-scan-architecture.md": {
-    "mtime": 1779525843.4929476,
-    "hash": "990c79e084876fe58615df38735937cb"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/fr13-pipeline-engine-p0-architecture.md": {
-    "mtime": 1779496231.935721,
-    "hash": "ef6cb5a294e9c9e06b54f1ee3a959808"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/arc42-architecture.md": {
-    "mtime": 1780357063.0167985,
-    "hash": "1c833f2223de0ef35454bbc220af794d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/fr13-p1-architecture-review.md": {
-    "mtime": 1779506030.6321735,
-    "hash": "49801bf9741bb2b6cc5ba3c5f42670c8"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/fr14-fr15-fr16-architecture.md": {
-    "mtime": 1779526127.1330025,
-    "hash": "589841f07011c993b4a137fc06046327"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/fr22-role-dispatch-architecture.md": {
-    "mtime": 1779525871.4770517,
-    "hash": "ac44de9db711eb0e6b6400cdfe5341de"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/fr13-pipeline-engine-p1-architecture.md": {
-    "mtime": 1779506093.2883158,
-    "hash": "255087a5c96e8e4b390370d4b6fb8ea5"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/fr08a-fr11-architecture.md": {
-    "mtime": 1779525872.6210558,
-    "hash": "3a6cebe7b0b33b3a4a790bb88f619d41"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/openclaw-plugin-design.md": {
-    "mtime": 1779453213.4248886,
-    "hash": "680b8303a41cd019f5a33c5a61b12b34"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/injection-ownership-migration.md": {
-    "mtime": 1780819337.8318315,
-    "hash": "3889e23c32853f70d607fbe5dd84ed46"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/sevo-ux-arch-stages-design.md": {
-    "mtime": 1779494145.558165,
-    "hash": "c4913e31fbd13a74ae6e6cd2294dc1b8"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/router-level-classifier-fix-2026-05-24.md": {
-    "mtime": 1779622435.779297,
-    "hash": "84dd3087c11c0990e4b8d364e7e514f6"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-001-filesystem-artifact-storage.md": {
-    "mtime": 1777097742.9523668,
-    "hash": "c2ef0dd826148d6c5c282d28f2925099"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-006-web-frontend-framework.md": {
-    "mtime": 1777097742.9523668,
-    "hash": "b723534850b7c436543cb81e45dff0e2"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-002-stage-state-machine.md": {
-    "mtime": 1777097742.9523668,
-    "hash": "63096d558329710dea7a6e2325363e16"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-003-declarative-gate-rules.md": {
-    "mtime": 1777097742.9523668,
-    "hash": "9d4c87aaa69a37dd501ce571aa08c67f"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-004-test-case-parallel-artifact.md": {
-    "mtime": 1777097742.9523668,
-    "hash": "278211eb57427cf0825975356bb07e16"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-004-web-api-style.md": {
-    "mtime": 1777097742.9523668,
-    "hash": "124003f91d84b79002309cdd0dde1259"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-010-plugin-communication-protocol.md": {
-    "mtime": 1779929935.2419355,
-    "hash": "c64faa6378a9702fb74b64b6c2cd8304"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-011-prompt-injection-driven-spawn.md": {
-    "mtime": 1779929947.4451358,
-    "hash": "0e6291c75416a74d4e2f9a4a8a414115"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/architecture/decisions/ADR-005-web-realtime-strategy.md": {
-    "mtime": 1777097742.9523668,
-    "hash": "b67fc290a46021d093f092b3e8fde5ce"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/design/product-requirements.md": {
-    "mtime": 1780726651.6609404,
-    "hash": "eba779356ea1cb6dec1b2279b25cc798"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/design/fr13-pipeline-engine-p0-scope.md": {
-    "mtime": 1779495440.805833,
-    "hash": "9433edb7422fa83ca91c7eb0ef7a5949"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/design/fr13-pipeline-engine-p1-scope.md": {
-    "mtime": 1779505256.44731,
-    "hash": "002c59bcbf3763ee7974dc96f31f840c"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/design/sevo-product-requirements.md": {
-    "mtime": 1778377817.499646,
-    "hash": "e98010a08376264619fba5934ad60cda"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/design/pipeline-v2-architecture-cc.md": {
-    "mtime": 1780990711.270295,
-    "hash": "e47ea577e869183c57e6011865faa703"
+    "mtime": 1781262428.2149456,
+    "hash": "d6c89b95018a53801affa357eb5080d9"
   },
   "/root/.openclaw/workspace/projects/sevo/docs/design/pipeline-v2-architecture.md": {
     "mtime": 1780990337.1450808,
     "hash": "ddefb6b60e60b8c4e99752b302b1ff9d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/design/sevo-web-visual-upgrade-spec.md": {
-    "mtime": 1779092460.307817,
-    "hash": "7b5831b8288dcce2816a7ec4f173c1a0"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/design/endgame-scope.md": {
-    "mtime": 1779510964.3837008,
-    "hash": "182db7cc0b2aa108906d4e9889c97ce0"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/design/web-console-ui-simplify-spec.md": {
-    "mtime": 1779120275.0856547,
-    "hash": "663efb64065edfc22a54942d5aa2b847"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/reviews/contract-review-ux-arch-stages.md": {
-    "mtime": 1779494983.422187,
-    "hash": "8c61efeeabe62574b275941ac05903fc"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/reviews/contract-review-fr13-p0-architecture.md": {
-    "mtime": 1779495965.805722,
-    "hash": "bad4fe5c4db073e5c0f3864a1c614e19"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/reviews/fr13-p1-code-audit.md": {
-    "mtime": 1779507581.5185413,
-    "hash": "0dc160f2f791fa3ecb7438750974606d"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/reviews/code-review-fr13-p0-implementation.md": {
-    "mtime": 1779497744.1863673,
-    "hash": "35faff8b993783a5ebd2dbb43f401b4b"
   },
   "/root/.openclaw/workspace/projects/sevo/skill/pipeline-create/SKILL.md": {
     "mtime": 1777097742.9563668,
@@ -2490,9 +1794,5 @@
   "/root/.openclaw/workspace/projects/sevo/tests/fixtures/skill-e2e-project/docs/design/product-requirements.md": {
     "mtime": 1777097742.970367,
     "hash": "896628c5597e989218607eba2225522b"
-  },
-  "/root/.openclaw/workspace/projects/sevo/docs/sevo-dashboard-screenshot.jpg": {
-    "mtime": 1780297029.151901,
-    "hash": "49b070316cc5bfc90a05e11332d27b4d"
   }
 }

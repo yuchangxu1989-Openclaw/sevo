@@ -6,22 +6,22 @@
  */
 
 const FULL_PIPELINE_STAGES = Object.freeze([
-  'specify',
-  'spec-review',
-  'design',
-  'design-review',
+  'spec',
+  'spec-review-gate',
+  'plan',
+  'plan-review-gate',
   'implement',
-  'code-review',
-  'smoke',
-  'publish',
-  'post-release-verify',
+  'implement-review-gate',
+  'regression',
+  'deploy',
+  'verify',
   'ledger',
 ]);
 
 const REVIEW_STAGE_IDS = Object.freeze(new Set([
-  'spec-review',
-  'design-review',
-  'code-review',
+  'spec-review-gate',
+  'plan-review-gate',
+  'implement-review-gate',
 ]));
 
 /**

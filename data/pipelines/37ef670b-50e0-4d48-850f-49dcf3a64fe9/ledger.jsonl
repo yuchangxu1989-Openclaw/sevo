@@ -1,3 +1,4 @@
 {"timestamp":"2026-06-09T16:10:00.567Z","type":"run-created","pipelineRunId":"37ef670b-50e0-4d48-850f-49dcf3a64fe9","data":{"projectSlug":"e2e-cycle","currentStageId":"implement","entryType":"create"}}
 {"timestamp":"2026-06-09T16:10:00.568Z","type":"stage-advanced","pipelineRunId":"37ef670b-50e0-4d48-850f-49dcf3a64fe9","data":{"stageId":"implement","status":"passed"}}
 {"timestamp":"2026-06-09T16:10:00.568Z","type":"stage-advanced","pipelineRunId":"37ef670b-50e0-4d48-850f-49dcf3a64fe9","data":{"stageId":"review","status":"failed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-13T17:24:17.199Z","type":"run-closed","pipelineRunId":"37ef670b-50e0-4d48-850f-49dcf3a64fe9","data":{"status":"archived","reason":"expired: no activity for 24h"}}

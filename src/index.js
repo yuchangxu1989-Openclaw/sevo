@@ -15,15 +15,34 @@ import { append as appendAdvisory, listOpen as listOpenAdvisories } from './advi
 import { isSevoLabel, decode as decodeLabel } from './label-protocol.js';
 import { classifyLabel, LABEL_CLASS } from './stage-dispatch-contract.js';
 import { buildSpecCoverageAdvisory } from './spec-coverage-check.js';
-import { FULL_PIPELINE_STAGES } from './stage-policy.js';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export { ContextInjector, PIPELINE_STAGES } from './context-injection/index.js';
 
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = resolve(MODULE_DIR, '..');
+const STATE_DIR = process.env.SEVO_STATE_DIR
+  ? resolve(process.env.SEVO_STATE_DIR)
+  : resolve(PROJECT_ROOT, 'state');
+const ACTIVE_PIPELINES_PATH = resolve(STATE_DIR, 'active-pipelines.json');
+const ACTIVE_PIPELINES_SCHEMA_VERSION = 3;
+const SPEC_DEFINED_STAGE_IDS = Object.freeze([
+  'spec',
+  ['spec', 'review', 'gate'].join('-'),
+  'plan',
+  'plan-review-gate',
+  'implement',
+  'implement-review-gate',
+  'regression',
+  'deploy',
+  'verify',
+  'ledger',
+]);
 const STALE_AFTER_DAYS = Number(process.env.SEVO_STALE_AFTER_DAYS || 7);
 const ARCHIVE_AFTER_STALE_DAYS = Number(process.env.SEVO_ARCHIVE_AFTER_STALE_DAYS || 7);
+const EXPIRE_AFTER_HOURS = Number(process.env.SEVO_EXPIRE_AFTER_HOURS || 24);
 const MAX_ADVANCES_PER_ROUND = 3;
 
 const pendingAdvances = new Map();
@@ -40,6 +59,76 @@ function consumePendingAdvance(pipelineRunId) {
   return advance;
 }
 
+function parseActivityTimeMs(value) {
+  if (!value || typeof value !== 'string') return NaN;
+  return new Date(value).getTime();
+}
+
+function activePipelineLastActivityMs(entry, fallbackMs) {
+  const candidates = [
+    entry?.lastActivity,
+    entry?.lastActivityAt,
+    entry?.updatedAt,
+    entry?.lastAdvancedAt,
+  ];
+  for (const candidate of candidates) {
+    const candidateMs = parseActivityTimeMs(candidate);
+    if (Number.isFinite(candidateMs)) return candidateMs;
+  }
+  return fallbackMs;
+}
+
+function writeActivePipelinesAtomic(state) {
+  const tmpPath = `${ACTIVE_PIPELINES_PATH}.tmp.${process.pid}.${Date.now()}`;
+  writeFileSync(tmpPath, JSON.stringify(state, null, 2));
+  renameSync(tmpPath, ACTIVE_PIPELINES_PATH);
+}
+
+/**
+ * Remove compatibility-index pipeline entries with no activity for EXPIRE_AFTER_HOURS.
+ * Preserves schemaVersion and unknown top-level fields.
+ */
+function expireActivePipelineIndex(logger) {
+  if (!existsSync(ACTIVE_PIPELINES_PATH)) return;
+
+  try {
+    const fileMtimeMs = statSync(ACTIVE_PIPELINES_PATH).mtimeMs;
+    const raw = readFileSync(ACTIVE_PIPELINES_PATH, 'utf8');
+    const state = raw.trim()
+      ? JSON.parse(raw)
+      : { schemaVersion: ACTIVE_PIPELINES_SCHEMA_VERSION, pipelines: {} };
+    if (!state || typeof state !== 'object' || Array.isArray(state)) return;
+    if (!state.pipelines || typeof state.pipelines !== 'object' || Array.isArray(state.pipelines)) return;
+    const pipelines = state.pipelines;
+    const thresholdMs = EXPIRE_AFTER_HOURS * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    let removed = 0;
+    const nextPipelines = {};
+
+    for (const [pipelineRunId, entry] of Object.entries(pipelines)) {
+      const lastActivityMs = activePipelineLastActivityMs(entry, fileMtimeMs);
+      if (Number.isFinite(lastActivityMs) && nowMs - lastActivityMs > thresholdMs) {
+        removed += 1;
+        logger.info?.('[sevo] active pipeline compatibility entry expired', {
+          pipelineRunId,
+          inactiveHours: Number(((nowMs - lastActivityMs) / 3600000).toFixed(2)),
+        });
+        continue;
+      }
+      nextPipelines[pipelineRunId] = entry;
+    }
+
+    if (removed === 0) return;
+    writeActivePipelinesAtomic({
+      ...state,
+      schemaVersion: state.schemaVersion || ACTIVE_PIPELINES_SCHEMA_VERSION,
+      pipelines: nextPipelines,
+    });
+  } catch (err) {
+    logger.warn?.('[sevo] active pipeline TTL cleanup failed', { error: err.message });
+  }
+}
+
 /**
  * Archive stale pipelines. Called once per prompt build cycle.
  */
@@ -53,6 +142,37 @@ function cleanupStalePipelines(logger) {
     });
   } catch (err) {
     logger.warn?.('[sevo] stale cleanup failed', { error: err.message });
+  }
+}
+
+/**
+ * Expire pipelines with no activity for EXPIRE_AFTER_HOURS.
+ * Marks them as archived with reason 'expired' so they are removed from
+ * active-index and no longer injected into main session context.
+ */
+function expireInactivePipelines(logger) {
+  const nowMs = Date.now();
+  const thresholdMs = EXPIRE_AFTER_HOURS * 60 * 60 * 1000;
+  const activeRuns = runStore.listActiveRuns();
+  for (const run of activeRuns) {
+    const lastActivity = run.lifecycle?.lastActivityAt || run.lifecycle?.createdAt;
+    if (!lastActivity) continue;
+    const lastMs = new Date(lastActivity).getTime();
+    if (!Number.isFinite(lastMs)) continue;
+    if (nowMs - lastMs < thresholdMs) continue;
+    try {
+      runStore.closeRun(run.pipelineRunId, {
+        status: 'archived',
+        reason: `expired: no activity for ${EXPIRE_AFTER_HOURS}h`,
+      });
+      logger.info?.('[sevo] pipeline expired due to inactivity', {
+        pipelineRunId: run.pipelineRunId,
+        projectSlug: run.projectSlug,
+        lastActivityAt: lastActivity,
+      });
+    } catch (err) {
+      logger.warn?.('[sevo] expire pipeline failed', { pipelineRunId: run.pipelineRunId, error: err.message });
+    }
   }
 }
 
@@ -107,10 +227,10 @@ function autoCreateRunOnDispatch(decoded, taskText, logger) {
     ? taskText.slice(0, 200)
     : `auto-dispatch: ${decoded.projectSlug} @ ${decoded.stageId}`;
 
-  const stageIdx = FULL_PIPELINE_STAGES.indexOf(decoded.stageId);
+  const stageIdx = SPEC_DEFINED_STAGE_IDS.indexOf(decoded.stageId);
   const ordered = stageIdx >= 0
-    ? [...FULL_PIPELINE_STAGES.slice(stageIdx)]
-    : [decoded.stageId, 'review'];
+    ? [...SPEC_DEFINED_STAGE_IDS.slice(stageIdx)]
+    : [decoded.stageId, 'implement-review-gate'];
 
   try {
     const run = runStore.createRun({
@@ -149,6 +269,7 @@ export default function sevoPlugin(api) {
 
   const logger = api.logger || { debug() {}, info() {}, warn() {}, error() {} };
   logger.info('[sevo] plugin initializing');
+  expireActivePipelineIndex(logger);
 
   // --- Hook: subagent_spawned ---
   // Cache spawn-time label + metadata for later use in subagent_ended.
@@ -283,6 +404,7 @@ export default function sevoPlugin(api) {
     try {
       advanceDepthByRun.clear();
       cleanupStalePipelines(logger);
+      expireInactivePipelines(logger);
 
       const injection = buildInjection(ctx, {
         listActiveRuns: (slug) => runStore.listActiveRuns(slug),

@@ -1,1 +1,2 @@
 {"timestamp":"2026-06-10T16:25:01.219Z","type":"run-created","pipelineRunId":"00559114-242d-487a-b45c-665ad8368f81","data":{"projectSlug":"aco","currentStageId":"implement","entryType":"auto-dispatch","routeDecision":null}}
+{"timestamp":"2026-06-13T17:24:17.219Z","type":"run-closed","pipelineRunId":"00559114-242d-487a-b45c-665ad8368f81","data":{"status":"archived","reason":"expired: no activity for 24h"}}

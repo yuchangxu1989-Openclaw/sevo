@@ -5,16 +5,17 @@
   "projectRoot": "projects/test",
   "goal": "Test failure nextStageId",
   "scopeFingerprint": "sha256:5a84d43804268de15c4c2822afd78bf96f33302683b0d62f439ad460b9c284f1",
-  "status": "running",
+  "status": "archived",
   "entryType": "create",
   "lifecycle": {
     "createdAt": "2026-06-10T11:54:40.375Z",
     "startedAt": "2026-06-10T11:54:40.375Z",
     "completedAt": null,
     "cancelledAt": null,
-    "lastActivityAt": "2026-06-10T11:54:40.377Z",
+    "lastActivityAt": "2026-06-13T17:24:17.204Z",
     "staleDetectedAt": null,
-    "terminalReason": null
+    "terminalReason": "expired: no activity for 24h",
+    "archivedAt": "2026-06-13T17:24:17.204Z"
   },
   "stagePlan": {
     "ordered": [
