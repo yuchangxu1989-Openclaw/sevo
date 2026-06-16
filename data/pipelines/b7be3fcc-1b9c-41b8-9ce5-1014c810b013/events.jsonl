@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-03T05:58:02.004Z","pipelineId":"b7be3fcc-1b9c-41b8-9ce5-1014c810b013","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-fr-46-autodispatchstage-board-mpxnng2r","level":"L1"}}
-{"timestamp":"2026-06-03T05:58:02.005Z","pipelineId":"b7be3fcc-1b9c-41b8-9ce5-1014c810b013","stage":"spec","eventType":"stage_activated","payload":{}}

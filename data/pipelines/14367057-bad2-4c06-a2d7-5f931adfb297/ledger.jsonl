@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-11T07:57:37.146Z","type":"run-created","pipelineRunId":"14367057-bad2-4c06-a2d7-5f931adfb297","data":{"projectSlug":"aco-notify","currentStageId":"fix","entryType":"auto-dispatch","routeDecision":null}}
-{"timestamp":"2026-06-13T17:24:17.241Z","type":"run-closed","pipelineRunId":"14367057-bad2-4c06-a2d7-5f931adfb297","data":{"status":"archived","reason":"expired: no activity for 24h"}}

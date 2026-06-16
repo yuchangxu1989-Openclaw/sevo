@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+  "projectSlug": "kivo",
+  "projectRoot": "projects/kivo",
+  "goal": "## 目标\n在 KIVO 和 SEVO 的 spec 中，凡涉及语义匹配、分类、路由判断的 FR/AC，补充明确约束：必须用 embedding 向量语义匹配 + 每条规则 30+ 相似句，严禁关键词正则匹配。\n\n## 背景\n- 用户明确要求（2026-06-15）：所有产品 spec 涉及语义匹配的部分都要明确 embedding+30 相似句+禁止正则\n- ACO spec 已有「原则 6：语",
+  "scopeFingerprint": "sha256:affd49d5bdf3c524addefc95247797b2050cd05cd313fd6ad6b81df5a1245931",
+  "status": "expired",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-15T00:08:05.297Z",
+    "startedAt": "2026-06-15T00:08:05.297Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "archivedAt": null,
+    "lastActivityAt": "2026-06-16T01:03:57.246Z",
+    "staleDetectedAt": null,
+    "terminalReason": "expired: created more than 24h ago",
+    "expiredAt": "2026-06-16T01:03:57.242Z"
+  },
+  "stagePlan": {
+    "ordered": [
+      "spec",
+      "spec-review-gate",
+      "plan",
+      "plan-review-gate",
+      "implement",
+      "implement-review-gate",
+      "regression",
+      "deploy",
+      "verify",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "implement",
+  "stages": {
+    "spec": {
+      "status": "passed",
+      "startedAt": "2026-06-15T00:08:05.297Z",
+      "completedAt": "2026-06-15T00:22:46.742Z",
+      "dispatchId": "natural-label:1781482816658",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "spec-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-15T00:22:46.743Z",
+      "completedAt": "2026-06-15T00:33:52.870Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "plan": {
+      "status": "passed",
+      "startedAt": "2026-06-15T00:33:52.871Z",
+      "completedAt": "2026-06-15T00:55:59.426Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "plan-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-15T00:55:59.427Z",
+      "completedAt": "2026-06-15T01:15:17.381Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "active",
+      "startedAt": "2026-06-15T01:15:17.382Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement-review-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "e6709779-80e0-4ce1-968b-d4f6ffb2337a",
+      "runId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+      "stageId": "spec",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"spec\" is missing required evidence fields: specDocument",
+      "evidence": [
+        "specDocument"
+      ],
+      "createdAt": "2026-06-15T00:22:46.740Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "c4fc005c-d4b8-4d42-bb97-8333ba4fcd3c",
+      "runId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+      "stageId": "spec-review-gate",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"spec-review-gate\" is missing required evidence fields: findings, verdict",
+      "evidence": [
+        "findings",
+        "verdict"
+      ],
+      "createdAt": "2026-06-15T00:33:52.868Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "51cdae6a-d2d3-4519-80bd-068985b6e394",
+      "runId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+      "stageId": "plan",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for kivo before plan dispatch.",
+      "evidence": [
+        "specPath=/root/projects/kivo/docs/product-requirements.md",
+        "goalTokens=kivo,sevo,spec,凡涉及语义匹配,路由判断的,补充明确约束,embedding,向量语义匹配,每条规则,严禁关键词正则匹配,用户明确要求,2026-06-15,所有产品,涉及语义匹配的部分都要明确,禁止正则"
+      ],
+      "createdAt": "2026-06-15T00:37:19.565Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "5b22d7aa-9efd-4913-9b0c-f6392f4df1cf",
+      "runId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+      "stageId": "plan",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"plan\".",
+      "evidence": [],
+      "createdAt": "2026-06-15T00:55:59.424Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "09d1f121-66d8-4655-b2ed-f90e19b023b5",
+      "runId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+      "stageId": "plan-review-gate",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"plan-review-gate\".",
+      "evidence": [],
+      "createdAt": "2026-06-15T01:15:17.374Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "b575c33c-e9a5-4c9c-a346-8ffe3844b9c6",
+      "runId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for kivo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/kivo/docs/product-requirements.md",
+        "goalTokens=kivo,sevo,spec,凡涉及语义匹配,路由判断的,补充明确约束,embedding,向量语义匹配,每条规则,严禁关键词正则匹配,用户明确要求,2026-06-15,所有产品,涉及语义匹配的部分都要明确,禁止正则"
+      ],
+      "createdAt": "2026-06-15T01:31:30.894Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "d22dcb67-5fa7-4911-b7c5-6a9ccbd3cfca",
+      "runId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for kivo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/kivo/docs/product-requirements.md",
+        "goalTokens=kivo,sevo,spec,凡涉及语义匹配,路由判断的,补充明确约束,embedding,向量语义匹配,每条规则,严禁关键词正则匹配,用户明确要求,2026-06-15,所有产品,涉及语义匹配的部分都要明确,禁止正则"
+      ],
+      "createdAt": "2026-06-15T02:00:39.596Z",
+      "resolvedAt": null
+    }
+  ],
+  "nextAction": {
+    "kind": "dispatch-stage",
+    "pipelineRunId": "9e141e44-d905-49f7-88cd-c2cf7c733cd1",
+    "projectSlug": "kivo",
+    "completedStageId": "plan-review-gate",
+    "completedStageStatus": "passed",
+    "nextStageId": "implement",
+    "dispatch": {
+      "label": "sevo:kivo:9e141e44:implement:1",
+      "agentId": null,
+      "tier": "T1",
+      "timeout": 3600
+    },
+    "entryCriteria": "plan-review-gate 通过",
+    "exitCriteria": "代码实现完成，通过本地测试",
+    "advisorySummary": "openAdvisories+=1",
+    "createdAt": "2026-06-15T01:15:17.382Z"
+  }
+}

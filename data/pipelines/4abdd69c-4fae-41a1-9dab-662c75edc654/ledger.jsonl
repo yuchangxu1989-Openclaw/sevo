@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-09T16:47:48.790Z","type":"run-created","pipelineRunId":"4abdd69c-4fae-41a1-9dab-662c75edc654","data":{"projectSlug":"e2e-vague","currentStageId":"spec","entryType":"create","routeDecision":null}}
-{"timestamp":"2026-06-09T16:47:48.792Z","type":"run-closed","pipelineRunId":"4abdd69c-4fae-41a1-9dab-662c75edc654","data":{"status":"cancelled","reason":"e2e test cleanup"}}

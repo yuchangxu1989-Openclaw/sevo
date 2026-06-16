@@ -1,9 +1,0 @@
-{"timestamp":"2026-06-09T16:10:33.709Z","type":"run-created","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"projectSlug":"e2e-exhaust","currentStageId":"implement","entryType":"create"}}
-{"timestamp":"2026-06-09T16:10:33.709Z","type":"stage-advanced","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"stageId":"implement","status":"passed"}}
-{"timestamp":"2026-06-09T16:10:33.710Z","type":"stage-reset-for-retry","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"stageId":"fix","attempt":2}}
-{"timestamp":"2026-06-09T16:10:33.711Z","type":"stage-reset-for-retry","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"stageId":"fix","attempt":3}}
-{"timestamp":"2026-06-09T16:10:33.711Z","type":"stage-reset-for-retry","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"stageId":"fix","attempt":4}}
-{"timestamp":"2026-06-09T16:10:33.712Z","type":"stage-reset-for-retry","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"stageId":"fix","attempt":5}}
-{"timestamp":"2026-06-09T16:10:33.712Z","type":"stage-reset-for-retry","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"stageId":"review","attempt":2}}
-{"timestamp":"2026-06-09T16:10:33.713Z","type":"stage-advanced","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"stageId":"review","status":"failed","artifacts":[],"dispatchId":null}}
-{"timestamp":"2026-06-09T16:10:33.713Z","type":"run-closed","pipelineRunId":"7fe5ab65-4f21-4272-9af0-0a0cb93f1021","data":{"status":"cancelled","reason":"e2e test cleanup"}}

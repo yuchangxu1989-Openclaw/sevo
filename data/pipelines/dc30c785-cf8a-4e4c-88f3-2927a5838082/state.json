@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "dc30c785-cf8a-4e4c-88f3-2927a5838082",
+  "projectSlug": "sevo",
+  "projectRoot": "projects/sevo",
+  "goal": "## 目标\n修复 SEVO 插件的 pipeline 阶段推进 bug：implement 完成后能自动推进到 implement-review-gate，但 implement-review-gate 完成后没有推进到 regression。\n\n## 背景\n- SEVO 插件路径：`/root/.openclaw/workspace/projects/sevo/src/index.js`\n- P",
+  "scopeFingerprint": "sha256:990fb9d2d5655b696fcd1864b76a80d1eb2ca77f7ae7e5a76b8cb8244b3b914d",
+  "status": "expired",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-14T00:44:34.978Z",
+    "startedAt": "2026-06-14T00:44:34.978Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "archivedAt": null,
+    "lastActivityAt": "2026-06-15T00:45:34.978Z",
+    "staleDetectedAt": null,
+    "terminalReason": "expired: created more than 24h ago",
+    "expiredAt": "2026-06-15T00:45:34.978Z"
+  },
+  "stagePlan": {
+    "ordered": [
+      "implement",
+      "implement-review-gate",
+      "regression",
+      "deploy",
+      "verify",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "implement",
+  "stages": {
+    "implement": {
+      "status": "active",
+      "startedAt": "2026-06-14T00:44:34.978Z",
+      "completedAt": null,
+      "dispatchId": "natural-label:1781448717212",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement-review-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": true,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "daff742d-dfc8-489f-97c5-32eab45a3dd2",
+      "runId": "dc30c785-cf8a-4e4c-88f3-2927a5838082",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for sevo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/sevo/docs/product-requirements.md",
+        "goalTokens=sevo,pipeline,阶段推进,implement,完成后能自动推进到,implement-review-gate,完成后没有推进到,regression,插件路径,root,openclaw,workspace,projects,index"
+      ],
+      "createdAt": "2026-06-14T00:44:34.984Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "6c15cc7c-a4e7-4d1a-b80a-1a234b75d68f",
+      "runId": "dc30c785-cf8a-4e4c-88f3-2927a5838082",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for sevo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/sevo/docs/product-requirements.md",
+        "goalTokens=sevo,pipeline,阶段推进,implement,完成后能自动推进到,implement-review-gate,完成后没有推进到,regression,插件路径,root,openclaw,workspace,projects,index"
+      ],
+      "createdAt": "2026-06-14T01:57:42.185Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "8eab8204-8206-4363-bf80-82d5b8cb4161",
+      "runId": "dc30c785-cf8a-4e4c-88f3-2927a5838082",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for sevo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/sevo/docs/product-requirements.md",
+        "goalTokens=sevo,pipeline,阶段推进,implement,完成后能自动推进到,implement-review-gate,完成后没有推进到,regression,插件路径,root,openclaw,workspace,projects,index"
+      ],
+      "createdAt": "2026-06-14T13:22:48.739Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "da0169ec-35b1-46c5-946b-67bf756b3db1",
+      "runId": "dc30c785-cf8a-4e4c-88f3-2927a5838082",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for sevo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/sevo/docs/product-requirements.md",
+        "goalTokens=sevo,pipeline,阶段推进,implement,完成后能自动推进到,implement-review-gate,完成后没有推进到,regression,插件路径,root,openclaw,workspace,projects,index"
+      ],
+      "createdAt": "2026-06-14T14:27:49.997Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "3c225e64-a4b9-4b4f-b33f-8a334ac2a4ec",
+      "runId": "dc30c785-cf8a-4e4c-88f3-2927a5838082",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for sevo before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/sevo/docs/product-requirements.md",
+        "goalTokens=sevo,pipeline,阶段推进,implement,完成后能自动推进到,implement-review-gate,完成后没有推进到,regression,插件路径,root,openclaw,workspace,projects,index"
+      ],
+      "createdAt": "2026-06-14T14:51:57.210Z",
+      "resolvedAt": null
+    }
+  ]
+}

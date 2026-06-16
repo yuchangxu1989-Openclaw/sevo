@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+  "projectSlug": "aco",
+  "projectRoot": "projects/aco",
+  "goal": "## 目标\n在 ACO spec 中新增一个 FR：L2 规则统一 Web 管理端。用户确认放 ACO，管理 KIVO/SEVO/ACO 三方的语义触发规则，界面上区分来源和明细。\n\n## 用户原话（授权依据）\n\"我确认L2规则的web统一管理端在ACO，包含对KIVO、SEVO、ACO的规则。需要在界面上区分好来源和明细\"\n\n## 背景\n- ACO 当前已有 embedding 语义触发实现（1",
+  "scopeFingerprint": "sha256:23a2420461f6fdf6225f27bbb969c7ab06d9188edd1c6f5c3e2ef9031bd08704",
+  "status": "expired",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-15T06:35:14.832Z",
+    "startedAt": "2026-06-15T06:35:14.832Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "archivedAt": null,
+    "lastActivityAt": "2026-06-16T08:13:12.592Z",
+    "staleDetectedAt": null,
+    "terminalReason": "expired: created more than 24h ago",
+    "expiredAt": "2026-06-16T08:13:12.592Z"
+  },
+  "stagePlan": {
+    "ordered": [
+      "spec",
+      "spec-review-gate",
+      "plan",
+      "plan-review-gate",
+      "implement",
+      "implement-review-gate",
+      "regression",
+      "deploy",
+      "verify",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "implement",
+  "stages": {
+    "spec": {
+      "status": "passed",
+      "startedAt": "2026-06-15T06:35:14.832Z",
+      "completedAt": "2026-06-15T06:56:24.566Z",
+      "dispatchId": "natural-label:1781505314837",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "spec-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-15T06:56:24.567Z",
+      "completedAt": "2026-06-15T07:14:00.342Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "plan": {
+      "status": "passed",
+      "startedAt": "2026-06-15T07:14:00.344Z",
+      "completedAt": "2026-06-15T07:36:41.843Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "plan-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-15T07:36:41.845Z",
+      "completedAt": "2026-06-15T08:10:57.986Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "active",
+      "startedAt": "2026-06-15T08:10:57.987Z",
+      "completedAt": null,
+      "dispatchId": "natural-label:1781575758655",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement-review-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "343e5c57-986f-4740-a41e-1206bcbd3224",
+      "runId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+      "stageId": "spec",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"spec\" is missing required evidence fields: specDocument",
+      "evidence": [
+        "specDocument"
+      ],
+      "createdAt": "2026-06-15T06:56:24.564Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "94af2f7e-041a-4cc6-8dbb-258bd5e33de4",
+      "runId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+      "stageId": "spec-review-gate",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"spec-review-gate\" is missing required evidence fields: findings, verdict",
+      "evidence": [
+        "findings",
+        "verdict"
+      ],
+      "createdAt": "2026-06-15T07:14:00.340Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "121c875c-9256-49df-8e23-a4250e3f7168",
+      "runId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+      "stageId": "plan",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before plan dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,中新增一个,规则统一,用户确认放,kivo,sevo,三方的语义触发规则,界面上区分来源和明细,用户原话,授权依据,我确认l2规则的web统一管理端在aco,包含对kivo,aco的规则,需要在界面上区分好来源和明细,当前已有,embedding,语义触发实现"
+      ],
+      "createdAt": "2026-06-15T07:17:09.849Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "e2d9fac0-ca9b-4fed-a3db-b927bb36230b",
+      "runId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+      "stageId": "plan",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"plan\".",
+      "evidence": [],
+      "createdAt": "2026-06-15T07:36:41.841Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "b052b6d6-6e9d-4283-80b2-b580d13cbb73",
+      "runId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,中新增一个,规则统一,用户确认放,kivo,sevo,三方的语义触发规则,界面上区分来源和明细,用户原话,授权依据,我确认l2规则的web统一管理端在aco,包含对kivo,aco的规则,需要在界面上区分好来源和明细,当前已有,embedding,语义触发实现"
+      ],
+      "createdAt": "2026-06-15T08:10:35.128Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "a425c802-7ed8-4058-b8c4-24c850bdfdc0",
+      "runId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+      "stageId": "plan-review-gate",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"plan-review-gate\".",
+      "evidence": [],
+      "createdAt": "2026-06-15T08:10:57.984Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "affcc958-95ee-4ace-9461-381a256401ba",
+      "runId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,中新增一个,规则统一,用户确认放,kivo,sevo,三方的语义触发规则,界面上区分来源和明细,用户原话,授权依据,我确认l2规则的web统一管理端在aco,包含对kivo,aco的规则,需要在界面上区分好来源和明细,当前已有,embedding,语义触发实现"
+      ],
+      "createdAt": "2026-06-15T11:07:55.201Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "29a8843a-b49c-4fae-8165-4805a4596b40",
+      "runId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,中新增一个,规则统一,用户确认放,kivo,sevo,三方的语义触发规则,界面上区分来源和明细,用户原话,授权依据,我确认l2规则的web统一管理端在aco,包含对kivo,aco的规则,需要在界面上区分好来源和明细,当前已有,embedding,语义触发实现"
+      ],
+      "createdAt": "2026-06-16T02:09:18.653Z",
+      "resolvedAt": null
+    }
+  ],
+  "nextAction": {
+    "kind": "dispatch-stage",
+    "pipelineRunId": "a5a2b1b1-6cde-4580-a33f-e50397424498",
+    "projectSlug": "aco",
+    "completedStageId": "plan-review-gate",
+    "completedStageStatus": "passed",
+    "nextStageId": "implement",
+    "dispatch": {
+      "label": "sevo:aco:a5a2b1b1:implement:1",
+      "agentId": null,
+      "tier": "T1",
+      "timeout": 3600
+    },
+    "entryCriteria": "plan-review-gate 通过",
+    "exitCriteria": "代码实现完成，通过本地测试",
+    "advisorySummary": "openAdvisories+=1",
+    "createdAt": "2026-06-15T08:10:57.988Z"
+  }
+}

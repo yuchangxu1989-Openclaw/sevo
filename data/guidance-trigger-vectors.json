@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "description": "FR-K35 guidance trigger vectors — placeholder, run bootstrap-guidance-vectors.js to populate",
+  "generatedAt": null,
+  "thresholds": { "direct": 0.52, "fallback": 0.40 },
+  "samples": []
+}

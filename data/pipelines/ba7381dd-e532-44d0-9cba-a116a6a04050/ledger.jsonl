@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-11T04:10:56.242Z","type":"run-created","pipelineRunId":"ba7381dd-e532-44d0-9cba-a116a6a04050","data":{"projectSlug":"sevo-completion-handler-lookup-v3","currentStageId":"fix","entryType":"auto-dispatch","routeDecision":null}}
-{"timestamp":"2026-06-13T17:24:17.230Z","type":"run-closed","pipelineRunId":"ba7381dd-e532-44d0-9cba-a116a6a04050","data":{"status":"archived","reason":"expired: no activity for 24h"}}

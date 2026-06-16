@@ -796,11 +796,15 @@ export function touch(pipelineRunId) {
 export function patchRun(pipelineRunId, patch) {
   const loadedRun = requireRun(pipelineRunId);
   const timestamp = nowIso();
+  const patchLifecycle = patch?.lifecycle && typeof patch.lifecycle === 'object'
+    ? patch.lifecycle
+    : {};
   const mergedRun = {
     ...loadedRun,
     ...patch,
     lifecycle: {
       ...loadedRun.lifecycle,
+      ...patchLifecycle,
       lastActivityAt: timestamp,
     },
   };

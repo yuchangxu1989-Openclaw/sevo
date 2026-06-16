@@ -31,19 +31,21 @@ function extractSectionsMatching(content, pattern) {
   let buffer = [];
 
   for (const line of lines) {
-    const headingMatch = /^(#{2,3})\s+(.+)$/.exec(line);
+    const headingMatch = /^(#{2,6})\s+(.+)$/.exec(line);
     if (headingMatch) {
-      if (capturing && buffer.length > 0) {
-        results.push(buffer.join('\n').trim());
-      }
-
       const level = headingMatch[1].length;
       const title = headingMatch[2];
       if (pattern.test(title)) {
+        if (capturing && buffer.length > 0) {
+          results.push(buffer.join('\n').trim());
+        }
         capturing = true;
         captureLevel = level;
         buffer = [line];
       } else if (capturing && level <= captureLevel) {
+        if (buffer.length > 0) {
+          results.push(buffer.join('\n').trim());
+        }
         capturing = false;
         buffer = [];
       } else if (capturing) {
@@ -96,6 +98,65 @@ function safeReadFile(filePath) {
   }
 }
 
+function safeReadSpecFile(filePath) {
+  const content = safeReadFile(filePath);
+  if (!content) return null;
+
+  const trimmed = content.trimStart();
+  if (!trimmed.startsWith('{')) return content;
+
+  try {
+    const parsed = JSON.parse(content);
+    const markdown = parsed?.data?.markdown;
+    return typeof markdown === 'string' ? markdown : content;
+  } catch {
+    return content;
+  }
+}
+
+function extractFunctionalRequirementsWithAcceptanceCriteria(content) {
+  const frSections = extractSectionsMatching(content, /^FR[-\s]?\d[\w.-]*\b/i);
+  if (frSections.length === 0) {
+    const functionalSections = extractSectionsMatching(content, /^(?:功能需求|Functional Requirements)$/i);
+    return functionalSections.length > 0 ? functionalSections.join('\n---\n') : null;
+  }
+
+  const blocks = [];
+  for (const section of frSections) {
+    const lines = section.split('\n');
+    const heading = lines[0]?.replace(/^#{2,6}\s+/, '').trim();
+    if (!heading) continue;
+
+    const acLines = [];
+    let inAcSection = false;
+    for (const line of lines.slice(1)) {
+      const trimmed = line.trim();
+      if (/^[-*]\s*AC[-\s]?\d[\w.-]*\s*[:：]/i.test(trimmed) || /^AC[-\s]?\d[\w.-]*\s*[:：]/i.test(trimmed)) {
+        acLines.push(trimmed);
+        continue;
+      }
+
+      if (/^(?:#{4,6}\s*)?(?:验收标准|Acceptance Criteria)\b/i.test(trimmed)) {
+        inAcSection = true;
+        acLines.push(trimmed);
+        continue;
+      }
+
+      if (inAcSection) {
+        if (/^#{4,6}\s+/.test(trimmed) && !/(?:验收标准|Acceptance Criteria)/i.test(trimmed)) {
+          inAcSection = false;
+          continue;
+        }
+        if (trimmed) acLines.push(trimmed);
+      }
+    }
+
+    blocks.push(`### ${heading}\n${acLines.length > 0 ? acLines.join('\n') : '_No acceptance criteria found under this FR._'}`);
+  }
+
+  return blocks.length > 0 ? blocks.join('\n\n') : null;
+}
+
 function listFiles(dir, ext = '.md') {
   try {
     if (!existsSync(dir)) return [];
@@ -131,7 +192,8 @@ export class ContextInjector {
   buildInjection(projectPath, stage) {
     const resolved = resolve(projectPath);
     const docsDir = join(resolved, 'docs');
-    const specPath = join(docsDir, 'design', 'product-requirements.md');
+    const designSpecPath = join(docsDir, 'design', 'product-requirements.md');
+    const specPath = existsSync(designSpecPath) ? designSpecPath : join(docsDir, 'product-requirements.md');
     const arcPath = join(docsDir, 'architecture', 'arc42-architecture.md');
     const adrDir = join(docsDir, 'architecture', 'decisions');
     const srcDir = join(resolved, 'src');
@@ -142,7 +204,7 @@ export class ContextInjector {
       case 'plan':
         return this.buildPlanContext(specPath, adrDir);
       case 'implement':
-        return this.buildImplementContext(arcPath, adrDir);
+        return this.buildImplementContext(specPath, arcPath, adrDir);
       case 'review':
         return this.buildReviewContext(specPath, arcPath, srcDir);
       default:
@@ -154,7 +216,7 @@ export class ContextInjector {
     const blocks = [];
     blocks.push('## Context Injection (Stage: spec)');
 
-    const spec = safeReadFile(specPath);
+    const spec = safeReadSpecFile(specPath);
     if (spec) {
       blocks.push('\n### Existing Spec (key sections)');
       const vision = extractSection(spec, '产品愿景') ?? extractSection(spec, 'Vision');
@@ -190,7 +252,7 @@ export class ContextInjector {
     const blocks = [];
     blocks.push('## Context Injection (Stage: plan)');
 
-    const spec = safeReadFile(specPath);
+    const spec = safeReadSpecFile(specPath);
     if (spec) {
       blocks.push('\n### Product Requirements Spec (full)');
       blocks.push(spec);
@@ -212,9 +274,23 @@ export class ContextInjector {
     return blocks.join('\n\n');
   }
 
-  buildImplementContext(arcPath, adrDir) {
+  buildImplementContext(specPath, arcPath, adrDir) {
     const blocks = [];
     blocks.push('## Context Injection (Stage: implement)');
+
+    const spec = safeReadSpecFile(specPath);
+    if (spec) {
+      blocks.push('\n### Product Requirements (FR/AC summary)');
+      const frAcSummary = extractFunctionalRequirementsWithAcceptanceCriteria(spec);
+      if (frAcSummary) {
+        blocks.push(frAcSummary);
+      } else {
+        const acList = extractAcceptanceCriteria(spec);
+        blocks.push(acList ?? '_No functional requirements or acceptance criteria found in spec._');
+      }
+    } else {
+      blocks.push('\n_No spec found. Implementation without FR/AC context is risky._');
+    }
 
     const arc = safeReadFile(arcPath);
     if (arc) {
@@ -273,7 +349,7 @@ export class ContextInjector {
       '5. 除了代码质量，还要检查实现是否严格按 spec 描述的方式工作。',
     ].join('\n'));
 
-    const spec = safeReadFile(specPath);
+    const spec = safeReadSpecFile(specPath);
     if (spec) {
       blocks.push('\n### Acceptance Criteria');
       const acList = extractAcceptanceCriteria(spec);

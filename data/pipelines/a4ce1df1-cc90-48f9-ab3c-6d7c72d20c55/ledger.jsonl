@@ -1,0 +1,7 @@
+{"timestamp":"2026-06-14T10:25:37.034Z","type":"run-created","pipelineRunId":"a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55","data":{"projectSlug":"aco","currentStageId":"implement-review-gate","entryType":"auto-dispatch","routeDecision":null}}
+{"timestamp":"2026-06-14T10:25:37.037Z","type":"stage-advanced","pipelineRunId":"a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55","data":{"stageId":"implement-review-gate","status":"active","artifacts":[],"dispatchId":"natural-label:1781432737036"}}
+{"timestamp":"2026-06-14T10:45:26.203Z","type":"run-patched","pipelineRunId":"a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55","data":{"fields":["openAdvisories"]}}
+{"timestamp":"2026-06-14T10:45:26.204Z","type":"stage-advanced","pipelineRunId":"a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55","data":{"stageId":"implement-review-gate","status":"passed","artifacts":[],"dispatchId":null}}
+{"timestamp":"2026-06-14T10:45:26.205Z","type":"run-patched","pipelineRunId":"a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55","data":{"fields":["currentStageId","stages"]}}
+{"timestamp":"2026-06-14T10:45:26.206Z","type":"run-patched","pipelineRunId":"a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55","data":{"fields":["nextAction"]}}
+{"timestamp":"2026-06-15T10:32:49.133Z","type":"run-patched","pipelineRunId":"a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55","data":{"fields":["status","lifecycle"]}}

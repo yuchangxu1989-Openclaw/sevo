@@ -1,3 +1,19 @@
 {
-  "pipelines": {}
+  "pipelines": {
+    "a567bd3a-80cf-471c-b265-b4c135274d24": {
+      "projectSlug": "kivo",
+      "status": "running",
+      "currentStageId": "review"
+    },
+    "d96908e6-3ffa-45d4-a514-44bb5a6dfb96": {
+      "projectSlug": "sevo",
+      "status": "running",
+      "currentStageId": "deploy"
+    },
+    "a8f3c6ac-1155-443e-8833-b9f9e52daeba": {
+      "projectSlug": "sevo",
+      "status": "running",
+      "currentStageId": "deploy"
+    }
+  }
 }

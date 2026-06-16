@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-08T02:17:22.862Z","pipelineId":"a43422d4-bf21-403f-a373-526ff6d5b400","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-stage-skipping-mq4kyv41","level":"L1"}}
-{"timestamp":"2026-06-08T02:17:22.862Z","pipelineId":"a43422d4-bf21-403f-a373-526ff6d5b400","stage":"spec","eventType":"stage_activated","payload":{}}

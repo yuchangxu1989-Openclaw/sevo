@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "70b50fd9-3d19-426b-8e7b-9869e042c3a4",
+  "projectSlug": "sevo",
+  "projectRoot": "projects/sevo",
+  "goal": "## 目标\n在 SEVO spec 中补充一条 FR：SEVO 自身的 E2E 全链路 regression test，验证 10 阶段自动推进端到端工作。\n\n## 背景\nSEVO spec 已有 FR-13 PipelineEngine 定义了单步验收标准（AC-13.1~AC-13.12），但缺少一条集成级 E2E 测试场景——把 10 阶段串起来跑一遍，验证从 spec 到 ledger 的",
+  "scopeFingerprint": "sha256:8c4b07644729dce524f9c5fa7e96828592f88be3eda767515e55a50cb9dbed82",
+  "status": "expired",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-14T07:48:17.838Z",
+    "startedAt": "2026-06-14T07:48:17.838Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "archivedAt": null,
+    "lastActivityAt": "2026-06-15T07:59:27.129Z",
+    "staleDetectedAt": null,
+    "terminalReason": "expired: created more than 24h ago",
+    "expiredAt": "2026-06-15T07:59:27.129Z"
+  },
+  "stagePlan": {
+    "ordered": [
+      "spec",
+      "spec-review-gate",
+      "plan",
+      "plan-review-gate",
+      "implement",
+      "implement-review-gate",
+      "regression",
+      "deploy",
+      "verify",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "implement",
+  "stages": {
+    "spec": {
+      "status": "passed",
+      "startedAt": "2026-06-14T07:48:17.838Z",
+      "completedAt": "2026-06-14T08:03:10.055Z",
+      "dispatchId": "natural-label:1781423297842",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "spec-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-14T08:03:10.056Z",
+      "completedAt": "2026-06-14T08:26:01.706Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "plan": {
+      "status": "passed",
+      "startedAt": "2026-06-14T08:26:01.707Z",
+      "completedAt": "2026-06-14T09:00:27.207Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "plan-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-14T09:00:27.208Z",
+      "completedAt": "2026-06-14T09:13:42.760Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "active",
+      "startedAt": "2026-06-14T09:13:42.762Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement-review-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": true,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "040abb08-4cfc-42d8-bda5-84ecc34c41b1",
+      "runId": "70b50fd9-3d19-426b-8e7b-9869e042c3a4",
+      "stageId": "spec",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"spec\" is missing required evidence fields: specDocument",
+      "evidence": [
+        "specDocument"
+      ],
+      "createdAt": "2026-06-14T08:03:10.053Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "b14be834-ae18-45c3-ab1c-3aa7b9d7c834",
+      "runId": "70b50fd9-3d19-426b-8e7b-9869e042c3a4",
+      "stageId": "spec-review-gate",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"spec-review-gate\" is missing required evidence fields: findings, verdict",
+      "evidence": [
+        "findings",
+        "verdict"
+      ],
+      "createdAt": "2026-06-14T08:26:01.704Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "8d25b4a8-e5cc-4379-8c1a-7933ca6f296e",
+      "runId": "70b50fd9-3d19-426b-8e7b-9869e042c3a4",
+      "stageId": "plan",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for sevo before plan dispatch.",
+      "evidence": [
+        "specPath=/root/projects/sevo/docs/product-requirements.md",
+        "goalTokens=sevo,spec,中补充一条,regression,test,阶段自动推进端到端工作,fr-13,pipelineengine,定义了单步验收标准,ac-13,但缺少一条集成级,测试场景,阶段串起来跑一遍,ledger"
+      ],
+      "createdAt": "2026-06-14T08:37:06.762Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "bb3a262a-d398-47e3-bb65-29c00fef806b",
+      "runId": "70b50fd9-3d19-426b-8e7b-9869e042c3a4",
+      "stageId": "plan",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"plan\".",
+      "evidence": [],
+      "createdAt": "2026-06-14T09:00:27.205Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "9e81b2c8-f9e1-4f78-95c7-322b71369a51",
+      "runId": "70b50fd9-3d19-426b-8e7b-9869e042c3a4",
+      "stageId": "plan-review-gate",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"plan-review-gate\".",
+      "evidence": [],
+      "createdAt": "2026-06-14T09:13:42.758Z",
+      "resolvedAt": null
+    }
+  ],
+  "nextAction": {
+    "kind": "dispatch-stage",
+    "pipelineRunId": "70b50fd9-3d19-426b-8e7b-9869e042c3a4",
+    "projectSlug": "sevo",
+    "completedStageId": "plan-review-gate",
+    "completedStageStatus": "passed",
+    "nextStageId": "implement",
+    "dispatch": {
+      "label": "sevo:sevo:70b50fd9:implement:1",
+      "agentId": null,
+      "tier": "T1",
+      "timeout": 3600
+    },
+    "entryCriteria": "plan-review-gate 通过",
+    "exitCriteria": "代码实现完成，通过本地测试",
+    "advisorySummary": "openAdvisories+=1",
+    "createdAt": "2026-06-14T09:13:42.763Z"
+  }
+}

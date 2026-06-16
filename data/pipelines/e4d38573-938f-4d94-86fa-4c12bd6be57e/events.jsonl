@@ -1,5 +1,0 @@
-{"type": "pipeline_created", "timestamp": "2026-05-18T16:04:50.552154+00:00", "projectSlug": "sevo", "taskId": "task-sevo-web-simplify-6a0b38a2"}
-{"type": "stage_started", "timestamp": "2026-05-18T16:04:50.552154+00:00", "stageId": "spec"}
-{"type": "artifact_created", "timestamp": "2026-05-18T16:04:50.552154+00:00", "stageId": "spec", "artifactType": "spec", "path": "docs/design/web-console-ui-simplify-spec.md"}
-{"type": "stage_completed", "timestamp": "2026-05-18T16:04:50.552154+00:00", "stageId": "spec"}
-{"type": "stage_started", "timestamp": "2026-05-18T16:04:50.552154+00:00", "stageId": "spec-review-gate"}

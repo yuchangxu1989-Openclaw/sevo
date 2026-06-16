@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-03T08:29:20.399Z","pipelineId":"ee522ad6-7fa9-4778-ba46-2fb727f64159","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-sevo-mpxt20wk","level":"L1"}}
-{"timestamp":"2026-06-03T08:29:20.400Z","pipelineId":"ee522ad6-7fa9-4778-ba46-2fb727f64159","stage":"spec","eventType":"stage_activated","payload":{}}

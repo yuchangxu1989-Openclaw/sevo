@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-09T16:10:00.566Z","type":"run-created","pipelineRunId":"85be67ec-f2cc-42ad-84ec-81be245113cc","data":{"projectSlug":"e2e-default","currentStageId":"spec","entryType":"create"}}
-{"timestamp":"2026-06-09T16:10:00.566Z","type":"run-closed","pipelineRunId":"85be67ec-f2cc-42ad-84ec-81be245113cc","data":{"status":"cancelled","reason":"e2e test cleanup"}}

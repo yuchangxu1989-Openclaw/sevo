@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-03T17:45:17.579Z","pipelineId":"bfeb894e-f758-48fc-877c-cc62d26fdd95","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-kivo-mpycwwgw","level":"L1"}}
-{"timestamp":"2026-06-03T17:45:17.579Z","pipelineId":"bfeb894e-f758-48fc-877c-cc62d26fdd95","stage":"spec","eventType":"stage_activated","payload":{}}

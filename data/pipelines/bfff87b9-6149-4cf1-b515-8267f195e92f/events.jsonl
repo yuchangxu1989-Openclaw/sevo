@@ -1,2 +1,0 @@
-{"timestamp":"2026-05-05T14:59:51.389Z","pipelineId":"bfff87b9-6149-4cf1-b515-8267f195e92f","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-aco-mosr8moe","level":"L2+"}}
-{"timestamp":"2026-05-05T14:59:51.390Z","pipelineId":"bfff87b9-6149-4cf1-b515-8267f195e92f","stage":"spec","eventType":"stage_activated","payload":{}}

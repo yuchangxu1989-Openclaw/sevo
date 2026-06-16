@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-05T02:07:56.945Z","pipelineId":"0dc48abc-ef36-46c0-91ad-22277c7a946a","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-claw-design-mq0ab8s6","level":"L1"}}
-{"timestamp":"2026-06-05T02:07:56.945Z","pipelineId":"0dc48abc-ef36-46c0-91ad-22277c7a946a","stage":"spec","eventType":"stage_activated","payload":{}}

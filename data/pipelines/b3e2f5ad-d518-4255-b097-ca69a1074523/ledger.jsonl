@@ -1,7 +1,0 @@
-{"timestamp":"2026-06-09T16:10:00.562Z","type":"run-created","pipelineRunId":"b3e2f5ad-d518-4255-b097-ca69a1074523","data":{"projectSlug":"e2e-fix","currentStageId":"spec","entryType":"entry-fix"}}
-{"timestamp":"2026-06-09T16:10:00.562Z","type":"stage-advanced","pipelineRunId":"b3e2f5ad-d518-4255-b097-ca69a1074523","data":{"stageId":"spec","status":"passed"}}
-{"timestamp":"2026-06-09T16:10:00.563Z","type":"stage-advanced","pipelineRunId":"b3e2f5ad-d518-4255-b097-ca69a1074523","data":{"stageId":"spec-review-gate","status":"passed"}}
-{"timestamp":"2026-06-09T16:10:00.563Z","type":"stage-advanced","pipelineRunId":"b3e2f5ad-d518-4255-b097-ca69a1074523","data":{"stageId":"implement","status":"passed"}}
-{"timestamp":"2026-06-09T16:10:00.564Z","type":"stage-advanced","pipelineRunId":"b3e2f5ad-d518-4255-b097-ca69a1074523","data":{"stageId":"review","status":"passed"}}
-{"timestamp":"2026-06-09T16:10:00.564Z","type":"stage-advanced","pipelineRunId":"b3e2f5ad-d518-4255-b097-ca69a1074523","data":{"stageId":"fix","status":"active"}}
-{"timestamp":"2026-06-09T16:10:00.565Z","type":"run-closed","pipelineRunId":"b3e2f5ad-d518-4255-b097-ca69a1074523","data":{"status":"cancelled","reason":"e2e test cleanup"}}

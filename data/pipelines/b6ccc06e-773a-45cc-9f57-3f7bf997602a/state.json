@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "b6ccc06e-773a-45cc-9f57-3f7bf997602a",
+  "projectSlug": "aco",
+  "projectRoot": "projects/aco",
+  "goal": "## 目标\n对 ACO 三大守卫插件的按需注入改造做回归测试，确保改造没有破坏已有功能。\n\n## 回归范围\n- `/root/.openclaw/extensions/aco-dispatch-guard/` — 调度规则守卫\n- `/root/.openclaw/extensions/aco-objective-fact-guard/` — 客观事实守卫\n- `/root/.openclaw/e",
+  "scopeFingerprint": "sha256:6c4501ed11c1d54262c0753b2a517e6c975d624b155a366fb6077c4bf17dcb43",
+  "status": "expired",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-14T10:42:44.734Z",
+    "startedAt": "2026-06-14T10:42:44.734Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "archivedAt": null,
+    "lastActivityAt": "2026-06-15T11:02:01.791Z",
+    "staleDetectedAt": null,
+    "terminalReason": "expired: created more than 24h ago",
+    "expiredAt": "2026-06-15T11:02:01.790Z"
+  },
+  "stagePlan": {
+    "ordered": [
+      "regression",
+      "deploy",
+      "verify",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "deploy",
+  "stages": {
+    "regression": {
+      "status": "passed",
+      "startedAt": "2026-06-14T10:42:44.734Z",
+      "completedAt": "2026-06-14T11:03:38.474Z",
+      "dispatchId": "natural-label:1781433764738",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "active",
+      "startedAt": "2026-06-14T11:03:38.475Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "2cfe2351-364e-492a-abd7-86ddf155ee6e",
+      "runId": "b6ccc06e-773a-45cc-9f57-3f7bf997602a",
+      "stageId": "regression",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"regression\" is missing required evidence fields: testRun, verdict",
+      "evidence": [
+        "testRun",
+        "verdict"
+      ],
+      "createdAt": "2026-06-14T11:03:38.472Z",
+      "resolvedAt": null
+    }
+  ],
+  "nextAction": {
+    "kind": "dispatch-stage",
+    "pipelineRunId": "b6ccc06e-773a-45cc-9f57-3f7bf997602a",
+    "projectSlug": "aco",
+    "completedStageId": "regression",
+    "completedStageStatus": "passed",
+    "nextStageId": "deploy",
+    "dispatch": {
+      "label": "sevo:aco:b6ccc06e:deploy:1",
+      "agentId": null,
+      "tier": "T1",
+      "timeout": 1200
+    },
+    "entryCriteria": "regression 通过",
+    "exitCriteria": "部署成功，包/服务可用",
+    "advisorySummary": "openAdvisories+=1",
+    "createdAt": "2026-06-14T11:03:38.487Z"
+  }
+}

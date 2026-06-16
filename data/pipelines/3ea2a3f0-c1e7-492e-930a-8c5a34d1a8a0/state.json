@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+  "projectSlug": "aco",
+  "projectRoot": "projects/aco",
+  "goal": "## 目标\n确认 ACO spec 对\"规则按需注入\"功能的 FR/AC 覆盖是否完整，如有缺口则补充。\n\n## 背景\n当前 ACO 三大插件（dispatch-guard / objective-fact-guard / spec-challenge-guard）每轮全量注入约 9,133 tokens。需要改为按需注入以降本。已有审计报告：`/root/.openclaw/workspace/",
+  "scopeFingerprint": "sha256:edeacf10e6636d8b39d504351c35807b5f09ef8e263ed1e5bc305ebad253d1a3",
+  "status": "expired",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-14T07:37:00.115Z",
+    "startedAt": "2026-06-14T07:37:00.115Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "archivedAt": null,
+    "lastActivityAt": "2026-06-15T07:40:22.681Z",
+    "staleDetectedAt": null,
+    "terminalReason": "expired: created more than 24h ago",
+    "expiredAt": "2026-06-15T07:40:22.680Z"
+  },
+  "stagePlan": {
+    "ordered": [
+      "spec",
+      "spec-review-gate",
+      "plan",
+      "plan-review-gate",
+      "implement",
+      "implement-review-gate",
+      "regression",
+      "deploy",
+      "verify",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "implement",
+  "stages": {
+    "spec": {
+      "status": "passed",
+      "startedAt": "2026-06-14T07:37:00.115Z",
+      "completedAt": "2026-06-14T07:58:14.940Z",
+      "dispatchId": "natural-label:1781422620119",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "spec-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-14T07:58:14.941Z",
+      "completedAt": "2026-06-14T08:20:06.342Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "plan": {
+      "status": "passed",
+      "startedAt": "2026-06-14T08:20:06.343Z",
+      "completedAt": "2026-06-14T08:47:54.483Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "plan-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-14T08:47:54.484Z",
+      "completedAt": "2026-06-14T09:09:05.660Z",
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement": {
+      "status": "active",
+      "startedAt": "2026-06-14T09:09:05.661Z",
+      "completedAt": null,
+      "dispatchId": "natural-label:1781484266820",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "implement-review-gate": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "20f764d3-647d-47c0-becc-f84a59cad090",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "spec",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"spec\" is missing required evidence fields: specDocument",
+      "evidence": [
+        "specDocument"
+      ],
+      "createdAt": "2026-06-14T07:58:14.938Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "90cf51e4-3f9d-4c36-88f0-f52e9e1dd34a",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "spec-review-gate",
+      "type": "evidence-contract-missing-fields",
+      "severity": "warn",
+      "message": "Completion for stage \"spec-review-gate\" is missing required evidence fields: findings, verdict",
+      "evidence": [
+        "findings",
+        "verdict"
+      ],
+      "createdAt": "2026-06-14T08:20:06.340Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "267f693c-7fb3-46a9-8046-5adf26cf4821",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "plan",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before plan dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,规则按需注入,覆盖是否完整,如有缺口则补充,三大插件,dispatch-guard,objective-fact-guard,spec-challenge-guard,每轮全量注入约,tokens,需要改为按需注入以降本,已有审计报告,root,openclaw,workspace"
+      ],
+      "createdAt": "2026-06-14T08:27:10.210Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "86735d61-b5bd-43e2-b85a-f6a3aba66c71",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "plan",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"plan\".",
+      "evidence": [],
+      "createdAt": "2026-06-14T08:47:54.481Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "25292938-0bbd-4f8d-89ad-e23eeba939e5",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "plan-review-gate",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"plan-review-gate\".",
+      "evidence": [],
+      "createdAt": "2026-06-14T09:09:05.658Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "c6283407-b2ee-470e-8ccc-2a7aeaa1e5ed",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,规则按需注入,覆盖是否完整,如有缺口则补充,三大插件,dispatch-guard,objective-fact-guard,spec-challenge-guard,每轮全量注入约,tokens,需要改为按需注入以降本,已有审计报告,root,openclaw,workspace"
+      ],
+      "createdAt": "2026-06-14T09:16:05.203Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "e772d84f-e42d-4c92-8f31-09bfaaf8cedc",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,规则按需注入,覆盖是否完整,如有缺口则补充,三大插件,dispatch-guard,objective-fact-guard,spec-challenge-guard,每轮全量注入约,tokens,需要改为按需注入以降本,已有审计报告,root,openclaw,workspace"
+      ],
+      "createdAt": "2026-06-14T10:08:41.336Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "0d02de73-e76d-4341-a607-e539e8ac17da",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,规则按需注入,覆盖是否完整,如有缺口则补充,三大插件,dispatch-guard,objective-fact-guard,spec-challenge-guard,每轮全量注入约,tokens,需要改为按需注入以降本,已有审计报告,root,openclaw,workspace"
+      ],
+      "createdAt": "2026-06-14T13:15:14.652Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "61443f74-cf38-4628-b6e0-f454c3a23854",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,规则按需注入,覆盖是否完整,如有缺口则补充,三大插件,dispatch-guard,objective-fact-guard,spec-challenge-guard,每轮全量注入约,tokens,需要改为按需注入以降本,已有审计报告,root,openclaw,workspace"
+      ],
+      "createdAt": "2026-06-14T17:42:13.586Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "939b3f49-5a43-4d13-a725-addd85851b14",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,规则按需注入,覆盖是否完整,如有缺口则补充,三大插件,dispatch-guard,objective-fact-guard,spec-challenge-guard,每轮全量注入约,tokens,需要改为按需注入以降本,已有审计报告,root,openclaw,workspace"
+      ],
+      "createdAt": "2026-06-15T00:30:27.852Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "25544f3c-9c11-4ed2-b299-2d2039912706",
+      "runId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+      "stageId": "implement",
+      "type": "spec-coverage-gap",
+      "severity": "warn",
+      "message": "No product requirements spec found for aco before implement dispatch.",
+      "evidence": [
+        "specPath=/root/projects/aco/docs/product-requirements.md",
+        "goalTokens=spec,规则按需注入,覆盖是否完整,如有缺口则补充,三大插件,dispatch-guard,objective-fact-guard,spec-challenge-guard,每轮全量注入约,tokens,需要改为按需注入以降本,已有审计报告,root,openclaw,workspace"
+      ],
+      "createdAt": "2026-06-15T00:44:26.818Z",
+      "resolvedAt": null
+    }
+  ],
+  "nextAction": {
+    "kind": "dispatch-stage",
+    "pipelineRunId": "3ea2a3f0-c1e7-492e-930a-8c5a34d1a8a0",
+    "projectSlug": "aco",
+    "completedStageId": "plan-review-gate",
+    "completedStageStatus": "passed",
+    "nextStageId": "implement",
+    "dispatch": {
+      "label": "sevo:aco:3ea2a3f0:implement:1",
+      "agentId": null,
+      "tier": "T1",
+      "timeout": 3600
+    },
+    "entryCriteria": "plan-review-gate 通过",
+    "exitCriteria": "代码实现完成，通过本地测试",
+    "advisorySummary": "openAdvisories+=1",
+    "createdAt": "2026-06-14T09:09:05.662Z"
+  }
+}

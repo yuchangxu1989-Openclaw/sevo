@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-03T04:06:16.246Z","pipelineId":"2c0e7934-6d7b-4c79-81c5-c079a387a36f","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-sevo-mpxjncjb","level":"L1"}}
-{"timestamp":"2026-06-03T04:06:16.247Z","pipelineId":"2c0e7934-6d7b-4c79-81c5-c079a387a36f","stage":"spec","eventType":"stage_activated","payload":{}}

@@ -549,6 +549,72 @@ function computeAdvance(run, completedStageId, deps = {}) {
       run, completedStageId, completedStageStatus, stageConfig, deps._findingsSummary, { maxFixRounds: deps.maxFixRounds }
     );
 
+    if (loopResult.action === 'advance') {
+      const ordered = Array.isArray(run?.stagePlan?.ordered) ? run.stagePlan.ordered : [];
+      const index = ordered.indexOf(completedStageId);
+      const linearNext = index >= 0
+        ? ordered.slice(index + 1).find((sid) => !COMPLETED_STAGE_STATUSES.has(run.stages?.[sid]?.status)) || null
+        : null;
+      if (linearNext) {
+        if (typeof runStore.patchRun === 'function') {
+          const stages = { ...(run.stages || {}) };
+          const ns = stages[linearNext] || { status: 'pending', startedAt: null, completedAt: null, dispatchId: null, artifacts: [], attempt: 1 };
+          stages[linearNext] = { ...ns, status: ns.status === 'pending' ? 'active' : ns.status, startedAt: ns.startedAt || new Date().toISOString() };
+          runStore.patchRun(run.pipelineRunId, { currentStageId: linearNext, stages });
+        }
+        const dispatchParams = resolveStageDispatchParams(linearNext, deps);
+        const { label } = buildDispatchContract({
+          projectSlug: run.projectSlug,
+          pipelineRunId: run.pipelineRunId,
+          stageId: linearNext,
+          attempt: run.stages?.[linearNext]?.attempt || 1,
+        });
+        const nextAction = {
+          kind: 'dispatch-stage',
+          pipelineRunId: run.pipelineRunId,
+          projectSlug: run.projectSlug,
+          completedStageId,
+          completedStageStatus,
+          nextStageId: linearNext,
+          dispatch: {
+            label,
+            agentId: dispatchParams.agentId || null,
+            tier: dispatchParams.tier || null,
+            timeout: Number(dispatchParams.timeout || 1200),
+          },
+          entryCriteria: getEntryCriteria(linearNext) || null,
+          exitCriteria: getExitCriteria(linearNext) || null,
+          advisorySummary,
+          createdAt: new Date().toISOString(),
+        };
+        const persistedRun = persistNextAction(run, nextAction, runStore);
+        return {
+          advanceText: buildNextActionText(nextAction),
+          nextAction,
+          nextStageId: linearNext,
+          runSnapshot: persistedRun,
+          dispatchHint: nextAction.dispatch,
+        };
+      }
+      const completedRun = markRunCompleteIfPossible(run, runStore);
+      const completeAction = {
+        kind: 'complete-run',
+        pipelineRunId: completedRun.pipelineRunId,
+        projectSlug: completedRun.projectSlug,
+        completedStageId,
+        completedStageStatus,
+        advisorySummary,
+        createdAt: new Date().toISOString(),
+      };
+      const persistedComplete = persistNextAction(completedRun, completeAction, runStore);
+      return {
+        advanceText: buildNextActionText(completeAction),
+        nextAction: completeAction,
+        nextStageId: null,
+        runSnapshot: persistedComplete,
+      };
+    }
+
     if (loopResult.action === 'dispatch-fix') {
       const fixAttempt = (run.stages?.[loopResult.cycleTarget]?.attempt || 1) + 1;
       if (typeof runStore.patchRun === 'function') {
@@ -713,6 +779,17 @@ function computeAdvance(run, completedStageId, deps = {}) {
     };
   }
 
+  if (typeof runStore.patchRun === 'function') {
+    const stages = { ...(run.stages || {}) };
+    const nextStage = stages[nextStageId] || { status: 'pending', startedAt: null, completedAt: null, dispatchId: null, artifacts: [], attempt: 1 };
+    stages[nextStageId] = {
+      ...nextStage,
+      status: nextStage.status === 'pending' ? 'active' : nextStage.status,
+      startedAt: nextStage.startedAt || new Date().toISOString(),
+    };
+    runStore.patchRun(run.pipelineRunId, { currentStageId: nextStageId, stages });
+  }
+
   const dispatchParams = resolveStageDispatchParams(nextStageId, deps);
   const { label } = buildDispatchContract({
     projectSlug: run.projectSlug,
@@ -801,6 +878,7 @@ function tryAutoCreateRun(label, decoded, evt, deps) {
     status,
     artifacts: extractArtifacts(evt),
     dispatchId: extractDispatchId(evt),
+    suppressAutoAdvance: true,
   });
 
   const completionAdvisories = completionAdvisory ? [completionAdvisory] : [];
@@ -921,6 +999,7 @@ export function handleCompletion(evt, deps = {}) {
     status,
     artifacts: extractArtifacts(evt),
     dispatchId: extractDispatchId(evt),
+    suppressAutoAdvance: true,
   });
 
   const advance = computeAdvance(updatedRun, decoded.stageId, {

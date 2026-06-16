@@ -1,1 +1,0 @@
-{"timestamp":"2026-06-11T10:52:37.892Z","pipelineId":"0d60d64a-8a5c-484f-83f5-f69838e18880","stage":"specify","eventType":"fix_attempt","payload":{"attempt":1,"failureReason":"Task failed","taskId":null,"outcome":"pending"}}

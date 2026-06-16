@@ -1,3 +1,0 @@
-{"timestamp":"2026-06-10T14:32:32.640Z","type":"run-created","pipelineRunId":"e5b2d1bd-38ad-4838-9f34-3f30edf6dcf9","data":{"projectSlug":"kivo","currentStageId":"fix","entryType":"auto-completion","routeDecision":null}}
-{"timestamp":"2026-06-10T14:32:32.641Z","type":"stage-advanced","pipelineRunId":"e5b2d1bd-38ad-4838-9f34-3f30edf6dcf9","data":{"stageId":"fix","status":"passed","artifacts":[],"dispatchId":null}}
-{"timestamp":"2026-06-13T17:24:17.207Z","type":"run-closed","pipelineRunId":"e5b2d1bd-38ad-4838-9f34-3f30edf6dcf9","data":{"status":"archived","reason":"expired: no activity for 24h"}}

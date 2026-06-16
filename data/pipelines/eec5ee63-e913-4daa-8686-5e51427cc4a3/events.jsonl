@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-03T06:12:09.351Z","pipelineId":"eec5ee63-e913-4daa-8686-5e51427cc4a3","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-autodispatchstage-index-js-mpxo5kdp","level":"L1"}}
-{"timestamp":"2026-06-03T06:12:09.351Z","pipelineId":"eec5ee63-e913-4daa-8686-5e51427cc4a3","stage":"spec","eventType":"stage_activated","payload":{}}

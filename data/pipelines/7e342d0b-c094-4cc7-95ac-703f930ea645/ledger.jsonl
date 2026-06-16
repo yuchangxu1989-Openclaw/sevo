@@ -1,8 +1,0 @@
-{"timestamp":"2026-06-09T16:10:33.704Z","type":"run-created","pipelineRunId":"7e342d0b-c094-4cc7-95ac-703f930ea645","data":{"projectSlug":"e2e-cycle","currentStageId":"implement","entryType":"create"}}
-{"timestamp":"2026-06-09T16:10:33.704Z","type":"stage-advanced","pipelineRunId":"7e342d0b-c094-4cc7-95ac-703f930ea645","data":{"stageId":"implement","status":"passed"}}
-{"timestamp":"2026-06-09T16:10:33.705Z","type":"stage-advanced","pipelineRunId":"7e342d0b-c094-4cc7-95ac-703f930ea645","data":{"stageId":"review","status":"failed","artifacts":[],"dispatchId":null}}
-{"timestamp":"2026-06-09T16:10:33.705Z","type":"stage-reset-for-retry","pipelineRunId":"7e342d0b-c094-4cc7-95ac-703f930ea645","data":{"stageId":"fix","attempt":2}}
-{"timestamp":"2026-06-09T16:10:33.706Z","type":"stage-advanced","pipelineRunId":"7e342d0b-c094-4cc7-95ac-703f930ea645","data":{"stageId":"fix","status":"passed","artifacts":[],"dispatchId":null}}
-{"timestamp":"2026-06-09T16:10:33.707Z","type":"stage-reset-for-retry","pipelineRunId":"7e342d0b-c094-4cc7-95ac-703f930ea645","data":{"stageId":"review","attempt":2}}
-{"timestamp":"2026-06-09T16:10:33.708Z","type":"stage-advanced","pipelineRunId":"7e342d0b-c094-4cc7-95ac-703f930ea645","data":{"stageId":"review","status":"passed","artifacts":[],"dispatchId":null}}
-{"timestamp":"2026-06-09T16:10:33.708Z","type":"run-closed","pipelineRunId":"7e342d0b-c094-4cc7-95ac-703f930ea645","data":{"status":"cancelled","reason":"e2e test cleanup"}}

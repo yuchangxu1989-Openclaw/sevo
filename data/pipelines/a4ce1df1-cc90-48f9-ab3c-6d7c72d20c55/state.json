@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 2,
+  "pipelineRunId": "a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55",
+  "projectSlug": "aco",
+  "projectRoot": "projects/aco",
+  "goal": "## 目标\n审计 ACO 三大守卫插件的「按需注入」改造代码质量，判定是否通过 implement-review-gate。\n\n## 审计范围\n- `/root/.openclaw/extensions/aco-dispatch-guard/index.js` — 调度规则按需注入改造\n- `/root/.openclaw/extensions/aco-objective-fact-guard/i",
+  "scopeFingerprint": "sha256:a61e08144d5dd8abd258a49f1a6074fec95a4c9e1cd0a8d3b9d1152bb367cf3d",
+  "status": "expired",
+  "entryType": "auto-dispatch",
+  "lifecycle": {
+    "createdAt": "2026-06-14T10:25:37.032Z",
+    "startedAt": "2026-06-14T10:25:37.032Z",
+    "completedAt": null,
+    "cancelledAt": null,
+    "archivedAt": null,
+    "lastActivityAt": "2026-06-15T10:32:49.131Z",
+    "staleDetectedAt": null,
+    "terminalReason": "expired: created more than 24h ago",
+    "expiredAt": "2026-06-15T10:32:49.130Z"
+  },
+  "stagePlan": {
+    "ordered": [
+      "implement-review-gate",
+      "regression",
+      "deploy",
+      "verify",
+      "ledger"
+    ],
+    "skipped": []
+  },
+  "currentStageId": "regression",
+  "stages": {
+    "implement-review-gate": {
+      "status": "passed",
+      "startedAt": "2026-06-14T10:25:37.032Z",
+      "completedAt": "2026-06-14T10:45:26.203Z",
+      "dispatchId": "natural-label:1781432737036",
+      "artifacts": [],
+      "attempt": 1
+    },
+    "regression": {
+      "status": "active",
+      "startedAt": "2026-06-14T10:45:26.205Z",
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "deploy": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "verify": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    },
+    "ledger": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "dispatchId": null,
+      "artifacts": [],
+      "attempt": 1
+    }
+  },
+  "metadata": {
+    "createdBy": "user",
+    "maintenanceRun": false,
+    "parentRunId": null,
+    "routeDecision": null
+  },
+  "openAdvisories": [
+    {
+      "id": "a275eac6-08c6-4a97-aeb4-edd8f7fa14c8",
+      "runId": "a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55",
+      "stageId": "implement-review-gate",
+      "type": "evidence-contract-unknown-stage",
+      "severity": "warn",
+      "message": "No evidence contract is registered for stage \"implement-review-gate\".",
+      "evidence": [],
+      "createdAt": "2026-06-14T10:45:26.201Z",
+      "resolvedAt": null
+    }
+  ],
+  "nextAction": {
+    "kind": "dispatch-stage",
+    "pipelineRunId": "a4ce1df1-cc90-48f9-ab3c-6d7c72d20c55",
+    "projectSlug": "aco",
+    "completedStageId": "implement-review-gate",
+    "completedStageStatus": "passed",
+    "nextStageId": "regression",
+    "dispatch": {
+      "label": "sevo:aco:a4ce1df1:regression:1",
+      "agentId": null,
+      "tier": "audit",
+      "timeout": 1200
+    },
+    "entryCriteria": "implement-review-gate 通过",
+    "exitCriteria": "回归测试全部通过",
+    "advisorySummary": "openAdvisories+=1",
+    "createdAt": "2026-06-14T10:45:26.206Z"
+  }
+}

@@ -1,3 +1,0 @@
-{"timestamp":"2026-06-11T11:31:11.131Z","type":"run-created","pipelineRunId":"17a90fc5-d7e8-40a3-b001-b56e9e6e66d6","data":{"projectSlug":"sevo","currentStageId":"implement","entryType":"auto-dispatch","routeDecision":null}}
-{"timestamp":"2026-06-13T07:46:20.069Z","type":"run-patched","pipelineRunId":"17a90fc5-d7e8-40a3-b001-b56e9e6e66d6","data":{"fields":["openAdvisories"]}}
-{"timestamp":"2026-06-13T08:18:12.333Z","type":"run-closed","pipelineRunId":"17a90fc5-d7e8-40a3-b001-b56e9e6e66d6","data":{"status":"completed","reason":"all stages succeeded per kanban review 2026-06-13"}}

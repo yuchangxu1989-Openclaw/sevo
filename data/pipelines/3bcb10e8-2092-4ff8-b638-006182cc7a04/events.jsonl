@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-03T07:39:04.706Z","pipelineId":"3bcb10e8-2092-4ff8-b638-006182cc7a04","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-dispatch-guard-spec-first-mpxr9fhx","level":"L1"}}
-{"timestamp":"2026-06-03T07:39:04.706Z","pipelineId":"3bcb10e8-2092-4ff8-b638-006182cc7a04","stage":"spec","eventType":"stage_activated","payload":{}}

@@ -1,3 +1,0 @@
-{"timestamp":"2026-06-11T10:28:13.652Z","type":"run-created","pipelineRunId":"c9416f20-774e-41ce-8037-15a96b949671","data":{"projectSlug":"kivo","currentStageId":"implement","entryType":"auto-dispatch","routeDecision":null}}
-{"timestamp":"2026-06-13T07:46:19.789Z","type":"run-patched","pipelineRunId":"c9416f20-774e-41ce-8037-15a96b949671","data":{"fields":["openAdvisories"]}}
-{"timestamp":"2026-06-13T08:18:12.336Z","type":"run-closed","pipelineRunId":"c9416f20-774e-41ce-8037-15a96b949671","data":{"status":"completed","reason":"all stages succeeded per kanban review 2026-06-13"}}

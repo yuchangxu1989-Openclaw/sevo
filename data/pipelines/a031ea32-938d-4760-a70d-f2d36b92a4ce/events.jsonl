@@ -1,2 +1,0 @@
-{"timestamp":"2026-05-21T15:59:17.720Z","pipelineId":"a031ea32-938d-4760-a70d-f2d36b92a4ce","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-kivo-p0-wiki-web-mpfoep5i","level":"L2+"}}
-{"timestamp":"2026-05-21T15:59:17.721Z","pipelineId":"a031ea32-938d-4760-a70d-f2d36b92a4ce","stage":"spec","eventType":"stage_activated","payload":{}}

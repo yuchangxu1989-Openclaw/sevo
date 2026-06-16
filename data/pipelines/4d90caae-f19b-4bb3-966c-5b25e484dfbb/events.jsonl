@@ -1,2 +1,0 @@
-{"timestamp":"2026-06-03T06:39:28.872Z","pipelineId":"4d90caae-f19b-4bb3-966c-5b25e484dfbb","stage":"spec","eventType":"pipeline_created","payload":{"taskId":"task-fr-46-fallback-root-mpxp4s8e","level":"L1"}}
-{"timestamp":"2026-06-03T06:39:28.872Z","pipelineId":"4d90caae-f19b-4bb3-966c-5b25e484dfbb","stage":"spec","eventType":"stage_activated","payload":{}}

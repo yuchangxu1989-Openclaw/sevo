@@ -108,16 +108,18 @@ export function decode(label) {
     parts.length >= 2 &&
     parts[0] &&
     parts[1] &&
-    !hasWhitespace(parts[0]) &&
-    !hasWhitespace(parts[1])
+    !hasWhitespace(parts[0])
   ) {
-    return {
-      projectSlug: parts[0],
-      pipelineRunId: null,
-      pipelineRunIdShort: null,
-      stageId: parts[1],
-      attempt: normalizeAttempt(parts[2]),
-    };
+    const stageId = parts[1].split(/\s/)[0];
+    if (stageId) {
+      return {
+        projectSlug: parts[0],
+        pipelineRunId: null,
+        pipelineRunIdShort: null,
+        stageId,
+        attempt: normalizeAttempt(parts[2]),
+      };
+    }
   }
 
   const naturalMatch = body.match(/^([a-z0-9][a-z0-9-]*)\s+([a-z0-9][a-z0-9-]*)\b/i);
